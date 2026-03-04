@@ -32,13 +32,15 @@ export type ExceptionOptions<T = Unit> = {
  * @param options - The exception options
  * @returns Exception<T>
  */
-export const exception = <T = Unit>(options: ExceptionOptions<T>): Exception<T> =>
-  Object.freeze({
+export const exception = <T = Unit>(options: ExceptionOptions<T>): Exception<T> => {
+  const data = options.data ?? unit;
+  return Object.freeze({
     name: options.name,
     message: options.message,
-    data: options.data ?? unit,
+    data: data as T,
     stack: options.stack ?? new Error().stack,
   });
+};
 
 /**
  * Creates an Exception with current stack trace

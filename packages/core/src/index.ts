@@ -9,8 +9,8 @@
 // Re-export all types
 export type { Unit } from "./unit.js";
 export type { Success } from "./success.js";
-export type { Cause } from "./cause.js";
-export type { Exception } from "./exception.js";
+export type { Cause, CauseOptions } from "./cause.js";
+export type { Exception, ExceptionOptions } from "./exception.js";
 export type { Outcome } from "./outcome.js";
 
 // Unit
@@ -23,9 +23,4 @@ export { success, successUnit, isSuccess } from "./success.js";
 export { cause, causeUnit, isCause } from "./cause.js";
 
 // Exception
-export { exception, exceptionUnit, isException } from "./exception.js";
-
-// Outcome (combines all)
-export { success, cause, exception, causeUnit, exceptionUnit } from "./outcome.js";
-export { isSuccess, isCause, isException } from "./outcome.js";
-export type { Outcome } from "./outcome.js";
+export { exception, exceptionWithStack, exceptionUnit, isException } from "./exception.js";
