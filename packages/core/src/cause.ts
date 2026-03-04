@@ -3,7 +3,7 @@
  * Unlike Exceptions, Causes are expected and recoverable errors
  */
 
-import { Unit } from "./unit.js";
+import { Unit, unit } from "./unit.js";
 
 /**
  * Cause data structure
@@ -46,7 +46,7 @@ export function cause<T = unknown>(options: CauseOptions<T>): Cause<T> {
 export function causeUnit(options: Omit<CauseOptions<Unit>, "data">): Cause<Unit> {
   return cause({
     ...options,
-    data: Object.freeze({}) as Unit,
+    data: unit,
   });
 }
 
@@ -66,6 +66,7 @@ export function isCause<T = unknown>(value: unknown): value is Cause<T> {
   return (
     typeof obj.name === "string" &&
     typeof obj.message === "string" &&
-    "data" in obj
+    "data" in obj &&
+    !("stack" in obj) // Exclude Exception
   );
 }

@@ -4,9 +4,9 @@
  */
 
 import { Success, success as createSuccess } from "./success.js";
-import { Cause, cause as createCause } from "./cause.js";
-import { Exception, exception as createException } from "./exception.js";
-import { Unit } from "./unit.js";
+import { Cause, cause as createCause, causeUnit as createCauseUnit } from "./cause.js";
+import { Exception, exception as createException, exceptionUnit as createExceptionUnit } from "./exception.js";
+import { Unit, unit } from "./unit.js";
 
 /**
  * Outcome union type
@@ -53,10 +53,7 @@ export function causeUnit(options: {
   readonly name: string;
   readonly message: string;
 }): Cause<Unit> {
-  return createCause({
-    ...options,
-    data: Object.freeze({}) as Unit,
-  });
+  return createCauseUnit(options);
 }
 
 /**
@@ -84,7 +81,7 @@ export function exceptionUnit(options: {
   readonly message: string;
   readonly stack?: string;
 }): Exception<Unit> {
-  return createException(options);
+  return createExceptionUnit(options);
 }
 
 // Re-export type guards

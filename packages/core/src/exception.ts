@@ -3,7 +3,7 @@
  * Unlike Causes, these are unexpected and typically unrecoverable
  */
 
-import { Unit } from "./unit.js";
+import { Unit, unit } from "./unit.js";
 
 /**
  * Exception data structure
@@ -36,7 +36,7 @@ export function exception<T = Unit>(options: ExceptionOptions<T>): Exception<T> 
   return Object.freeze({
     name: options.name,
     message: options.message,
-    data: options.data ?? (Object.freeze({}) as T),
+    data: options.data ?? unit,
     stack: options.stack ?? new Error().stack,
   });
 }
@@ -52,6 +52,24 @@ export function exceptionWithStack<T = Unit>(
   return exception({
     ...options,
     stack: new Error().stack,
+  });
+}
+
+/**
+ * Creates an Exception with Unit data
+ * @param options - The exception options without data
+ * @returns Exception<Unit>
+ */
+export function exceptionUnit(options: {
+  readonly name: string;
+  readonly message: string;
+  readonly stack?: string;
+}): Exception<Unit> {
+  return exception({
+    name: options.name,
+    message: options.message,
+    data: unit,
+    stack: options.stack,
   });
 }
 
