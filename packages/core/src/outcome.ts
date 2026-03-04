@@ -6,7 +6,7 @@
 import { Success, success as createSuccess } from "./success.js";
 import { Cause, cause as createCause, causeUnit as createCauseUnit } from "./cause.js";
 import { Exception, exception as createException, exceptionUnit as createExceptionUnit } from "./exception.js";
-import { Unit, unit } from "./unit.js";
+import { Unit } from "./unit.js";
 
 /**
  * Outcome union type
@@ -26,9 +26,7 @@ export type Outcome<
  * @param value - The success value
  * @returns Success<T>
  */
-export function success<T>(value: T): Success<T> {
-  return createSuccess(value);
-}
+export const success = <T>(value: T): Success<T> => createSuccess(value);
 
 /**
  * Creates a Cause outcome (domain error)
@@ -36,25 +34,21 @@ export function success<T>(value: T): Success<T> {
  * @param options - The cause options
  * @returns Cause<T>
  */
-export function cause<T = unknown>(options: {
+export const cause = <T = unknown>(options: {
   readonly name: string;
   readonly message: string;
   readonly data: T;
-}): Cause<T> {
-  return createCause(options);
-}
+}): Cause<T> => createCause(options);
 
 /**
  * Creates a Cause with Unit data
  * @param options - The cause options without data
  * @returns Cause<Unit>
  */
-export function causeUnit(options: {
+export const causeUnit = (options: {
   readonly name: string;
   readonly message: string;
-}): Cause<Unit> {
-  return createCauseUnit(options);
-}
+}): Cause<Unit> => createCauseUnit(options);
 
 /**
  * Creates an Exception outcome (system error)
@@ -62,27 +56,23 @@ export function causeUnit(options: {
  * @param options - The exception options
  * @returns Exception<T>
  */
-export function exception<T = Unit>(options: {
+export const exception = <T = Unit>(options: {
   readonly name: string;
   readonly message: string;
   readonly data?: T;
   readonly stack?: string;
-}): Exception<T> {
-  return createException(options);
-}
+}): Exception<T> => createException(options);
 
 /**
  * Creates an Exception with Unit data
  * @param options - The exception options without data
  * @returns Exception<Unit>
  */
-export function exceptionUnit(options: {
+export const exceptionUnit = (options: {
   readonly name: string;
   readonly message: string;
   readonly stack?: string;
-}): Exception<Unit> {
-  return createExceptionUnit(options);
-}
+}): Exception<Unit> => createExceptionUnit(options);
 
 // Re-export type guards
 export { isSuccess } from "./success.js";
