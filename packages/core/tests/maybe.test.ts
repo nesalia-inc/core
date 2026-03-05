@@ -350,7 +350,7 @@ describe("Maybe", () => {
     });
 
     it("should return null if None", () => {
-      const result = toNullable(none);
+      const result = toNullable(none());
       expect(result).toBe(null);
     });
   });
@@ -362,7 +362,7 @@ describe("Maybe", () => {
     });
 
     it("should return undefined if None", () => {
-      const result = toUndefined(none);
+      const result = toUndefined(none());
       expect(result).toBe(undefined);
     });
   });
