@@ -16,6 +16,8 @@ export type Maybe<T> = Some<T> | None;
 export type Some<T> = {
   readonly ok: true;
   readonly value: T;
+  isSome(): true;
+  isNone(): false;
 };
 
 /**
@@ -23,6 +25,8 @@ export type Some<T> = {
  */
 export type None = {
   readonly ok: false;
+  isSome(): false;
+  isNone(): true;
 };
 
 /**
@@ -34,6 +38,12 @@ export const some = <T>(value: T): Some<T> =>
   Object.freeze({
     ok: true,
     value,
+    isSome() {
+      return true;
+    },
+    isNone() {
+      return false;
+    },
   });
 
 /**
@@ -44,6 +54,12 @@ export const someUnit = (): Some<void> =>
   Object.freeze({
     ok: true,
     value: undefined,
+    isSome() {
+      return true;
+    },
+    isNone() {
+      return false;
+    },
   });
 
 /**
@@ -52,6 +68,12 @@ export const someUnit = (): Some<void> =>
  */
 const NONE: None = Object.freeze({
   ok: false,
+  isSome() {
+    return false;
+  },
+  isNone() {
+    return true;
+  },
 });
 
 export const none = (): None => NONE;

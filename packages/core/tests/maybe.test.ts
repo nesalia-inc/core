@@ -121,6 +121,16 @@ describe("Maybe", () => {
         expect(value.value).toBe(42);
       }
     });
+
+    it("isSome() method should return true for Some", () => {
+      const result = some(42);
+      expect(result.isSome()).toBe(true);
+    });
+
+    it("isSome() method should return false for None", () => {
+      const result = none();
+      expect(result.isSome()).toBe(false);
+    });
   });
 
   describe("isNone", () => {
@@ -139,6 +149,16 @@ describe("Maybe", () => {
       if (isNone(value)) {
         expect(value.ok).toBe(false);
       }
+    });
+
+    it("isNone() method should return false for Some", () => {
+      const result = some(42);
+      expect(result.isNone()).toBe(false);
+    });
+
+    it("isNone() method should return true for None", () => {
+      const result = none();
+      expect(result.isNone()).toBe(true);
     });
   });
 
