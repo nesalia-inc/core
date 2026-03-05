@@ -1,51 +1,117 @@
-# Package Template
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="public/icon.png">
+    <source media="(prefers-color-scheme: light)" srcset="public/icon.png">
+    <img src="public/icon.png" alt="@deessejs/core" width="150" height="150" style="border-radius: 50%;">
+  </picture>
+</p>
 
-TypeScript monorepo template with pnpm, turbo, vitest, husky, and changesets.
+<h1 align="center">@deessejs/core</h1>
 
-## Setup
+<p align="center">
+  <a href="https://www.npmjs.com/package/@deessejs/core">
+    <img src="https://img.shields.io/npm/v/@deessejs/core" alt="npm Version">
+  </a>
+  <a href="https://www.npmjs.com/package/@deessejs/core">
+    <img src="https://img.shields.io/bundlejs/size/@deessejs/core" alt="Bundle Size">
+  </a>
+  <a href="https://github.com/nesalia-inc/core/actions">
+    <img src="https://img.shields.io/github/actions/workflow/status/nesalia-inc/core/ci?label=tests" alt="Tests">
+  </a>
+  <a href="https://github.com/nesalia-inc/core/actions">
+    <img src="https://img.shields.io/badge/coverage-100%25-brightgreen" alt="Coverage">
+  </a>
+  <a href="https://github.com/nesalia-inc/core/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/nesalia-inc/core" alt="License">
+  </a>
+</p>
+
+> Functional programming patterns for TypeScript.
+
+## Packages
+
+| Package | Description | Version |
+|---------|-------------|---------|
+| `@deessejs/core` | Functional programming patterns | [![](https://img.shields.io/npm/v/@deessejs/core)](https://www.npmjs.com/package/@deessejs/core) |
+
+## Requirements
+
+- TypeScript 5.0+
+- Node.js 20+
+
+## Installation
+
+```bash
+# Install core
+npm install @deessejs/core
+
+# Or using pnpm
+pnpm add @deessejs/core
+
+# Or using yarn
+yarn add @deessejs/core
+```
+
+## Quick Start
+
+```typescript
+import { success, cause, exception, isSuccess, isCause, isException, Outcome } from '@deessejs/core'
+
+// Success - Normal Operation Result
+const ok = success({ id: 1, name: 'John' })
+
+if (isSuccess(ok)) {
+  console.log(ok.value.name)
+}
+
+// Cause - Domain Errors
+const notFound = cause({
+  name: 'NOT_FOUND',
+  message: 'User not found',
+  data: { id: 123 }
+})
+
+// Exception - System Errors
+const crash = exception({
+  name: 'DATABASE_ERROR',
+  message: 'Connection failed'
+})
+```
+
+## Development
 
 ```bash
 # Install dependencies
 pnpm install
 
-# Enable husky
-pnpm prepare
+# Build all packages
+pnpm build
+
+# Run tests
+pnpm test
+
+# Run tests with coverage
+pnpm test:coverage
+
+# Lint
+pnpm lint
+
+# Type check
+pnpm typecheck
 ```
 
-## Scripts
+## Contributing
 
-| Command | Description |
-|---------|-------------|
-| `pnpm build` | Build all packages |
-| `pnpm dev` | Run dev mode with watch |
-| `pnpm lint` | Run ESLint |
-| `pnpm typecheck` | Run TypeScript type checking |
-| `pnpm test` | Run vitest |
-| `pnpm release` | Version bump with changesets |
-| `pnpm publish` | Publish packages to npm |
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-## Adding a Package
+## Author
 
-1. Create a new directory in `packages/`
-2. Add a `package.json` with the required scripts
-3. Add a `tsconfig.json` extending the root config
+- **Nesalia Inc.**
 
-## Release
+## Security
 
-```bash
-# Create a changeset
-pnpm changeset add
+If you discover any security vulnerabilities, please send an e-mail to security@nesalia.com.
 
-# Version bump
-pnpm release
+## License
 
-# Publish (CI will do this on tag push)
-pnpm publish
-```
-
-## Git Hooks
-
-Pre-commit hooks run automatically:
-- `pnpm turbo lint`
-- `pnpm turbo typecheck`
-- `pnpm turbo test`
+MIT License - see the [LICENSE](LICENSE) file for details.
