@@ -12,6 +12,7 @@ export type { Success } from "./success.js";
 export type { Cause, CauseOptions } from "./cause.js";
 export type { Exception, ExceptionOptions } from "./exception.js";
 export type { Outcome } from "./outcome.js";
+export type { Maybe, Some, None } from "./maybe.js";
 
 // Unit
 export { unit, isUnit } from "./unit.js";
@@ -24,3 +25,21 @@ export { cause, causeUnit, isCause } from "./cause.js";
 
 // Exception
 export { exception, exceptionWithStack, exceptionUnit, isException } from "./exception.js";
+
+// Maybe
+export {
+  some,
+  someUnit,
+  none,
+  fromNullable,
+  isSome,
+  isNone,
+  map,
+  flatMap,
+  getOrElse,
+  getOrCompute,
+  tap,
+  match,
+  toNullable,
+  toUndefined,
+} from "./maybe.js";

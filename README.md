@@ -78,6 +78,63 @@ const crash = exception({
 })
 ```
 
+## Maybe Type
+
+The `Maybe` type represents optional values - a value that may or may not be present. It's a safer alternative to `null`/`undefined`.
+
+### Types
+
+| Type | Description |
+|------|-------------|
+| `Maybe<T>` | Union of `Some<T>` or `None` |
+| `Some<T>` | A present value (`{ ok: true, value: T }`) |
+| `None` | An absent value (`{ ok: false }`) |
+
+### Functions
+
+```typescript
+import {
+  some, none, someUnit,
+  fromNullable, isSome, isNone,
+  map, flatMap, getOrElse, getOrCompute,
+  tap, match, toNullable, toUndefined
+} from '@deessejs/core'
+
+// Creation
+const present = some(42)           // Some<number>
+const absent = none()              // None
+const unit = someUnit()            // Some<void>
+
+// From nullable
+const value1 = fromNullable(42)    // Some<number>
+const value2 = fromNullable(null)  // None
+const value3 = fromNullable(0)     // Some<number> (0 is a valid value)
+
+// Type guards
+isSome(present)   // true
+isNone(absent)    // true
+
+// Transform
+map(present, x => x * 2)           // Some<84>
+flatMap(present, x => some(x * 2)) // Some<84>
+flatMap(absent, x => some(x * 2))  // None
+
+// Extract
+getOrElse(present, 0)              // 42
+getOrElse(absent, 0)               // 0
+
+// Side effects
+tap(present, console.log)           // logs 42, returns Some<42>
+match(present, v => v * 2, () => 0) // 84
+match(absent, v => v * 2, () => 0)  // 0
+
+// Convert back
+toNullable(present)  // 42
+toNullable(absent)  // null
+toUndefined(present) // 42
+toUndefined(absent)  // undefined
+```
+
 ## Development
 
 ```bash
