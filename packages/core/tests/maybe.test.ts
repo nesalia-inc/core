@@ -9,6 +9,11 @@ import {
   flatMap,
   getOrElse,
   getOrCompute,
+  tap,
+  match,
+  toNullable,
+  toUndefined,
+  someUnit,
   Maybe,
 } from "../src/maybe";
 
@@ -259,6 +264,86 @@ describe("Maybe", () => {
         expect(user.value.id).toBe(1);
         expect(user.value.name).toBe("John");
       }
+    });
+  });
+
+  describe("someUnit", () => {
+    it("should create a Some with undefined value", () => {
+      const result = someUnit();
+      expect(result.ok).toBe(true);
+      expect(result.value).toBe(undefined);
+    });
+
+    it("should be a frozen object", () => {
+      const result = someUnit();
+      expect(Object.isFrozen(result)).toBe(true);
+    });
+  });
+
+  describe("tap", () => {
+    it("should call function with value if Some", () => {
+      let captured = 0;
+      tap(some(5), (v) => {
+        captured = v;
+      });
+      expect(captured).toBe(5);
+    });
+
+    it("should not call function if None", () => {
+      let called = false;
+      tap(none, () => {
+        called = true;
+      });
+      expect(called).toBe(false);
+    });
+
+    it("should return the same Maybe", () => {
+      const m = some(42);
+      const result = tap(m, () => {});
+      expect(result).toBe(m);
+    });
+  });
+
+  describe("match", () => {
+    it("should call someFn if Some", () => {
+      const result = match(some(5), (v) => v * 2, () => 0);
+      expect(result).toBe(10);
+    });
+
+    it("should call noneFn if None", () => {
+      const result = match(none, (v) => v * 2, () => 0);
+      expect(result).toBe(0);
+    });
+
+    it("should allow different return types", () => {
+      const someResult = match(some("hello"), (v) => v.length, () => 0);
+      const noneResult = match(none, (v: string) => v.length, () => 0);
+      expect(someResult).toBe(5);
+      expect(noneResult).toBe(0);
+    });
+  });
+
+  describe("toNullable", () => {
+    it("should return value if Some", () => {
+      const result = toNullable(some(42));
+      expect(result).toBe(42);
+    });
+
+    it("should return null if None", () => {
+      const result = toNullable(none);
+      expect(result).toBe(null);
+    });
+  });
+
+  describe("toUndefined", () => {
+    it("should return value if Some", () => {
+      const result = toUndefined(some(42));
+      expect(result).toBe(42);
+    });
+
+    it("should return undefined if None", () => {
+      const result = toUndefined(none);
+      expect(result).toBe(undefined);
     });
   });
 });

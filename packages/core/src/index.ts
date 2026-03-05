@@ -29,6 +29,7 @@ export { exception, exceptionWithStack, exceptionUnit, isException } from "./exc
 // Maybe
 export {
   some,
+  someUnit,
   none,
   fromNullable,
   isSome,
