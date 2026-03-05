@@ -27,4 +27,18 @@ export { cause, causeUnit, isCause } from "./cause.js";
 export { exception, exceptionWithStack, exceptionUnit, isException } from "./exception.js";
 
 // Maybe
-export { some, none, fromNullable, isSome, isNone, map, flatMap, getOrElse, getOrCompute } from "./maybe.js";
+export {
+  some,
+  none,
+  fromNullable,
+  isSome,
+  isNone,
+  map,
+  flatMap,
+  getOrElse,
+  getOrCompute,
+  tap,
+  match,
+  toNullable,
+  toUndefined,
+} from "./maybe.js";

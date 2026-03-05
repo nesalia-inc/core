@@ -81,7 +81,7 @@ export const map = <T, U>(maybe: Maybe<T>, fn: (value: T) => U): Maybe<U> =>
 
 /**
  * Chains Maybes - function if Some, returns None otherwise
- * applies @typeParam T - The type of the value
+ * @typeParam T - The type of the value
  * @typeParam U - The type of the chained value
  * @param maybe - The Maybe to chain
  * @param fn - The chaining function
@@ -89,6 +89,53 @@ export const map = <T, U>(maybe: Maybe<T>, fn: (value: T) => U): Maybe<U> =>
  */
 export const flatMap = <T, U>(maybe: Maybe<T>, fn: (value: T) => Maybe<U>): Maybe<U> =>
   isSome(maybe) ? fn(maybe.value) : none;
+
+/**
+ * Performs a side effect without changing the value
+ * @typeParam T - The type of the value
+ * @param maybe - The Maybe to inspect
+ * @param fn - The side effect function
+ * @returns The same Maybe
+ */
+export const tap = <T>(maybe: Maybe<T>, fn: (value: T) => void): Maybe<T> => {
+  if (isSome(maybe)) {
+    fn(maybe.value);
+  }
+  return maybe;
+};
+
+/**
+ * Matches both Some and None cases
+ * @typeParam T - The type of the value
+ * @typeParam U - The type of the result
+ * @param maybe - The Maybe to match
+ * @param some - Function to handle Some
+ * @param none - Function to handle None
+ * @returns Result of the handler function
+ */
+export const match = <T, U>(
+  maybe: Maybe<T>,
+  some: (value: T) => U,
+  none: () => U
+): U => (isSome(maybe) ? some(maybe.value) : none());
+
+/**
+ * Converts Maybe to a nullable value
+ * @typeParam T - The type of the value
+ * @param maybe - The Maybe to convert
+ * @returns The value if Some, null otherwise
+ */
+export const toNullable = <T>(maybe: Maybe<T>): T | null =>
+  isSome(maybe) ? maybe.value : null;
+
+/**
+ * Converts Maybe to an undefined-able value
+ * @typeParam T - The type of the value
+ * @param maybe - The Maybe to convert
+ * @returns The value if Some, undefined otherwise
+ */
+export const toUndefined = <T>(maybe: Maybe<T>): T | undefined =>
+  isSome(maybe) ? maybe.value : undefined;
 
 /**
  * Gets the value or a default
