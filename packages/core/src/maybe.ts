@@ -50,9 +50,11 @@ export const someUnit = (): Some<void> =>
  * Creates a None (absent value)
  * @returns None
  */
-export const none: None = Object.freeze({
+const NONE: None = Object.freeze({
   ok: false,
 });
+
+export const none = (): None => NONE;
 
 /**
  * Creates a Maybe from a nullable value
@@ -60,7 +62,7 @@ export const none: None = Object.freeze({
  * @returns Some<T> if value is not null/undefined, None otherwise
  */
 export const fromNullable = <T>(value: T | null | undefined): Maybe<T> =>
-  value == null ? none : some(value);
+  value == null ? none() : some(value);
 
 /**
  * Type guard to check if Maybe is Some
@@ -87,7 +89,7 @@ export const isNone = <T>(maybe: Maybe<T>): maybe is None => maybe.ok === false;
  * @returns Some<U> if Some, None otherwise
  */
 export const map = <T, U>(maybe: Maybe<T>, fn: (value: T) => U): Maybe<U> =>
-  isSome(maybe) ? some(fn(maybe.value)) : none;
+  isSome(maybe) ? some(fn(maybe.value)) : none();
 
 /**
  * Chains Maybes - function if Some, returns None otherwise
@@ -98,7 +100,7 @@ export const map = <T, U>(maybe: Maybe<T>, fn: (value: T) => U): Maybe<U> =>
  * @returns Result of the function if Some, None otherwise
  */
 export const flatMap = <T, U>(maybe: Maybe<T>, fn: (value: T) => Maybe<U>): Maybe<U> =>
-  isSome(maybe) ? fn(maybe.value) : none;
+  isSome(maybe) ? fn(maybe.value) : none();
 
 /**
  * Performs a side effect without changing the value

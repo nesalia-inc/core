@@ -102,7 +102,7 @@ import {
 
 // Creation
 const present = some(42)           // Some<number>
-const absent = none                // None
+const absent = none()              // None
 const unit = someUnit()            // Some<void>
 
 // From nullable

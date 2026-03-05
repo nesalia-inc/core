@@ -44,13 +44,13 @@ describe("Maybe", () => {
 
   describe("none", () => {
     it("should return a None with ok: false", () => {
-      const result = none;
+      const result = none();
       expect(result.ok).toBe(false);
     });
 
     it("should be a singleton", () => {
-      const n1 = none;
-      const n2 = none;
+      const n1 = none();
+      const n2 = none();
       expect(n1).toBe(n2);
     });
   });
@@ -111,7 +111,7 @@ describe("Maybe", () => {
     });
 
     it("should return false for None", () => {
-      const result = none;
+      const result = none();
       expect(isSome(result)).toBe(false);
     });
 
@@ -130,12 +130,12 @@ describe("Maybe", () => {
     });
 
     it("should return true for None", () => {
-      const result = none;
+      const result = none();
       expect(isNone(result)).toBe(true);
     });
 
     it("should narrow type correctly", () => {
-      const value: Maybe<number> = none;
+      const value: Maybe<number> = none();
       if (isNone(value)) {
         expect(value.ok).toBe(false);
       }
@@ -152,7 +152,7 @@ describe("Maybe", () => {
     });
 
     it("should return None if None", () => {
-      const result = map(none, (x) => x * 2);
+      const result = map(none(), (x) => x * 2);
       expect(isNone(result)).toBe(true);
     });
 
@@ -176,12 +176,12 @@ describe("Maybe", () => {
     });
 
     it("should return None if None", () => {
-      const result = flatMap(none, (x) => some(x * 2));
+      const result = flatMap(none(), (x) => some(x * 2));
       expect(isNone(result)).toBe(true);
     });
 
     it("should allow returning None from function", () => {
-      const result = flatMap(some(2), (x) => (x > 0 ? some(x) : none));
+      const result = flatMap(some(2), (x) => (x > 0 ? some(x) : none()));
       expect(isSome(result)).toBe(true);
       if (isSome(result)) {
         expect(result.value).toBe(2);
@@ -189,7 +189,7 @@ describe("Maybe", () => {
     });
 
     it("should allow returning None from function when condition fails", () => {
-      const result = flatMap(some(-1), (x) => (x > 0 ? some(x) : none));
+      const result = flatMap(some(-1), (x) => (x > 0 ? some(x) : none()));
       expect(isNone(result)).toBe(true);
     });
   });
@@ -201,7 +201,7 @@ describe("Maybe", () => {
     });
 
     it("should return default if None", () => {
-      const result = getOrElse(none, 0);
+      const result = getOrElse(none(), 0);
       expect(result).toBe(0);
     });
 
@@ -218,7 +218,7 @@ describe("Maybe", () => {
     });
 
     it("should return computed value if None", () => {
-      const result = getOrCompute(none, () => 42);
+      const result = getOrCompute(none(), () => 42);
       expect(result).toBe(42);
     });
 
@@ -233,7 +233,7 @@ describe("Maybe", () => {
 
     it("should call function if None", () => {
       let called = false;
-      getOrCompute(none, () => {
+      getOrCompute(none(), () => {
         called = true;
         return 42;
       });
@@ -243,7 +243,7 @@ describe("Maybe", () => {
 
   describe("type narrowing", () => {
     it("should correctly narrow Maybe types in array", () => {
-      const values: Maybe<number>[] = [some(1), none, some(2)];
+      const values: Maybe<number>[] = [some(1), none(), some(2)];
 
       const somes = values.filter(isSome);
       const nones = values.filter(isNone);
@@ -291,7 +291,7 @@ describe("Maybe", () => {
 
     it("should not call function if None", () => {
       let called = false;
-      tap(none, () => {
+      tap(none(), () => {
         called = true;
       });
       expect(called).toBe(false);
@@ -311,13 +311,13 @@ describe("Maybe", () => {
     });
 
     it("should call noneFn if None", () => {
-      const result = match(none, (v) => v * 2, () => 0);
+      const result = match(none(), (v) => v * 2, () => 0);
       expect(result).toBe(0);
     });
 
     it("should allow different return types", () => {
       const someResult = match(some("hello"), (v) => v.length, () => 0);
-      const noneResult = match(none, (v: string) => v.length, () => 0);
+      const noneResult = match(none(), (v: string) => v.length, () => 0);
       expect(someResult).toBe(5);
       expect(noneResult).toBe(0);
     });
