@@ -10,8 +10,6 @@ import {
   getOrElse,
   getOrCompute,
   Maybe,
-  Some,
-  None,
 } from "../src/maybe";
 
 describe("Maybe", () => {
