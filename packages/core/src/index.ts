@@ -101,3 +101,7 @@ export {
   toNullable as toNullableAsyncResult,
   toUndefined as toUndefinedAsyncResult,
 } from "./async-result.js";
+
+// Sleep
+export { sleep, withTimeout, withTimeout_ } from "./sleep.js";
+export type { TimeoutOptions } from "./sleep.js";
