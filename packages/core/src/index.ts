@@ -78,3 +78,26 @@ export {
   toNullable as toNullableTry,
   toUndefined as toUndefinedTry,
 } from "./try.js";
+
+// AsyncResult
+export type { AsyncResult, AsyncResultInner, AsyncOk, AsyncErr } from "./async-result.js";
+export {
+  okAsync,
+  errAsync,
+  fromPromise,
+  isOk as isAsyncOk,
+  isErr as isAsyncErr,
+  mapAsync,
+  flatMapAsync,
+  map as mapAsyncResult,
+  flatMap as flatMapAsyncResult,
+  getOrElse as getOrElseAsyncResult,
+  getOrCompute as getOrComputeAsyncResult,
+  tap as tapAsyncResult,
+  match as matchAsyncResult,
+  race,
+  all,
+  traverse,
+  toNullable as toNullableAsyncResult,
+  toUndefined as toUndefinedAsyncResult,
+} from "./async-result.js";
