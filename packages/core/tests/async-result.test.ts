@@ -18,7 +18,6 @@ import {
   traverse,
   toNullable,
   toUndefined,
-  AsyncResult,
 } from "../src/async-result";
 
 describe("AsyncResult", () => {
