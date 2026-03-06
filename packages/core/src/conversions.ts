@@ -4,7 +4,7 @@
 
 import { ok, err, Result, isOk } from "./result.js";
 import { some, none, Maybe, isSome } from "./maybe.js";
-import { success, cause, exception, Outcome, isSuccess, isCause, isException, Success, Cause, Exception } from "./outcome.js";
+import { success, cause, Outcome } from "./outcome.js";
 
 /**
  * Options for converting Maybe to Result
@@ -32,8 +32,13 @@ export const toResult = <T, E>(maybe: Maybe<T>, onNone: () => E): Result<T, E> =
 export const toOutcome = <T, CauseData = unknown>(
   maybe: Maybe<T>,
   options?: { name?: string; message?: string; data?: CauseData }
-): Outcome<T, Cause<CauseData>, never> =>
-  isSome(maybe) ? success(maybe.value) : cause(options ?? { name: "NONE", message: "Value is none" });
+): Outcome<T, CauseData, never> => {
+  if (isSome(maybe)) {
+    return success(maybe.value);
+  }
+  const { name = "NONE", message = "Value is none", data } = options ?? {};
+  return cause({ name, message, data: data as CauseData });
+};
 
 /**
  * Converts Result to Outcome
@@ -41,19 +46,24 @@ export const toOutcome = <T, CauseData = unknown>(
  * @returns Outcome<T, E, never>
  */
 export const toOutcomeFromResult = <T, E>(result: Result<T, E>): Outcome<T, E, never> =>
-  isOk(result) ? success(result.value) : cause({ name: "ERROR", message: String(result.error), data: result.error });
+  isOk(result) ? success(result.value) : cause({ name: "ERROR", message: String(result.error), data: result.error as E });
 
 /**
  * Converts Outcome to Result
  * @param outcome - The Outcome to convert
  * @returns Result<T, C | E>
  */
-export const toResultFromOutcome = <T, C, E>(outcome: Outcome<T, C, E>): Result<T, C | E> =>
-  isSuccess(outcome)
-    ? ok(outcome.value)
-    : isCause(outcome)
-    ? err(outcome as unknown as C)
-    : err(outcome as unknown as E);
+export const toResultFromOutcome = <T, C, E>(outcome: Outcome<T, C, E>): Result<T, C | E> => {
+  const o = outcome as { ok: boolean } & ({ value?: unknown } | { error: unknown });
+  if (o.ok === true && "value" in o) {
+    return ok(o.value as T);
+  }
+  if (!o.ok && "error" in o) {
+    return err(o.error as C | E);
+  }
+  // Fallback - should not happen
+  return err(o as C | E);
+};
 
 /**
  * Converts Result to Maybe
@@ -68,8 +78,13 @@ export const toMaybeFromResult = <T, E>(result: Result<T, E>): Maybe<T> =>
  * @param outcome - The Outcome to convert
  * @returns Maybe<T> (loses error info)
  */
-export const toMaybeFromOutcome = <T, C, E>(outcome: Outcome<T, C, E>): Maybe<T> =>
-  isSuccess(outcome) ? some(outcome.value) : none();
+export const toMaybeFromOutcome = <T, C, E>(outcome: Outcome<T, C, E>): Maybe<T> => {
+  const o = outcome as { ok: boolean } & ({ value?: unknown });
+  if (o.ok === true && "value" in o) {
+    return some(o.value as T);
+  }
+  return none();
+};
 
 /**
  * Converts undefined to None, otherwise to Some
@@ -95,18 +110,18 @@ export interface ToResultFromOutcomeOptions {
  */
 export const toResultFromOutcome_ = <T, C, E>(
   outcome: Outcome<T, C, E>,
-  options: ToResultFromOutcomeOptions = {}
+  _options: ToResultFromOutcomeOptions = {}
 ): Result<T, C | E> => {
-  const { includeException = true } = options;
+  const o = outcome as { ok: boolean } & ({ value?: unknown } | { error: unknown });
 
-  if (isSuccess(outcome)) {
-    return ok(outcome.value);
+  if (o.ok === true && "value" in o) {
+    return ok(o.value as T);
   }
 
-  if (isCause(outcome)) {
-    return err(outcome as unknown as C);
+  if (!o.ok && "error" in o) {
+    return err(o.error as C | E);
   }
 
-  // Exception - by default include, otherwise lose it
-  return includeException ? err(outcome as unknown as E) : ok(outcome as unknown as T);
+  // Fallback - should not happen
+  return err(o as C | E);
 };

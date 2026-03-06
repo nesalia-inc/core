@@ -25,7 +25,6 @@ describe("Retry", () => {
     });
 
     it("should use predicate to determine retryability", () => {
-      let attempts = 0;
       const isRetryable = (e: Error) => e.message === "retryable";
 
       expect(() => retry(() => { throw new Error("not retryable"); }, {
@@ -39,7 +38,7 @@ describe("Retry", () => {
       const onRetry = vi.fn();
       try {
         retry(() => { throw new Error("fail"); }, { attempts: 2, delay: 1, onRetry });
-      } catch (e) {
+      } catch {
         // Expected to throw
       }
       // Called for attempt 1 (before retry) and attempt 2 (before final throw)
@@ -55,7 +54,7 @@ describe("Retry", () => {
 
       try {
         retry(() => { throw new Error("fail"); }, { attempts: 3, delay: 100, backoff });
-      } catch (e) {
+      } catch {
         // Expected to throw
       }
       // Called for attempts 1 and 2 before final throw
@@ -99,7 +98,7 @@ describe("Retry", () => {
       const onRetry = vi.fn();
       try {
         await retryAsync(async () => { throw new Error("fail"); }, { attempts: 2, delay: 1, onRetry });
-      } catch (e) {
+      } catch {
         // Expected to throw
       }
       // Called for attempt 1 (before retry) and attempt 2 (before final throw)
@@ -110,7 +109,7 @@ describe("Retry", () => {
       const start = Date.now();
       try {
         await retryAsync(async () => { throw new Error("fail"); }, { attempts: 3, delay: 50 });
-      } catch (e) {
+      } catch {
         // Expected to throw
       }
       const elapsed = Date.now() - start;

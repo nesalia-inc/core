@@ -10,7 +10,7 @@ import {
 } from "../src/conversions";
 import { some, none } from "../src/maybe";
 import { ok, err } from "../src/result";
-import { success, cause, exception } from "../src/outcome";
+import { success, cause } from "../src/outcome";
 
 describe("Conversions", () => {
   describe("toResult", () => {
