@@ -248,4 +248,88 @@ describe("Try", () => {
       expect(result).toBe(undefined);
     });
   });
+
+  describe("methods (TrySuccess)", () => {
+    it("should have map method that returns TrySuccess", () => {
+      const result = attempt(() => 2);
+      const mapped = result.map((x) => x * 2);
+      expect(mapped.ok).toBe(true);
+      expect(mapped.value).toBe(4);
+    });
+
+    it("should have flatMap method that chains Tries", () => {
+      const result = attempt(() => 2);
+      const chained = result.flatMap((x) => attempt(() => x * 2));
+      expect(chained.ok).toBe(true);
+      expect(chained.value).toBe(4);
+    });
+
+    it("should have getOrElse method", () => {
+      const result = attempt(() => 42);
+      expect(result.getOrElse(0)).toBe(42);
+    });
+
+    it("should have getOrCompute method", () => {
+      const result = attempt(() => 42);
+      expect(result.getOrCompute(() => 0)).toBe(42);
+    });
+
+    it("should have tap method", () => {
+      const result = attempt(() => 5);
+      let captured = 0;
+      result.tap((v) => { captured = v; });
+      expect(captured).toBe(5);
+    });
+
+    it("should have match method", () => {
+      const result = attempt(() => 5);
+      const matched = result.match((v) => v * 2, () => 0);
+      expect(matched).toBe(10);
+    });
+
+    it("should allow chaining methods", () => {
+      const result = attempt(() => 1)
+        .map((x) => x + 1)
+        .map((x) => x * 2)
+        .getOrElse(0);
+      expect(result).toBe(4);
+    });
+  });
+
+  describe("methods (TryFailure)", () => {
+    it("should have map method that returns TryFailure", () => {
+      const result = attempt(() => { throw new Error("fail"); });
+      const mapped = result.map((x) => x * 2);
+      expect(mapped.ok).toBe(false);
+    });
+
+    it("should have flatMap method that returns TryFailure", () => {
+      const result = attempt(() => { throw new Error("fail"); });
+      const chained = result.flatMap((x) => attempt(() => x * 2));
+      expect(chained.ok).toBe(false);
+    });
+
+    it("should have getOrElse method", () => {
+      const result = attempt(() => { throw new Error("fail"); });
+      expect(result.getOrElse(42)).toBe(42);
+    });
+
+    it("should have getOrCompute method", () => {
+      const result = attempt(() => { throw new Error("fail"); });
+      expect(result.getOrCompute(() => 42)).toBe(42);
+    });
+
+    it("should have tap method", () => {
+      const result = attempt(() => { throw new Error("fail"); });
+      let called = false;
+      result.tap(() => { called = true; });
+      expect(called).toBe(false);
+    });
+
+    it("should have match method", () => {
+      const result = attempt(() => { throw new Error("fail"); });
+      const matched = result.match(() => 0, (e) => e.message);
+      expect(matched).toBe("fail");
+    });
+  });
 });

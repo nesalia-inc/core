@@ -4,6 +4,38 @@
  */
 
 /**
+ * TrySuccess type - represents a successful try with methods
+ * @typeParam T - The type of the value
+ */
+export type TrySuccess<T> = {
+  readonly ok: true;
+  readonly value: T;
+  // Methods for chaining - return the specific variant
+  map<U>(fn: (value: T) => U): TrySuccess<U>;
+  flatMap<U, E>(fn: (value: T) => Try<U, E>): Try<U, E>;
+  getOrElse(defaultValue: T): T;
+  getOrCompute<U>(fn: () => U): T | U;
+  tap(fn: (value: T) => void): TrySuccess<T>;
+  match<U>(ok: (value: T) => U, _err: (error: never) => U): U;
+};
+
+/**
+ * TryFailure type - represents a failed try with methods
+ * @typeParam E - The type of the error
+ */
+export type TryFailure<E> = {
+  readonly ok: false;
+  readonly error: E;
+  // Methods for chaining - return the specific variant
+  map<U>(_fn: (value: never) => U): TryFailure<E>;
+  flatMap<U>(_fn: (value: never) => Try<U, E>): TryFailure<E>;
+  getOrElse<T>(defaultValue: T): T;
+  getOrCompute<T, U>(fn: () => U): T | U;
+  tap(_fn: (value: never) => void): TryFailure<E>;
+  match<U>(_ok: (value: never) => U, err: (error: E) => U): U;
+};
+
+/**
  * Try type - union of Success and Failure
  * @typeParam T - The type of the success value
  * @typeParam E - The type of the error
@@ -11,22 +43,38 @@
 export type Try<T, E = Error> = TrySuccess<T> | TryFailure<E>;
 
 /**
- * TrySuccess type - represents a successful try
+ * Creates a TrySuccess with methods
  * @typeParam T - The type of the value
+ * @param value - The success value
+ * @returns TrySuccess<T>
  */
-export type TrySuccess<T> = {
-  readonly ok: true;
-  readonly value: T;
-};
+const createTrySuccess = <T>(value: T): TrySuccess<T> => ({
+  ok: true,
+  value,
+  map(fn) { return createTrySuccess(fn(value)); },
+  flatMap(fn) { return fn(value); },
+  getOrElse() { return value; },
+  getOrCompute() { return value; },
+  tap(fn) { fn(value); return this; },
+  match(ok) { return ok(value); },
+});
 
 /**
- * TryFailure type - represents a failed try
+ * Creates a TryFailure with methods
  * @typeParam E - The type of the error
+ * @param error - The error value
+ * @returns TryFailure<E>
  */
-export type TryFailure<E> = {
-  readonly ok: false;
-  readonly error: E;
-};
+const createTryFailure = <E>(error: E): TryFailure<E> => ({
+  ok: false,
+  error,
+  map() { return this as TryFailure<E>; },
+  flatMap() { return this as TryFailure<E>; },
+  getOrElse(defaultValue) { return defaultValue; },
+  getOrCompute(fn) { return fn(); },
+  tap() { return this as TryFailure<E>; },
+  match(_, err) { return err(error); },
+});
 
 /**
  * Wraps a synchronous function in a try/catch
@@ -35,9 +83,9 @@ export type TryFailure<E> = {
  */
 export const attempt = <T>(fn: () => T): Try<T, Error> => {
   try {
-    return { ok: true, value: fn() };
+    return createTrySuccess(fn());
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e : new Error(String(e)) };
+    return createTryFailure(e instanceof Error ? e : new Error(String(e)));
   }
 };
 
@@ -48,9 +96,9 @@ export const attempt = <T>(fn: () => T): Try<T, Error> => {
  */
 export const attemptAsync = async <T>(fn: () => Promise<T>): Promise<Try<T, Error>> => {
   try {
-    return { ok: true, value: await fn() };
+    return createTrySuccess(await fn());
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e : new Error(String(e)) };
+    return createTryFailure(e instanceof Error ? e : new Error(String(e)));
   }
 };
 
@@ -82,7 +130,7 @@ export const isErr = <T, E>(t: Try<T, E>): t is TryFailure<E> => t.ok === false;
  * @returns Try<U, E>
  */
 export const map = <T, E, U>(t: Try<T, E>, fn: (value: T) => U): Try<U, E> =>
-  isOk(t) ? { ok: true, value: fn(t.value) } : t;
+  isOk(t) ? createTrySuccess(fn(t.value)) : createTryFailure(t.error);
 
 /**
  * Chains Tries - function if successful, returns Failure otherwise
@@ -96,7 +144,7 @@ export const map = <T, E, U>(t: Try<T, E>, fn: (value: T) => U): Try<U, E> =>
 export const flatMap = <T, E, U>(
   t: Try<T, E>,
   fn: (value: T) => Try<U, E>
-): Try<U, E> => (isOk(t) ? fn(t.value) : t);
+): Try<U, E> => (isOk(t) ? fn(t.value) : createTryFailure(t.error));
 
 /**
  * Gets the value or a default
