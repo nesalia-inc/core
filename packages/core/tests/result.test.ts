@@ -14,8 +14,6 @@ import {
   toNullable,
   toUndefined,
   Result,
-  Ok,
-  Err,
 } from "../src/result";
 
 describe("Result", () => {
