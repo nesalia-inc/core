@@ -181,4 +181,4 @@ export const RetryConfigs = {
  */
 export const exponentialBackoff = (attempt: number, delay: number): number => delay * Math.pow(2, attempt - 1);
 export const linearBackoff = (attempt: number, delay: number): number => delay * attempt;
-export const constantBackoff = (attempt: number, delay: number): number => delay;
+export const constantBackoff = (_attempt: number, delay: number): number => delay;

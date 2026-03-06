@@ -171,10 +171,13 @@ export const getOrElse = <T, E>(result: AsyncResult<T, E>, defaultValue: T): Pro
  * @param fn - The function to compute default
  * @returns The value if AsyncOk, result of fn otherwise
  */
-export const getOrCompute = <T, E, U>(
+export const getOrCompute = async <T, E, U>(
   result: AsyncResult<T, E>,
   fn: () => Promise<U>
-): Promise<T | U> => result.then((r) => (isOk(r) ? r.value : fn()));
+): Promise<T | U> => {
+  const r = await result;
+  return isOk(r) ? r.value : await fn();
+};
 
 /**
  * Performs a side effect without changing the value
