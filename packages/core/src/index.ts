@@ -107,7 +107,7 @@ export { sleep, withTimeout, sleepWithSignal } from "./sleep.js";
 export type { TimeoutOptions, TimeoutError } from "./sleep.js";
 
 // Retry
-export { retry, retryAsync, RetryConfigs, exponentialBackoff, linearBackoff, constantBackoff } from "./retry.js";
+export { retry, retryAsync, exponentialBackoff, linearBackoff, constantBackoff } from "./retry.js";
 export type { RetryOptions } from "./retry.js";
 
 // Conversions

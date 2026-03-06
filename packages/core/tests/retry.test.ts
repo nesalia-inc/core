@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { retry, retryAsync, RetryConfigs, exponentialBackoff, linearBackoff, constantBackoff } from "../src/retry";
+import { retry, retryAsync, exponentialBackoff, linearBackoff, constantBackoff } from "../src/retry";
 
 describe("Retry", () => {
   describe("retry (sync)", () => {
@@ -114,24 +114,6 @@ describe("Retry", () => {
       }
       const elapsed = Date.now() - start;
       expect(elapsed).toBeGreaterThan(90);
-    });
-  });
-
-  describe("RetryConfigs", () => {
-    it("should have network config", () => {
-      expect(RetryConfigs.network).toBeDefined();
-      expect(RetryConfigs.network.attempts).toBe(3);
-      expect(RetryConfigs.network.jitter).toBe(true);
-    });
-
-    it("should have aggressive config", () => {
-      expect(RetryConfigs.aggressive).toBeDefined();
-      expect(RetryConfigs.aggressive.attempts).toBe(5);
-    });
-
-    it("should have conservative config", () => {
-      expect(RetryConfigs.conservative).toBeDefined();
-      expect(RetryConfigs.conservative.attempts).toBe(2);
     });
   });
 

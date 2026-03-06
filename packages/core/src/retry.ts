@@ -152,31 +152,6 @@ export const retryAsync = async <T>(fn: () => Promise<T>, options: RetryOptions 
 };
 
 /**
- * Pre-defined retry configurations
- */
-export const RetryConfigs = {
-  /** Default network retry config */
-  network: {
-    attempts: 3,
-    delay: 1000,
-    backoff: "exponential" as const,
-    jitter: true,
-  },
-  /** Aggressive retry config */
-  aggressive: {
-    attempts: 5,
-    delay: 500,
-    backoff: "linear" as const,
-  },
-  /** Conservative retry config */
-  conservative: {
-    attempts: 2,
-    delay: 2000,
-    backoff: "exponential" as const,
-  },
-};
-
-/**
  * Common backoff strategies
  */
 export const exponentialBackoff = (attempt: number, delay: number): number => delay * Math.pow(2, attempt - 1);
