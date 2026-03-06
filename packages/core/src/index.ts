@@ -13,6 +13,7 @@ export type { Cause, CauseOptions } from "./cause.js";
 export type { Exception, ExceptionOptions } from "./exception.js";
 export type { Outcome } from "./outcome.js";
 export type { Maybe, Some, None } from "./maybe.js";
+export type { Result, Ok, Err } from "./result.js";
 
 // Unit
 export { unit, isUnit } from "./unit.js";
@@ -34,12 +35,29 @@ export {
   fromNullable,
   isSome,
   isNone,
-  map,
-  flatMap,
-  getOrElse,
-  getOrCompute,
-  tap,
-  match,
-  toNullable,
-  toUndefined,
+  map as mapMaybe,
+  flatMap as flatMapMaybe,
+  getOrElse as getOrElseMaybe,
+  getOrCompute as getOrComputeMaybe,
+  tap as tapMaybe,
+  match as matchMaybe,
+  toNullable as toNullableMaybe,
+  toUndefined as toUndefinedMaybe,
 } from "./maybe.js";
+
+// Result
+export {
+  ok,
+  err,
+  isOk,
+  isErr,
+  map as mapResult,
+  flatMap as flatMapResult,
+  mapErr,
+  getOrElse as getOrElseResult,
+  getOrCompute as getOrComputeResult,
+  tap as tapResult,
+  match as matchResult,
+  toNullable as toNullableResult,
+  toUndefined as toUndefinedResult,
+} from "./result.js";
