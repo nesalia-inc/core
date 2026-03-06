@@ -16,6 +16,7 @@ export type TrySuccess<T> = {
   getOrElse(defaultValue: T): T;
   getOrCompute<U>(fn: () => U): T | U;
   tap(fn: (value: T) => void): TrySuccess<T>;
+  tapErr(fn: (error: never) => void): TrySuccess<T>;
   match<U>(ok: (value: T) => U, _err: (error: never) => U): U;
 };
 
@@ -32,6 +33,7 @@ export type TryFailure<E> = {
   getOrElse<T>(defaultValue: T): T;
   getOrCompute<T, U>(fn: () => U): T | U;
   tap(_fn: (value: never) => void): TryFailure<E>;
+  tapErr(fn: (error: E) => void): TryFailure<E>;
   match<U>(_ok: (value: never) => U, err: (error: E) => U): U;
 };
 
@@ -56,6 +58,7 @@ const createTrySuccess = <T>(value: T): TrySuccess<T> => ({
   getOrElse() { return value; },
   getOrCompute() { return value; },
   tap(fn) { fn(value); return this; },
+  tapErr() { return this; },
   match(ok) { return ok(value); },
 });
 
@@ -73,6 +76,7 @@ const createTryFailure = <E>(error: E): TryFailure<E> => ({
   getOrElse(defaultValue) { return defaultValue; },
   getOrCompute(fn) { return fn(); },
   tap() { return this as TryFailure<E>; },
+  tapErr(fn) { fn(error); return this; },
   match(_, err) { return err(error); },
 });
 
@@ -179,6 +183,21 @@ export const getOrCompute = <T, E, U>(t: Try<T, E>, fn: () => U): T | U =>
 export const tap = <T, E>(t: Try<T, E>, fn: (value: T) => void): Try<T, E> => {
   if (isOk(t)) {
     fn(t.value);
+  }
+  return t;
+};
+
+/**
+ * Performs a side effect without changing the value if Err
+ * @typeParam T - The type of the value
+ * @typeParam E - The type of the error
+ * @param t - The Try to inspect
+ * @param fn - The side effect function
+ * @returns The same Try
+ */
+export const tapErr = <T, E>(t: Try<T, E>, fn: (error: E) => void): Try<T, E> => {
+  if (isErr(t)) {
+    fn(t.error);
   }
   return t;
 };
