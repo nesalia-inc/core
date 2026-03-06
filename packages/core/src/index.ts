@@ -109,3 +109,16 @@ export type { TimeoutOptions } from "./sleep.js";
 // Retry
 export { retry, retryAsync, RetryConfigs, exponentialBackoff, linearBackoff, constantBackoff } from "./retry.js";
 export type { RetryOptions } from "./retry.js";
+
+// Conversions
+export {
+  toResult,
+  toOutcome,
+  toOutcomeFromResult,
+  toResultFromOutcome,
+  toMaybeFromResult,
+  toMaybeFromOutcome,
+  fromUndefinedable,
+  toResultFromOutcome_ as toResultFromOutcomeWithOptions,
+} from "./conversions.js";
+export type { ToResultOptions, ToResultFromOutcomeOptions } from "./conversions.js";
