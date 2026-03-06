@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { sleep, withTimeout } from "../src/sleep";
+import { sleep, withTimeout, withTimeout as withTimeoutFn, TimeoutError } from "../src/sleep";
 
 describe("Sleep", () => {
   describe("sleep", () => {
@@ -24,19 +24,23 @@ describe("Sleep", () => {
       expect(result).toBe(42);
     });
 
+    it("should work with function instead of promise", async () => {
+      const result = await withTimeout(() => Promise.resolve(42), 1000);
+      expect(result).toBe(42);
+    });
+
     it("should throw on timeout", async () => {
       await expect(
         withTimeout(new Promise(() => {}), 50)
       ).rejects.toThrow();
     });
 
-    it("should include timeout data in error", async () => {
+    it("should include timeout in error", async () => {
       try {
         await withTimeout(new Promise(() => {}), 50);
       } catch (e) {
-        expect((e as Error).name).toBe("TIMEOUT");
-        expect((e as Error).data).toBeDefined();
-        expect((e as Error).data.timeout).toBe(50);
+        expect((e as TimeoutError).name).toBe("TIMEOUT");
+        expect((e as TimeoutError).timeout).toBe(50);
       }
     });
 
@@ -58,8 +62,8 @@ describe("Sleep", () => {
       try {
         await withTimeout(new Promise(() => {}), 50, { includeElapsed: false });
       } catch (e) {
-        expect((e as Error).data).toEqual({ timeout: 50 });
-        expect((e as Error).data.elapsed).toBeUndefined();
+        expect((e as TimeoutError).timeout).toBe(50);
+        expect((e as TimeoutError).elapsed).toBeUndefined();
       }
     });
 
@@ -67,8 +71,8 @@ describe("Sleep", () => {
       try {
         await withTimeout(new Promise(() => {}), 50, { includeElapsed: true });
       } catch (e) {
-        expect((e as Error).data.elapsed).toBeDefined();
-        expect((e as Error).data.elapsed).toBeGreaterThan(0);
+        expect((e as TimeoutError).elapsed).toBeDefined();
+        expect((e as TimeoutError).elapsed).toBeGreaterThan(0);
       }
     });
 

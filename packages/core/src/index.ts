@@ -103,8 +103,8 @@ export {
 } from "./async-result.js";
 
 // Sleep
-export { sleep, withTimeout, withTimeout_ } from "./sleep.js";
-export type { TimeoutOptions } from "./sleep.js";
+export { sleep, withTimeout, sleepWithSignal } from "./sleep.js";
+export type { TimeoutOptions, TimeoutError } from "./sleep.js";
 
 // Retry
 export { retry, retryAsync, RetryConfigs, exponentialBackoff, linearBackoff, constantBackoff } from "./retry.js";
