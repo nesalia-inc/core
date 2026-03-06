@@ -61,3 +61,20 @@ export {
   toNullable as toNullableResult,
   toUndefined as toUndefinedResult,
 } from "./result.js";
+
+// Try
+export type { Try, TrySuccess, TryFailure } from "./try.js";
+export {
+  attempt,
+  attemptAsync,
+  isOk as isTryOk,
+  isErr as isTryErr,
+  map as mapTry,
+  flatMap as flatMapTry,
+  getOrElse as getOrElseTry,
+  getOrCompute as getOrComputeTry,
+  tap as tapTry,
+  match as matchTry,
+  toNullable as toNullableTry,
+  toUndefined as toUndefinedTry,
+} from "./try.js";
