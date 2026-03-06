@@ -13,8 +13,6 @@ import {
   toNullable,
   toUndefined,
   Try,
-  TrySuccess,
-  TryFailure,
 } from "../src/try";
 
 describe("Try", () => {
