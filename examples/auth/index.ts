@@ -78,7 +78,7 @@ class UserDatabase {
 
   async findById(id: number): Promise<User | null> {
     await delay(50);
-    return Array.from(this.users.values().find((u) => u.id === id) || null);
+    return Array.from(this.users.values()).find((u) => u.id === id) || null;
   }
 }
 

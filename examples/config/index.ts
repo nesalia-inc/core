@@ -57,7 +57,11 @@ function getEnvVar(key: string): ReturnType<typeof fromNullable<string>> {
 
 function getEnvVarInt(key: string): ReturnType<typeof fromNullable<number>> {
   return fromNullable(process.env[key]).flatMap((value) => {
-    const parsed = parseInt(value, 10);
+    const trimmed = value.trim();
+    if (trimmed === "") {
+      return none();
+    }
+    const parsed = parseInt(trimmed, 10);
     return isNaN(parsed) ? none() : some(parsed);
   });
 }

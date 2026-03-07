@@ -328,7 +328,12 @@ async function getPostWithComments(postId: number) {
 // Example 6: Using Try for unsafe operations
 // ============================================================================
 
-function parseDatabaseJson(jsonString: string): Result<any, DatabaseError> {
+interface DatabaseRecord {
+  user?: string;
+  data?: unknown;
+}
+
+function parseDatabaseJson(jsonString: string): Result<DatabaseRecord, DatabaseError> {
   console.log(`\n=== Example 6: Safe JSON parsing with Try ===`);
 
   return attempt(() => JSON.parse(jsonString))
