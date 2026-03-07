@@ -134,6 +134,46 @@ Each package should have:
 }
 ```
 
+## GitHub Labels
+
+When creating GitHub issues, **always apply these labels**:
+
+### Type (Required)
+- `bug` - Something is broken
+- `feature` - New functionality
+- `enhancement` - Improvement to existing
+- `task` - General work
+- `refactor` - Code cleanup
+- `docs` - Documentation
+- `security` - Security issue
+- `tech-debt` - Technical debt
+
+### Status (Required)
+- `triage` - Needs evaluation
+- `ready` - Ready to work on
+- `in-progress` - Being worked on
+- `blocked` - Waiting on something
+- `review` - Awaiting review
+- `done` - Completed
+
+### Priority (Required)
+- `priority:critical` - Production down, data loss
+- `priority:high` - Major user impact
+- `priority:medium` - Normal impact
+- `priority:low` - Minor impact
+
+### Effort (Required)
+- `effort:xs` - < 1 hour
+- `effort:s` - 1 day
+- `effort:m` - 1-3 days
+- `effort:l` - 1 week
+- `effort:xl` - > 1 week
+
+**When creating an issue with `gh issue create`, always include:**
+```bash
+gh issue create --title "..." --body "..." --labels "feature,priority:medium,effort:m,ready"
+```
+
 ## Notes
 
 - ESLint uses flat config (`eslint.config.js`)
