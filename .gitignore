@@ -1,1 +1,4 @@
 *.tgz
+
+# Test coverage
+coverage
