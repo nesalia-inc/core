@@ -2,3 +2,13 @@
 
 # Test coverage
 coverage
+
+# Dependencies
+node_modules
+
+# Build cache
+.turbo
+
+# Lock files (optional, uncomment if needed)
+# package-lock.json
+# pnpm-lock.yaml
