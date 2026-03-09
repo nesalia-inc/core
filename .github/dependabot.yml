@@ -1,0 +1,43 @@
+# Dependabot configuration
+# See: https://docs.github.com/en/code-security/dependabot
+
+version: 2
+updates:
+  # Enable version updates for npm packages
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "dependabot"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    reviewers:
+      - "AliiiBenn"
+
+  # Enable version updates for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+
+  # Package-specific updates (if you add more packages)
+  # - package-ecosystem: "npm"
+  #   directory: "/packages/core"
+  #   schedule:
+  #     interval: "weekly"
