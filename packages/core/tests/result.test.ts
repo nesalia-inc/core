@@ -10,6 +10,7 @@ import {
   getOrElse,
   getOrCompute,
   tap,
+  tapErr,
   match,
   toNullable,
   toUndefined,
@@ -257,6 +258,30 @@ describe("Result", () => {
     it("should return the same Result", () => {
       const r = ok(42);
       const result = tap(r, () => {});
+      expect(result).toBe(r);
+    });
+  });
+
+  describe("tapErr", () => {
+    it("should call function with error if Err", () => {
+      let captured = "";
+      tapErr(err("error"), (e) => {
+        captured = e;
+      });
+      expect(captured).toBe("error");
+    });
+
+    it("should not call function if Ok", () => {
+      let called = false;
+      tapErr(ok(5), () => {
+        called = true;
+      });
+      expect(called).toBe(false);
+    });
+
+    it("should return the same Result", () => {
+      const r = err("error");
+      const result = tapErr(r, () => {});
       expect(result).toBe(r);
     });
   });

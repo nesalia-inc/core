@@ -60,6 +60,45 @@ describe("Retry", () => {
       // Called for attempts 1 and 2 before final throw
       expect(delays).toEqual([100, 100]);
     });
+
+    it("should apply jitter when enabled", () => {
+      let jitterValue = 0.5;
+      vi.spyOn(Math, "random").mockImplementation(() => jitterValue);
+
+      let attempts = 0;
+      const result = retry(() => {
+        attempts++;
+        if (attempts < 3) throw new Error("fail");
+        return 42;
+      }, { attempts: 3, delay: 100, jitter: true, backoff: "constant" });
+
+      expect(result).toBe(42);
+      vi.spyOn(Math, "random").mockRestore();
+    });
+
+    it("should use linear backoff", () => {
+      let attempts = 0;
+      const result = retry(() => {
+        attempts++;
+        if (attempts < 3) throw new Error("fail");
+        return 42;
+      }, { attempts: 3, delay: 10, backoff: "linear" });
+
+      expect(result).toBe(42);
+      expect(attempts).toBe(3);
+    });
+
+    it("should use constant backoff", () => {
+      let attempts = 0;
+      const result = retry(() => {
+        attempts++;
+        if (attempts < 3) throw new Error("fail");
+        return 42;
+      }, { attempts: 3, delay: 10, backoff: "constant" });
+
+      expect(result).toBe(42);
+      expect(attempts).toBe(3);
+    });
   });
 
   describe("retryAsync", () => {

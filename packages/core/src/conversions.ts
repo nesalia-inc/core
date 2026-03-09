@@ -55,15 +55,11 @@ export const toOutcomeFromResult = <T, E>(result: Result<T, E>): Outcome<T, E, n
  * @returns Result<T, C | E>
  */
 export const toResultFromOutcome = <T, C, E>(outcome: Outcome<T, C, E>): Result<T, C | E> => {
-  const o = outcome as { ok: boolean } & ({ value?: unknown } | { error: unknown });
+  const o = outcome as { ok: boolean; value?: unknown; error?: unknown };
   if (o.ok === true && "value" in o) {
     return ok(o.value as T);
   }
-  if (!o.ok && "error" in o) {
-    return err(o.error as C | E);
-  }
-  // Fallback - should not happen
-  return err(o as C | E);
+  return err((o.error ?? "Unknown error") as C | E);
 };
 
 /**
@@ -113,18 +109,13 @@ export const toResultFromOutcome_ = <T, C, E>(
   outcome: Outcome<T, C, E>,
   _options: ToResultFromOutcomeOptions = {}
 ): Result<T, C | E> => {
-  const o = outcome as { ok: boolean } & ({ value?: unknown } | { error: unknown });
+  const o = outcome as { ok: boolean; value?: unknown; error?: unknown };
 
   if (o.ok === true && "value" in o) {
     return ok(o.value as T);
   }
 
-  if (!o.ok && "error" in o) {
-    return err(o.error as C | E);
-  }
-
-  // Fallback - should not happen
-  return err(o as C | E);
+  return err((o.error ?? "Unknown error") as C | E);
 };
 
 /**
