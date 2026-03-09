@@ -1,6 +1,6 @@
 {
   "name": "@deessejs/core",
-  "version": "0.1.2",
+  "version": "0.1.4",
   "description": "Functional programming patterns for TypeScript",
   "type": "module",
   "main": "./dist/index.js",
