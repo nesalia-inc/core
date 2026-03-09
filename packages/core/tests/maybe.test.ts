@@ -298,6 +298,16 @@ describe("Maybe", () => {
       const result = someUnit();
       expect(Object.isFrozen(result)).toBe(true);
     });
+
+    it("isSome should return true", () => {
+      const result = someUnit();
+      expect(result.isSome()).toBe(true);
+    });
+
+    it("isNone should return false", () => {
+      const result = someUnit();
+      expect(result.isNone()).toBe(false);
+    });
   });
 
   describe("tap", () => {

@@ -9,6 +9,7 @@ import {
   getOrElse,
   getOrCompute,
   tap,
+  tapErr,
   match,
   toNullable,
   toUndefined,
@@ -195,6 +196,29 @@ describe("Try", () => {
           called = true;
         }
       );
+      expect(called).toBe(false);
+    });
+  });
+
+  describe("tapErr", () => {
+    it("should call function with error if failure", () => {
+      let captured = "";
+      tapErr(
+        attempt(() => {
+          throw new Error("test error");
+        }),
+        (e) => {
+          captured = e.message;
+        }
+      );
+      expect(captured).toBe("test error");
+    });
+
+    it("should not call function if success", () => {
+      let called = false;
+      tapErr(attempt(() => 5), () => {
+        called = true;
+      });
       expect(called).toBe(false);
     });
   });

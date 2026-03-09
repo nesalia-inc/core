@@ -1,6 +1,6 @@
 {
   "name": "@deessejs/core",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Type-safe error handling for TypeScript - Result, Maybe, Try, Outcome, and AsyncResult monads with zero runtime dependencies",
   "type": "module",
   "main": "./dist/index.js",

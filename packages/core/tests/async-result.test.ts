@@ -49,6 +49,13 @@ describe("AsyncResult", () => {
       expect(result.ok).toBe(false);
       expect(result.error).toBeInstanceOf(Error);
     });
+
+    it("should convert non-Error rejection to Error", async () => {
+      const result = await fromPromise(Promise.reject("string error"));
+      expect(result.ok).toBe(false);
+      expect(result.error).toBeInstanceOf(Error);
+      expect(result.error.message).toBe("string error");
+    });
   });
 
   describe("isOk", () => {
@@ -107,6 +114,11 @@ describe("AsyncResult", () => {
       expect(isOk(result)).toBe(true);
       expect((result as { value: number }).value).toBe(4);
     });
+
+    it("should return Err if AsyncErr", async () => {
+      const result = await mapAsync(errAsync("error"), async (x) => x * 2);
+      expect(isErr(result)).toBe(true);
+    });
   });
 
   describe("flatMapAsync", () => {
@@ -114,6 +126,11 @@ describe("AsyncResult", () => {
       const result = await flatMapAsync(okAsync(2), async (x) => okAsync(x * 2));
       expect(isOk(result)).toBe(true);
       expect((result as { value: number }).value).toBe(4);
+    });
+
+    it("should return Err if AsyncErr", async () => {
+      const result = await flatMapAsync(errAsync<string, string>("error"), async (x) => okAsync(x * 2));
+      expect(isErr(result)).toBe(true);
     });
   });
 

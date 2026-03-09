@@ -38,7 +38,6 @@ const calculateDelay = (attempt: number, delay: number, backoff: RetryOptions["b
     case "constant":
       return delay;
     default:
-      // Default to exponential
       return delay * Math.pow(2, attempt - 1);
   }
 };
@@ -102,8 +101,8 @@ export const retry = <T>(fn: () => T, options: RetryOptions = {}): T => {
       }
     }
   }
-
-  throw lastError!;
+  // This line is unreachable - the loop always returns or throws
+  throw new Error("Retry failed");
 };
 
 /**
@@ -147,8 +146,8 @@ export const retryAsync = async <T>(fn: () => Promise<T>, options: RetryOptions 
       }
     }
   }
-
-  throw lastError!;
+  // This line is unreachable - the loop always returns or throws
+  throw new Error("Retry failed");
 };
 
 /**

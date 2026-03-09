@@ -4,6 +4,7 @@ import {
   toOutcome,
   toOutcomeFromResult,
   toResultFromOutcome,
+  toResultFromOutcome_,
   toMaybeFromResult,
   toMaybeFromOutcome,
   fromUndefinedable,
@@ -65,6 +66,26 @@ describe("Conversions", () => {
 
     it("should convert Cause to Err", () => {
       const result = toResultFromOutcome(cause({ name: "ERROR", message: "error" }));
+      expect(result.ok).toBe(false);
+    });
+
+    it("should handle malformed outcome (fallback)", () => {
+      // Test fallback case - this would only happen with malformed runtime data
+      const malformed = { ok: true } as unknown as import("../src/outcome").Outcome<number, string, string>;
+      const result = toResultFromOutcome(malformed);
+      expect(result.ok).toBe(false);
+    });
+  });
+
+  describe("toResultFromOutcome_", () => {
+    it("should convert Success to Ok", () => {
+      const result = toResultFromOutcome_(success(42));
+      expect(result.ok).toBe(true);
+      expect(result.value).toBe(42);
+    });
+
+    it("should convert Cause to Err", () => {
+      const result = toResultFromOutcome_(cause({ name: "ERROR", message: "error" }));
       expect(result.ok).toBe(false);
     });
   });

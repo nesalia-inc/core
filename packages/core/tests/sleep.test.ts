@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { sleep, withTimeout, TimeoutError } from "../src/sleep";
+import { sleep, withTimeout, TimeoutError, sleepWithSignal } from "../src/sleep";
 
 describe("Sleep", () => {
   describe("sleep", () => {
@@ -80,6 +80,33 @@ describe("Sleep", () => {
       await expect(
         withTimeout(Promise.reject(new Error("Original error")), 1000)
       ).rejects.toThrow("Original error");
+    });
+  });
+
+  describe("sleepWithSignal", () => {
+    it("should resolve after specified delay without signal", async () => {
+      const start = Date.now();
+      await sleepWithSignal(50);
+      const elapsed = Date.now() - start;
+      expect(elapsed).toBeGreaterThanOrEqual(45);
+    });
+
+    it("should resolve before abort when signal is provided", async () => {
+      const controller = new AbortController();
+      const start = Date.now();
+      const sleepPromise = sleepWithSignal(50, controller.signal);
+
+      // Abort after a short delay
+      setTimeout(() => controller.abort(), 20);
+
+      await expect(sleepPromise).rejects.toThrow("Sleep aborted");
+    });
+
+    it("should reject immediately if signal is already aborted", async () => {
+      const controller = new AbortController();
+      controller.abort();
+
+      await expect(sleepWithSignal(1000, controller.signal)).rejects.toThrow("Sleep aborted");
     });
   });
 });
