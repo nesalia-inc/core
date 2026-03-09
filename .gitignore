@@ -1,13 +1,14 @@
 *.tgz
 
 # Test coverage
-coverage
+coverage/
 
 # Dependencies
-node_modules
+node_modules/
 
 # Build cache
-.turbo
+.turbo/
+turbo.json
 
 # Lock files (optional, uncomment if needed)
 # package-lock.json
