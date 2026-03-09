@@ -120,5 +120,7 @@ export {
   toMaybeFromOutcome,
   fromUndefinedable,
   toResultFromOutcome_ as toResultFromOutcomeWithOptions,
+  toOutcomeFromTry,
+  toTryFromOutcome,
 } from "./conversions.js";
 export type { ToResultOptions, ToResultFromOutcomeOptions } from "./conversions.js";
