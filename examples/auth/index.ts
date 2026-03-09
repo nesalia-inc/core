@@ -8,7 +8,7 @@
  * - Multi-factor authentication
  */
 
-import { fromPromise, okAsync, errAsync, success, cause, exception, ok, err } from "@deessejs/core";
+import { fromPromise, okAsync, errAsync, success, cause, exception, ok, err, some, none, Maybe } from "@deessejs/core";
 
 // ============================================================================
 // Types
@@ -107,29 +107,29 @@ const generateToken = async (user: User): Promise<AuthToken> => {
   };
 };
 
-const validateToken = async (token: string): Promise<{ userId: number } | null> => {
+const validateToken = async (token: string): Promise<Maybe<{ userId: number }>> => {
   await delay(50);
   if (token.startsWith("access_")) {
     const userId = parseInt(token.split("_")[1]);
-    return { userId };
+    return some({ userId });
   }
-  return null;
+  return none();
 };
 
-const refreshAccessToken = async (refreshToken: string): Promise<AuthToken | null> => {
+const refreshAccessToken = async (refreshToken: string): Promise<Maybe<AuthToken>> => {
   await delay(50);
   if (refreshToken.startsWith("refresh_")) {
     const userId = parseInt(refreshToken.split("_")[1]);
     const user = await db.findById(userId);
     if (user) {
-      return generateToken(user);
+      return some(await generateToken(user));
     }
   }
-  return null;
+  return none();
 };
 
-const delay = (ms: number): Promise<void> => {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+const delay = (ms: number): void => {
+  setTimeout(() => {}, ms);
 };
 
 // ============================================================================
@@ -265,9 +265,9 @@ const loginWithMfa = async (
 const validateAuthToken = async (token: string): Promise<Outcome<User, BusinessError, SystemError>> => {
   console.log(`\n=== Example 3: Token Validation ===`);
 
-  const validation = await fromPromise(validateToken(token));
+  const validation = await validateToken(token);
 
-  if (validation.isErr() || !validation.value) {
+  if (!validation.ok) {
     console.log(`  ✗ Invalid token`);
     return cause({
       code: "INVALID_TOKEN",
@@ -303,9 +303,9 @@ const refreshAuthToken = async (
 ): Promise<Outcome<AuthToken, BusinessError, SystemError>> => {
   console.log(`\n=== Example 4: Token Refresh ===`);
 
-  const newToken = await fromPromise(refreshAccessToken(refreshToken));
+  const newToken = await refreshAccessToken(refreshToken);
 
-  if (newToken.isErr() || !newToken.value) {
+  if (!newToken.ok) {
     console.log(`  ✗ Invalid refresh token`);
     return cause({
       code: "INVALID_REFRESH_TOKEN",
