@@ -1,10 +1,11 @@
 /**
- * Conversion helpers - convert between Result, Outcome, Maybe and other types
+ * Conversion helpers - convert between Result, Outcome, Maybe, Try and other types
  */
 
 import { ok, err, Result, isOk } from "./result.js";
 import { some, none, Maybe, isSome } from "./maybe.js";
-import { success, cause, Outcome } from "./outcome.js";
+import { success, cause, exception, Outcome, isSuccess } from "./outcome.js";
+import { Try, isOk as isTryOk, createTrySuccess, createTryFailure } from "./try.js";
 
 /**
  * Options for converting Maybe to Result
@@ -124,4 +125,28 @@ export const toResultFromOutcome_ = <T, C, E>(
 
   // Fallback - should not happen
   return err(o as C | E);
+};
+
+/**
+ * Converts Try to Outcome
+ * @param t - The Try to convert
+ * @returns Outcome<T> - Success if Try is Ok, Exception if Try is Err
+ */
+export const toOutcomeFromTry = <T, E = Error>(t: Try<T, E>): Outcome<T, E, never> =>
+  isTryOk(t) ? success(t.value) : exception({ name: "SYSTEM_ERROR", message: String(t.error) });
+
+/**
+ * Converts Outcome to Try
+ * Note: Cause data (C) and Exception data (E) are coerced to Error - type information is lost
+ * @param outcome - The Outcome to convert
+ * @returns Try<T> - Ok if Success, Err if Cause or Exception
+ */
+export const toTryFromOutcome = <T, C = unknown, E = unknown>(outcome: Outcome<T, C, E>): Try<T> => {
+  const o = outcome as { ok: boolean } & (C | E | { value?: T });
+  if (isSuccess(o)) {
+    return createTrySuccess(o.value);
+  }
+  // Cause or Exception -> TryFailure
+  const message = (outcome as { message: string }).message;
+  return createTryFailure(new Error(message));
 };
