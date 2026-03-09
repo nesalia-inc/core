@@ -46,83 +46,79 @@ type DatabaseError = {
 // Mock Database (simulating real DB operations)
 // ============================================================================
 
-class Database {
-  private users: User[] = [
+const delay = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 50));
+
+const database = {
+  users: [
     { id: 1, name: "Alice", email: "alice@example.com", createdAt: new Date() },
     { id: 2, name: "Bob", email: "bob@example.com", createdAt: new Date() },
-  ];
+  ] as User[],
 
-  private posts: Post[] = [
+  posts: [
     { id: 1, userId: 1, title: "First Post", content: "Hello!", createdAt: new Date() },
     { id: 2, userId: 1, title: "Second Post", content: "World!", createdAt: new Date() },
-  ];
+  ] as Post[],
 
-  private comments: Comment[] = [
+  comments: [
     { id: 1, postId: 1, userId: 2, text: "Great post!", createdAt: new Date() },
-  ];
+  ] as Comment[],
 
-  async findUserById(id: number): Promise<User | null> {
-    await this.delay();
-    return this.users.find((u) => u.id === id) || null;
-  }
+  findUserById: async (id: number): Promise<User | null> => {
+    await delay();
+    return database.users.find((u) => u.id === id) || null;
+  },
 
-  async findUserByEmail(email: string): Promise<User | null> {
-    await this.delay();
-    return this.users.find((u) => u.email === email) || null;
-  }
+  findUserByEmail: async (email: string): Promise<User | null> => {
+    await delay();
+    return database.users.find((u) => u.email === email) || null;
+  },
 
-  async createUser(user: Omit<User, "id" | "createdAt">): Promise<User> {
-    await this.delay();
+  createUser: async (user: Omit<User, "id" | "createdAt">): Promise<User> => {
+    await delay();
 
-    // Simulate constraint violation
-    const existing = this.users.find((u) => u.email === user.email);
+    const existing = database.users.find((u) => u.email === user.email);
     if (existing) {
       throw new Error("Email already exists");
     }
 
     const newUser: User = {
-      id: Math.max(...this.users.map((u) => u.id)) + 1,
+      id: Math.max(...database.users.map((u) => u.id)) + 1,
       ...user,
       createdAt: new Date(),
     };
-    this.users.push(newUser);
+    database.users.push(newUser);
     return newUser;
-  }
+  },
 
-  async findPostsByUserId(userId: number): Promise<Post[]> {
-    await this.delay();
-    return this.posts.filter((p) => p.userId === userId);
-  }
+  findPostsByUserId: async (userId: number): Promise<Post[]> => {
+    await delay();
+    return database.posts.filter((p) => p.userId === userId);
+  },
 
-  async createPost(post: Omit<Post, "id" | "createdAt">): Promise<Post> {
-    await this.delay();
+  createPost: async (post: Omit<Post, "id" | "createdAt">): Promise<Post> => {
+    await delay();
 
-    // Simulate foreign key constraint
-    const user = this.users.find((u) => u.id === post.userId);
+    const user = database.users.find((u) => u.id === post.userId);
     if (!user) {
       throw new Error("User not found");
     }
 
     const newPost: Post = {
-      id: Math.max(...this.posts.map((p) => p.id)) + 1,
+      id: Math.max(...database.posts.map((p) => p.id)) + 1,
       ...post,
       createdAt: new Date(),
     };
-    this.posts.push(newPost);
+    database.posts.push(newPost);
     return newPost;
-  }
+  },
 
-  async findCommentsByPostId(postId: number): Promise<Comment[]> {
-    await this.delay();
-    return this.comments.filter((c) => c.postId === postId);
-  }
+  findCommentsByPostId: async (postId: number): Promise<Comment[]> => {
+    await delay();
+    return database.comments.filter((c) => c.postId === postId);
+  },
+};
 
-  private delay(): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, 50));
-  }
-}
-
-const db = new Database();
+const db = database;
 
 // ============================================================================
 // Example 1: Simple query with AsyncResult

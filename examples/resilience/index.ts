@@ -271,8 +271,8 @@ const demonstrateRateLimiting = async () => {
 // Example 8: Building a resilient API client
 // ============================================================================
 
-class ResilientApiClient {
-  async get(endpoint: string): Promise<Result<string, ApiError>> {
+const resilientApiClient = {
+  get: async (endpoint: string): Promise<Result<string, ApiError>> => {
     console.log(`\n  API Client: GET ${endpoint}`);
 
     return retryAsync(
@@ -299,18 +299,18 @@ class ResilientApiClient {
         delay: 1000,
         backoff: "exponential",
         jitter: true,
-        onRetry: (error, attempt) => {
+        onRetry: (_error, attempt) => {
           console.log(`    ↻ Retry ${attempt} for ${endpoint}`);
         },
       }
     );
-  }
-}
+  },
+};
 
 const demonstrateApiClient = async () => {
   console.log("\n=== Example 8: Resilient API Client ===");
 
-  const client = new ResilientApiClient();
+  const client = resilientApiClient;
 
   const result1 = await client.get("/users/1");
   if (result1.isOk()) {

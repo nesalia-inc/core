@@ -49,8 +49,8 @@ type AuthResult = Outcome<
 // Mock Database
 // ============================================================================
 
-class UserDatabase {
-  private users: Map<string, User> = new Map([
+const userDatabase = {
+  users: new Map<string, User>([
     [
       "user@example.com",
       {
@@ -69,20 +69,20 @@ class UserDatabase {
         mfaEnabled: true,
       },
     ],
-  ]);
+  ]),
 
-  async findByEmail(email: string): Promise<User | null> {
+  findByEmail: async (email: string): Promise<User | null> => {
     await delay(50);
-    return this.users.get(email) || null;
-  }
+    return userDatabase.users.get(email) || null;
+  },
 
-  async findById(id: number): Promise<User | null> {
+  findById: async (id: number): Promise<User | null> => {
     await delay(50);
-    return Array.from(this.users.values()).find((u) => u.id === id) || null;
-  }
-}
+    return Array.from(userDatabase.users.values()).find((u) => u.id === id) || null;
+  },
+};
 
-const db = new UserDatabase();
+const db = userDatabase;
 
 // ============================================================================
 // Mock Services

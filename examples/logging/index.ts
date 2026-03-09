@@ -37,57 +37,56 @@ type ValidationError = {
 // Logger utility
 // ============================================================================
 
-class Logger {
-  private log(level: string, message: string, data?: any) {
+const logger = {
+  log: (level: string, message: string, data?: unknown) => {
     const timestamp = new Date().toISOString();
     console.log(`[${timestamp}] ${level}: ${message}`);
     if (data) {
       console.log(`  Data:`, JSON.stringify(data, null, 2));
     }
-  }
+  },
 
-  info(message: string, data?: any) {
-    this.log("INFO", message, data);
-  }
+  info: (message: string, data?: unknown) => {
+    logger.log("INFO", message, data);
+  },
 
-  error(message: string, data?: any) {
-    this.log("ERROR", message, data);
-  }
+  error: (message: string, data?: unknown) => {
+    logger.log("ERROR", message, data);
+  },
 
-  warn(message: string, data?: any) {
-    this.log("WARN", message, data);
-  }
+  warn: (message: string, data?: unknown) => {
+    logger.log("WARN", message, data);
+  },
 
-  debug(message: string, data?: any) {
-    this.log("DEBUG", message, data);
-  }
-}
-
-const logger = new Logger();
+  debug: (message: string, data?: unknown) => {
+    logger.log("DEBUG", message, data);
+  },
+};
 
 // ============================================================================
 // Timer utility
 // ============================================================================
 
-class Timer {
-  private start: number;
-  private label: string;
+type Timer = {
+  start: number;
+  label: string;
+  elapsed: () => number;
+  end: () => number;
+};
 
-  constructor(label: string) {
-    this.label = label;
-    this.start = Date.now();
-  }
-
-  elapsed(): number {
-    return Date.now() - this.start;
-  }
-
-  end(): number {
-    const elapsed = this.elapsed();
-    logger.debug(`${this.label} took ${elapsed}ms`);
-    return elapsed;
-  }
-}
+const createTimer = (label: string): Timer => {
+  const start = Date.now();
+  return {
+    get start() { return start; },
+    get label() { return label; },
+    elapsed: () => Date.now() - start,
+    end: () => {
+      const elapsed = Date.now() - start;
+      logger.debug(`${label} took ${elapsed}ms`);
+      return elapsed;
+    },
+  };
+};
 
 // ============================================================================
 // Example 1: Basic tap for logging
@@ -161,7 +160,7 @@ const validateUser = (user: any): Result<User, ValidationError> => {
 }
 
 const processUserWithLogging = (user: any): Result<ProcessedUser, ValidationError> => {
-  const timer = new Timer("User processing");
+  const timer = createTimer("User processing");
 
   return ok(user)
     .tap(() => logger.info("Processing user", { id: user.id }))
@@ -182,7 +181,7 @@ const processUserWithLogging = (user: any): Result<ProcessedUser, ValidationErro
 const timingAsyncOperations = async () => {
   console.log("\n=== Example 4: Timing Async Operations ===");
 
-  const timer = new Timer("API call");
+  const timer = createTimer("API call");
 
   const result = await fromPromise(
     new Promise((resolve) => setTimeout(resolve, 100, "API response"))
@@ -247,28 +246,28 @@ const loadData = async (requestId: string): Promise<any[]> => {
 // Example 6: Metrics collection
 // ============================================================================
 
-class Metrics {
-  private counters: Record<string, number> = {};
-  private timers: Record<string, number[]> = {};
+const metrics = {
+  counters: {} as Record<string, number>,
+  timers: {} as Record<string, number[]>,
 
-  increment(name: string) {
-    this.counters[name] = (this.counters[name] || 0) + 1;
-  }
+  increment: (name: string) => {
+    metrics.counters[name] = (metrics.counters[name] || 0) + 1;
+  },
 
-  time(name: string, duration: number) {
-    if (!this.timers[name]) {
-      this.timers[name] = [];
+  time: (name: string, duration: number) => {
+    if (!metrics.timers[name]) {
+      metrics.timers[name] = [];
     }
-    this.timers[name].push(duration);
-  }
+    metrics.timers[name].push(duration);
+  },
 
-  report() {
+  report: () => {
     console.log("\n  === Metrics Report ===");
-    console.log("  Counters:", this.counters);
+    console.log("  Counters:", metrics.counters);
     console.log(
       "  Timers:",
       Object.fromEntries(
-        Object.entries(this.timers).map(([name, values]) => [
+        Object.entries(metrics.timers).map(([name, values]) => [
           name,
           {
             count: values.length,
@@ -279,13 +278,11 @@ class Metrics {
         ])
       )
     );
-  }
-}
-
-const metrics = new Metrics();
+  },
+};
 
 const operationWithMetrics = async (userId: number) => {
-  const timer = new Timer("databaseQuery");
+  const timer = createTimer("databaseQuery");
 
   metrics.increment("queries.total");
 
