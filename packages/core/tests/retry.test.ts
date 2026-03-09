@@ -62,7 +62,7 @@ describe("Retry", () => {
     });
 
     it("should apply jitter when enabled", () => {
-      let jitterValue = 0.5;
+      const jitterValue = 0.5;
       vi.spyOn(Math, "random").mockImplementation(() => jitterValue);
 
       let attempts = 0;

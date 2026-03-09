@@ -93,7 +93,6 @@ describe("Sleep", () => {
 
     it("should resolve before abort when signal is provided", async () => {
       const controller = new AbortController();
-      const start = Date.now();
       const sleepPromise = sleepWithSignal(50, controller.signal);
 
       // Abort after a short delay
