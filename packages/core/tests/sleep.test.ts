@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { sleep, withTimeout, withTimeout as withTimeoutFn, TimeoutError } from "../src/sleep";
+import { sleep, withTimeout, TimeoutError } from "../src/sleep";
 
 describe("Sleep", () => {
   describe("sleep", () => {
