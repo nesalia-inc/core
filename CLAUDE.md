@@ -1,13 +1,14 @@
-# Package Template
+# @deessejs/core
 
-This is a TypeScript monorepo template using pnpm workspaces, turbo, vitest, husky, and changesets.
+TypeScript monorepo for `@deessejs/core` - Type-safe error handling library using pnpm workspaces, turbo, vitest, husky, and changesets.
 
 ## Project Structure
 
 ```
 .
 ├── packages/              # Workspace packages
-│   └── example/          # Example package
+│   └── core/             # Main @deessejs/core package
+├── examples/             # Usage examples
 ├── .github/workflows/    # GitHub Actions
 ├── .husky/              # Git hooks
 ├── turbo.json           # Turbo configuration
