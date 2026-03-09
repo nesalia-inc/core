@@ -1,14 +1,16 @@
 {
-  "name": "@nesalia/template-monorepo-ts",
+  "name": "@deessejs/core",
   "version": "0.1.7",
-  "description": "TypeScript monorepo template with vitest, turbo, husky, and changesets",
+  "private": true,
+  "description": "Monorepo for @deessejs/core - Type-safe error handling for TypeScript",
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
     "test": "turbo test",
-    "clean": "turbo clean"
+    "clean": "turbo clean",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.0",
@@ -27,13 +29,21 @@
     "baseBranch": "main",
     "changelog": false,
     "commit": false,
-    "fixed": [],
+    "fixed": [
+      "@deessejs/core"
+    ],
     "linked": [],
     "access": "restricted"
   },
-  "nesalia": {
-    "id": "monorepo-ts",
-    "displayName": "Monorepo TS",
-    "description": "Monorepo TS - TypeScript monorepo with vitest, turbo, husky, and changesets"
-  }
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nesalia-inc/core.git"
+  },
+  "keywords": [
+    "typescript",
+    "functional-programming",
+    "error-handling",
+    "monad"
+  ],
+  "license": "MIT"
 }
