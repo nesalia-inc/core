@@ -50,7 +50,7 @@ export type Try<T, E = Error> = TrySuccess<T> | TryFailure<E>;
  * @param value - The success value
  * @returns TrySuccess<T>
  */
-const createTrySuccess = <T>(value: T): TrySuccess<T> => ({
+export const createTrySuccess = <T>(value: T): TrySuccess<T> => ({
   ok: true,
   value,
   map(fn) { return createTrySuccess(fn(value)); },
@@ -68,7 +68,7 @@ const createTrySuccess = <T>(value: T): TrySuccess<T> => ({
  * @param error - The error value
  * @returns TryFailure<E>
  */
-const createTryFailure = <E>(error: E): TryFailure<E> => ({
+export const createTryFailure = <E>(error: E): TryFailure<E> => ({
   ok: false,
   error,
   map() { return this as TryFailure<E>; },
