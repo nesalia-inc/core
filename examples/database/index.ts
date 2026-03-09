@@ -8,7 +8,7 @@
  * - Transaction-like behavior with flatMap
  */
 
-import { ok, err, attempt, fromPromise, okAsync, errAsync } from "@deessejs/core";
+import { ok, err, attempt, fromPromise, okAsync, errAsync, some, none, Maybe } from "@deessejs/core";
 
 // ============================================================================
 // Types
@@ -46,7 +46,7 @@ type DatabaseError = {
 // Mock Database (simulating real DB operations)
 // ============================================================================
 
-const delay = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 50));
+const delay = (): void => { setTimeout(() => {}, 50); };
 
 const database = {
   users: [
@@ -63,14 +63,16 @@ const database = {
     { id: 1, postId: 1, userId: 2, text: "Great post!", createdAt: new Date() },
   ] as Comment[],
 
-  findUserById: async (id: number): Promise<User | null> => {
+  findUserById: async (id: number): Promise<Maybe<User>> => {
     await delay();
-    return database.users.find((u) => u.id === id) || null;
+    const user = database.users.find((u) => u.id === id);
+    return user ? some(user) : none();
   },
 
-  findUserByEmail: async (email: string): Promise<User | null> => {
+  findUserByEmail: async (email: string): Promise<Maybe<User>> => {
     await delay();
-    return database.users.find((u) => u.email === email) || null;
+    const user = database.users.find((u) => u.email === email);
+    return user ? some(user) : none();
   },
 
   createUser: async (user: Omit<User, "id" | "createdAt">): Promise<User> => {
@@ -128,17 +130,11 @@ const getUserById = async (id: number): Promise<Result<User, DatabaseError>> => 
   console.log(`\n=== Example 1: Find user by ID ===`);
   console.log(`Searching for user ${id}...`);
 
-  const result = await fromPromise(db.findUserById(id))
-    .map((user) => {
-      if (!user) {
-        throw new Error("User not found");
-      }
-      return user;
-    })
-    .mapErr((error): DatabaseError => ({
-      type: "NOT_FOUND",
-      message: error.message,
-    }));
+  const user = await db.findUserById(id);
+
+  const result = user
+    .map((u): Result<User, DatabaseError> => ok(u))
+    .getOrElse(err({ type: "NOT_FOUND", message: "User not found" }));
 
   return result.match(
     (user) => {
@@ -196,19 +192,14 @@ const createNewUser = async (
 const getUserWithPosts = async (userId: number) => {
   console.log(`\n=== Example 3: Get user with posts ===`);
 
-  const result = await fromPromise(db.findUserById(userId))
-    .flatMap((user) => {
-      if (!user) {
-        return errAsync<DatabaseError>({
-          type: "NOT_FOUND",
-          message: "User not found",
-        });
-      }
-      return okAsync(user);
-    })
-    .flatMapAsync(async (user) => {
-      const posts = await fromPromise(db.findPostsByUserId(user.id));
-      return posts.map((postList) => ({ user, posts: postList }));
+  const user = await db.findUserById(userId);
+
+  const result = user
+    .map((u): Result<{ user: User; posts: Post[] }, DatabaseError> => ok(u))
+    .getOrElse(err({ type: "NOT_FOUND", message: "User not found" }))
+    .flatMapAsync(async (u) => {
+      const posts = await db.findPostsByUserId(u.id);
+      return posts.map((postList) => ({ user: u, posts: postList }));
     })
     .mapErr((error): DatabaseError => error);
 

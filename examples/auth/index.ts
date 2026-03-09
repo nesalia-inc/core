@@ -71,14 +71,16 @@ const userDatabase = {
     ],
   ]),
 
-  findByEmail: async (email: string): Promise<User | null> => {
+  findByEmail: async (email: string): Promise<Maybe<User>> => {
     await delay(50);
-    return userDatabase.users.get(email) || null;
+    const user = userDatabase.users.get(email);
+    return user ? some(user) : none();
   },
 
-  findById: async (id: number): Promise<User | null> => {
+  findById: async (id: number): Promise<Maybe<User>> => {
     await delay(50);
-    return Array.from(userDatabase.users.values()).find((u) => u.id === id) || null;
+    const user = Array.from(userDatabase.users.values()).find((u) => u.id === id);
+    return user ? some(user) : none();
   },
 };
 

@@ -59,9 +59,9 @@ const fetchComments = async (postId: number): Promise<Comment[]> => {
   ];
 }
 
-const delay = (ms: number): Promise<void> => {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+const delay = (ms: number): void => {
+  setTimeout(() => {}, ms);
+};
 
 // ============================================================================
 // Example 1: Fetch multiple users in parallel

@@ -8,7 +8,8 @@
  * - Directory traversal
  */
 
-import { promises as fs } from "fs";
+import { promises as fs, readdirSync } from "fs";
+import * as fsSync from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { attempt, fromPromise, ok, err, okAsync, errAsync } from "@deessejs/core";
@@ -203,25 +204,26 @@ const findFilesByExtension = async (
 
   const results: string[] = [];
 
-  const traverse = async (currentPath: string): Promise<void> => {
-    const entriesResult = await fromPromise(fs.readdir(currentPath, { withFileTypes: true }));
-
-    if (entriesResult.isErr()) {
+  const traverse = (currentPath: string): void => {
+    let entries: fsSync.Dirent[];
+    try {
+      entries = fsSync.readdirSync(currentPath, { withFileTypes: true });
+    } catch {
       return;
     }
 
-    for (const entry of entriesResult.value) {
+    for (const entry of entries) {
       const fullPath = join(currentPath, entry.name);
 
       if (entry.isDirectory()) {
-        await traverse(fullPath);
+        traverse(fullPath);
       } else if (entry.isFile() && entry.name.endsWith(extension)) {
         results.push(fullPath);
       }
     }
   }
 
-  await traverse(dir);
+  traverse(dir);
 
   console.log(`✓ Found ${results.length} files`);
   results.forEach((file) => console.log(`  - ${file}`));
