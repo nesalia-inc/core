@@ -34,7 +34,7 @@ type SystemError = { type: string; message: string };
 // Example 1: Result ↔ Maybe
 // ============================================================================
 
-function resultToMaybeExample() {
+const resultToMaybeExample = () => {
   console.log("\n=== Example 1: Result ↔ Maybe ===");
 
   // Result → Maybe
@@ -63,13 +63,13 @@ function resultToMaybeExample() {
   if (result4.isErr()) {
     console.log(`    Error: ${result4.error.message}`);
   }
-}
+};
 
 // ============================================================================
 // Example 2: Result → Outcome
 // ============================================================================
 
-function resultToOutcomeExample() {
+const resultToOutcomeExample = () => {
   console.log("\n=== Example 2: Result → Outcome ===");
 
   // Ok → Success
@@ -88,13 +88,13 @@ function resultToOutcomeExample() {
     systemErrors: "exception",
   });
   console.log(`  Result Err to Exception: ${outcome3.isException() ? "Exception" : "Success/Cause"}`);
-}
+};
 
 // ============================================================================
 // Example 3: Outcome → Result
 // ============================================================================
 
-function outcomeToResultExample() {
+const outcomeToResultExample = () => {
   console.log("\n=== Example 3: Outcome → Result ===");
 
   // Success → Ok
@@ -111,13 +111,13 @@ function outcomeToResultExample() {
   const outcome3 = outcome3; // Would be exception type
   // Note: In real code, you'd create an actual exception outcome
   console.log(`  Outcome Exception to Result: Err (system error)`);
-}
+};
 
 // ============================================================================
 // Example 4: Maybe ↔ Outcome
 // ============================================================================
 
-function maybeToOutcomeExample() {
+const maybeToOutcomeExample = () => {
   console.log("\n=== Example 4: Maybe ↔ Outcome ===");
 
   // Some → Success
@@ -143,13 +143,13 @@ function maybeToOutcomeExample() {
   const outcome4 = cause({ code: "ERROR", message: "Failed" });
   const maybe4 = toMaybeFromOutcome(outcome4);
   console.log(`  Outcome Cause to Maybe: ${maybe4.isSome() ? "Some" : "None"}`);
-}
+};
 
 // ============================================================================
 // Example 5: When to use which type
 // ============================================================================
 
-function choosingTheRightType() {
+const choosingTheRightType = () => {
   console.log("\n=== Example 5: Choosing the Right Type ===");
 
   // Use Result when: Simple success/failure with error details
@@ -180,13 +180,13 @@ function choosingTheRightType() {
   if (businessError.isCause()) {
     console.log(`    Example: Business error - ${businessError.value.code}`);
   }
-}
+};
 
 // ============================================================================
 // Example 6: Practical conversion scenario
 // ============================================================================
 
-function practicalScenario() {
+const practicalScenario = () => {
   console.log("\n=== Example 6: Practical Scenario ===");
 
   // Scenario: User lookup that might not exist (Maybe)
@@ -209,19 +209,19 @@ function practicalScenario() {
 
   console.log(`  Step 3: Convert to Outcome for error handling`);
   console.log(`  Result: ${userOutcome.isSuccess() ? "Success" : "Error"}`);
-}
+};
 
 // ============================================================================
 // Example 7: Migration patterns
 // ============================================================================
 
-function migrationPatterns() {
+const migrationPatterns = () => {
   console.log("\n=== Example 7: Migration Patterns ===");
 
   // Old code using Maybe
-  function legacyFindUser(id: number): ReturnType<typeof some> {
+  const legacyFindUser = (id: number): ReturnType<typeof some> => {
     return id === 1 ? some({ id, name: "Alice" }) : none();
-  }
+  };
 
   // New code using Result (with migration)
   function newFindUser(id: number) {
@@ -241,13 +241,13 @@ function migrationPatterns() {
   if (user2.isErr()) {
     console.log(`      Error: ${user2.error.message}`);
   }
-}
+};
 
 // ============================================================================
 // Run all examples
 // ============================================================================
 
-function main() {
+const main = () => {
   console.log("╔════════════════════════════════════════════════════════════╗");
   console.log("║   Type Conversions Guide with @deessejs/core               ║");
   console.log("╚════════════════════════════════════════════════════════════╝");
@@ -268,6 +268,6 @@ function main() {
   console.log("\n╔════════════════════════════════════════════════════════════╗");
   console.log("║   All examples completed                                  ║");
   console.log("╚════════════════════════════════════════════════════════════╝");
-}
+};
 
 main();

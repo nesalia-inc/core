@@ -14,37 +14,37 @@ import { ok, err, success, cause, exception } from "@deessejs/core";
 // Types
 // ============================================================================
 
-interface RegistrationForm {
+type RegistrationForm = {
   name: string;
   email: string;
   age: number;
   password: string;
   confirmPassword: string;
-}
+};
 
-interface User {
+type User = {
   id: number;
   name: string;
   email: string;
   age: number;
-}
+};
 
-interface ValidationError {
+type ValidationError = {
   field: string;
   code: string;
   message: string;
-}
+};
 
-interface SystemError {
+type SystemError = {
   type: string;
   message: string;
-}
+};
 
 // ============================================================================
 // Validation Rules
 // ============================================================================
 
-function validateName(name: string): Result<string, ValidationError> {
+const validateName = (name: string): Result<string, ValidationError> => {
   if (name.length < 2) {
     return err({
       field: "name",
@@ -72,7 +72,7 @@ function validateName(name: string): Result<string, ValidationError> {
   return ok(name);
 }
 
-function validateEmail(email: string): Result<string, ValidationError> {
+const validateEmail = (email: string): Result<string, ValidationError> => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   if (!email) {
@@ -94,7 +94,7 @@ function validateEmail(email: string): Result<string, ValidationError> {
   return ok(email);
 }
 
-function validateAge(age: number): Result<number, ValidationError> {
+const validateAge = (age: number): Result<number, ValidationError> => {
   if (age < 13) {
     return err({
       field: "age",
@@ -114,7 +114,7 @@ function validateAge(age: number): Result<number, ValidationError> {
   return ok(age);
 }
 
-function validatePassword(password: string): Result<string, ValidationError> {
+const validatePassword = (password: string): Result<string, ValidationError> => {
   if (password.length < 8) {
     return err({
       field: "password",
@@ -148,12 +148,12 @@ function validatePassword(password: string): Result<string, ValidationError> {
   }
 
   return ok(password);
-}
+};
 
-function validatePasswordConfirmation(
+const validatePasswordConfirmation = (
   password: string,
   confirmPassword: string
-): Result<void, ValidationError> {
+): Result<void, ValidationError> => {
   if (password !== confirmPassword) {
     return err({
       field: "confirmPassword",
@@ -163,13 +163,13 @@ function validatePasswordConfirmation(
   }
 
   return ok(undefined);
-}
+};
 
 // ============================================================================
 // Example 1: Sequential validation (fail fast)
 // ============================================================================
 
-function validateFormSequential(
+const validateFormSequential = (
   form: RegistrationForm
 ): Result<RegistrationForm, ValidationError> {
   console.log("\n=== Example 1: Sequential Validation (Fail Fast) ===");
@@ -198,11 +198,11 @@ function validateFormSequential(
 // Example 2: Validate all fields (accumulate errors)
 // ============================================================================
 
-interface FormErrors {
+type FormErrors = {
   errors: ValidationError[];
-}
+};
 
-function validateFormAll(form: RegistrationForm): Result<RegistrationForm, FormErrors> {
+const validateFormAll = (form: RegistrationForm): Result<RegistrationForm, FormErrors> => {
   console.log("\n=== Example 2: Validate All Fields (Accumulate Errors) ===");
 
   const errors: ValidationError[] = [];
@@ -237,7 +237,7 @@ function validateFormAll(form: RegistrationForm): Result<RegistrationForm, FormE
 // Example 3: Using Outcome for rich error context
 // ============================================================================
 
-function validateFormWithOutcome(
+const validateFormWithOutcome = (
   form: RegistrationForm
 ): Outcome<RegistrationForm, ValidationError, SystemError> {
   console.log("\n=== Example 3: Using Outcome (Business vs System Errors) ===");
@@ -299,15 +299,15 @@ function validateFormWithOutcome(
 // Example 4: Conditional validation
 // ============================================================================
 
-interface UserProfile {
+type UserProfile = {
   name: string;
   email: string;
   age: number;
   website?: string; // Optional field
   twitter?: string; // Optional field
-}
+};
 
-function validateUserProfile(profile: UserProfile): Result<UserProfile, ValidationError> {
+const validateUserProfile = (profile: UserProfile): Result<UserProfile, ValidationError> => {
   console.log("\n=== Example 4: Conditional Validation ===");
 
   return ok(profile)
@@ -354,13 +354,13 @@ function validateUserProfile(profile: UserProfile): Result<UserProfile, Validati
 // Example 5: Async validation (e.g., check if email already exists)
 // ============================================================================
 
-async function emailExists(email: string): Promise<boolean> {
+const emailExists = async (email: string): Promise<boolean> => {
   // Simulate database check
   await new Promise((resolve) => setTimeout(resolve, 100));
   return email === "existing@example.com";
 }
 
-async function validateFormWithAsyncCheck(
+const validateFormWithAsyncCheck = async (
   form: RegistrationForm
 ): Promise<Result<RegistrationForm, ValidationError>> {
   console.log("\n=== Example 5: Async Validation ===");
@@ -388,7 +388,7 @@ async function validateFormWithAsyncCheck(
 // Run all examples
 // ============================================================================
 
-async function main() {
+const main = async () => {
   console.log("╔════════════════════════════════════════════════════════════╗");
   console.log("║   Form Validation with @deessejs/core                    ║");
   console.log("╚════════════════════════════════════════════════════════════╝");

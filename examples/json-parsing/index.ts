@@ -14,16 +14,16 @@ import { attempt, ok, err } from "@deessejs/core";
 // Types
 // ============================================================================
 
-interface UserConfig {
+type UserConfig = {
   name: string;
   email: string;
   preferences: {
     theme: "light" | "dark";
     notifications: boolean;
   };
-}
+};
 
-interface ApiResponse {
+type ApiResponse = {
   data: {
     users: Array<{
       id: number;
@@ -34,18 +34,18 @@ interface ApiResponse {
     total: number;
     page: number;
   };
-}
+};
 
-interface ParseError {
+type ParseError = {
   type: "INVALID_JSON" | "INVALID_SCHEMA" | "MISSING_FIELD";
   message: string;
-}
+};
 
 // ============================================================================
 // Example 1: Basic JSON parsing
 // ============================================================================
 
-function parseJsonString(jsonString: string): Result<any, ParseError> {
+const parseJsonString = (jsonString: string): Result<any, ParseError> => {
   console.log(`\n=== Example 1: Basic JSON Parsing ===`);
   console.log(`Parsing: "${jsonString}"`);
 
@@ -70,7 +70,7 @@ function parseJsonString(jsonString: string): Result<any, ParseError> {
 // Example 2: Parse and validate schema
 // ============================================================================
 
-function parseAndValidateConfig(jsonString: string): Result<UserConfig, ParseError> {
+const parseAndValidateConfig = (jsonString: string): Result<UserConfig, ParseError> => {
   console.log(`\n=== Example 2: Parse and Validate Config ===`);
 
   return attempt(() => JSON.parse(jsonString) as UserConfig)
@@ -81,7 +81,7 @@ function parseAndValidateConfig(jsonString: string): Result<UserConfig, ParseErr
     .flatMap((data) => validateUserConfig(data));
 }
 
-function validateUserConfig(data: any): Result<UserConfig, ParseError> {
+const validateUserConfig = (data: any): Result<UserConfig, ParseError> => {
   // Check required fields
   if (typeof data.name !== "string") {
     return err({
@@ -126,7 +126,7 @@ function validateUserConfig(data: any): Result<UserConfig, ParseError> {
 // Example 3: Parse with default values
 // ============================================================================
 
-function parseConfigWithDefaults(jsonString: string): UserConfig {
+const parseConfigWithDefaults = (jsonString: string): UserConfig => {
   console.log(`\n=== Example 3: Parse with Defaults ===`);
 
   const defaultConfig: UserConfig = {
@@ -162,7 +162,7 @@ function parseConfigWithDefaults(jsonString: string): UserConfig {
 // Example 4: Parse API response
 // ============================================================================
 
-function parseApiResponse(jsonString: string): Result<ApiResponse, ParseError> {
+const parseApiResponse = (jsonString: string): Result<ApiResponse, ParseError> => {
   console.log(`\n=== Example 4: Parse API Response ===`);
 
   return attempt(() => JSON.parse(jsonString) as ApiResponse)
@@ -173,7 +173,7 @@ function parseApiResponse(jsonString: string): Result<ApiResponse, ParseError> {
     .flatMap((response) => validateApiResponse(response));
 }
 
-function validateApiResponse(response: any): Result<ApiResponse, ParseError> {
+const validateApiResponse = (response: any): Result<ApiResponse, ParseError> => {
   if (!response.data || !Array.isArray(response.data.users)) {
     return err({
       type: "INVALID_SCHEMA",
@@ -195,7 +195,7 @@ function validateApiResponse(response: any): Result<ApiResponse, ParseError> {
 // Example 5: Safe parsing of nested data
 // ============================================================================
 
-interface UserProfile {
+type UserProfile = {
   id: number;
   profile: {
     name: string;
@@ -204,9 +204,9 @@ interface UserProfile {
       phone?: string;
     };
   };
-}
+};
 
-function parseNestedData(jsonString: string): Result<UserProfile, ParseError> {
+const parseNestedData = (jsonString: string): Result<UserProfile, ParseError> => {
   console.log(`\n=== Example 5: Parse Nested Data ===`);
 
   return attempt(() => JSON.parse(jsonString) as UserProfile)
@@ -248,7 +248,7 @@ function parseNestedData(jsonString: string): Result<UserProfile, ParseError> {
 // Example 6: Parse array of items
 // ============================================================================
 
-function parseUserArray(jsonString: string): Result<Array<{ id: number; name: string }>, ParseError> {
+const parseUserArray = (jsonString: string): Result<Array<{ id: number; name: string }>, ParseError> => {
   console.log(`\n=== Example 6: Parse Array of Items ===`);
 
   return attempt(() => JSON.parse(jsonString) as unknown[])
@@ -295,7 +295,7 @@ function parseUserArray(jsonString: string): Result<Array<{ id: number; name: st
 // Run all examples
 // ============================================================================
 
-function main() {
+const main = () => {
   console.log("╔════════════════════════════════════════════════════════════╗");
   console.log("║   Safe JSON Parsing with @deessejs/core                   ║");
   console.log("╚════════════════════════════════════════════════════════════╝");

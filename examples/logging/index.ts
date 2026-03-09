@@ -14,24 +14,24 @@ import { ok, err, fromPromise } from "@deessejs/core";
 // Types
 // ============================================================================
 
-interface User {
+type User = {
   id: number;
   name: string;
   email: string;
-}
+};
 
-interface ProcessedUser {
+type ProcessedUser = {
   id: number;
   name: string;
   email: string;
   normalizedEmail: string;
-}
+};
 
-interface ValidationError {
+type ValidationError = {
   field: string;
   code: string;
   message: string;
-}
+};
 
 // ============================================================================
 // Logger utility
@@ -93,7 +93,7 @@ class Timer {
 // Example 1: Basic tap for logging
 // ============================================================================
 
-function basicTapExample() {
+const basicTapExample = () => {
   console.log("\n=== Example 1: Basic tap for Logging ===");
 
   const result = ok(42)
@@ -112,7 +112,7 @@ function basicTapExample() {
 // Example 2: tapErr for error logging
 // ============================================================================
 
-function tapErrExample() {
+const tapErrExample = () => {
   console.log("\n=== Example 2: tapErr for Error Logging ===");
 
   const result = ok("user@example.com")
@@ -142,7 +142,7 @@ function tapErrExample() {
 // Example 3: Pipeline with observability
 // ============================================================================
 
-function validateUser(user: any): Result<User, ValidationError> {
+const validateUser = (user: any): Result<User, ValidationError> => {
   return ok(user)
     .tap(() => logger.info("Starting user validation"))
     .flatMap((data) =>
@@ -160,7 +160,7 @@ function validateUser(user: any): Result<User, ValidationError> {
     .tapErr((error) => logger.error(`Validation error in ${error.field}`, error));
 }
 
-function processUserWithLogging(user: any): Result<ProcessedUser, ValidationError> {
+const processUserWithLogging = (user: any): Result<ProcessedUser, ValidationError> => {
   const timer = new Timer("User processing");
 
   return ok(user)
@@ -179,7 +179,7 @@ function processUserWithLogging(user: any): Result<ProcessedUser, ValidationErro
 // Example 4: Timing async operations
 // ============================================================================
 
-async function timingAsyncOperations() {
+const timingAsyncOperations = async () => {
   console.log("\n=== Example 4: Timing Async Operations ===");
 
   const timer = new Timer("API call");
@@ -200,14 +200,14 @@ async function timingAsyncOperations() {
 // Example 5: Request logging pipeline
 // ============================================================================
 
-interface RequestContext {
+type RequestContext = {
   requestId: string;
   userId?: number;
   path: string;
   method: string;
-}
+};
 
-async function handleRequest(
+const handleRequest = async (
   request: RequestContext
 ): Promise<Result<{ status: number; body: any }, Error>> {
   const requestId = request.requestId;
@@ -237,7 +237,7 @@ async function handleRequest(
     .tapErr((error) => logger.error(`[req:${requestId}] Request failed`, { error: error.message }));
 }
 
-async function loadData(requestId: string): Promise<any[]> {
+const loadData = async (requestId: string): Promise<any[]> => {
   // Simulate data loading
   await new Promise((resolve) => setTimeout(resolve, 50));
   return [{ id: 1, name: "Item 1" }];
@@ -284,7 +284,7 @@ class Metrics {
 
 const metrics = new Metrics();
 
-async function operationWithMetrics(userId: number) {
+const operationWithMetrics = async (userId: number) => {
   const timer = new Timer("databaseQuery");
 
   metrics.increment("queries.total");
@@ -299,7 +299,7 @@ async function operationWithMetrics(userId: number) {
   return result;
 }
 
-async function metricsExample() {
+const metricsExample = async () => {
   console.log("\n=== Example 6: Metrics Collection ===");
 
   await operationWithMetrics(1);
@@ -313,7 +313,7 @@ async function metricsExample() {
 // Run all examples
 // ============================================================================
 
-async function main() {
+const main = async () => {
   console.log("╔════════════════════════════════════════════════════════════╗");
   console.log("║   Logger with Side Effects using @deessejs/core            ║");
   console.log("╚════════════════════════════════════════════════════════════╝");

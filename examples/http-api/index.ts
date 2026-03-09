@@ -12,20 +12,20 @@ import { ok, err, fromPromise, okAsync, errAsync } from "@deessejs/core";
 import { retryAsync, withTimeout } from "@deessejs/core";
 
 // Types
-interface User {
+type User = {
   id: number;
   name: string;
   email: string;
-}
+};
 
-interface ApiError {
+type ApiError = {
   type: "NETWORK" | "TIMEOUT" | "BUSINESS" | "NOT_FOUND";
   message: string;
   statusCode?: number;
-}
+};
 
 // Mock API functions (simulating real API calls)
-async function fetchUserFromApi(id: number): Promise<User> {
+const fetchUserFromApi = async (id: number): Promise<User> => {
   // Simulate API delay
   await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -41,7 +41,7 @@ async function fetchUserFromApi(id: number): Promise<User> {
   };
 }
 
-async function createUserInApi(data: {
+const createUserInApi = async (data: {
   name: string;
   email: string;
 }): Promise<User> {
@@ -64,7 +64,7 @@ async function createUserInApi(data: {
 // Example 1: Basic fetch with AsyncResult
 // ============================================================================
 
-async function getUser(id: number) {
+const getUser = async (id: number) => {
   console.log(`\n=== Example 1: Basic fetch with AsyncResult ===`);
   console.log(`Fetching user ${id}...`);
 
@@ -89,7 +89,7 @@ async function getUser(id: number) {
 // Example 2: Fetch with timeout
 // ============================================================================
 
-async function getUserWithTimeout(id: number, timeoutMs: number) {
+const getUserWithTimeout = async (id: number, timeoutMs: number) => {
   console.log(`\n=== Example 2: Fetch with timeout (${timeoutMs}ms) ===`);
   console.log(`Fetching user ${id} with timeout...`);
 
@@ -119,7 +119,7 @@ async function getUserWithTimeout(id: number, timeoutMs: number) {
 // Example 3: Fetch with retry logic
 // ============================================================================
 
-async function getUserWithRetry(id: number) {
+const getUserWithRetry = async (id: number) => {
   console.log(`\n=== Example 3: Fetch with retry logic ===`);
   console.log(`Fetching user ${id} with automatic retry...`);
 
@@ -158,7 +158,7 @@ async function getUserWithRetry(id: number) {
 // Example 4: POST request with validation
 // ============================================================================
 
-async function createUser(data: { name: string; email: string }) {
+const createUser = async (data: { name: string; email: string }) => {
   console.log(`\n=== Example 4: POST request with validation ===`);
   console.log(`Creating user: ${data.name} (${data.email})`);
 
@@ -207,7 +207,7 @@ async function createUser(data: { name: string; email: string }) {
 // Example 5: Chaining multiple API calls
 // ============================================================================
 
-async function getUserWithPosts(userId: number) {
+const getUserWithPosts = async (userId: number) => {
   console.log(`\n=== Example 5: Chaining multiple API calls ===`);
   console.log(`Fetching user ${userId} with posts...`);
 
@@ -242,7 +242,7 @@ async function getUserWithPosts(userId: number) {
 // Run all examples
 // ============================================================================
 
-async function main() {
+const main = async () => {
   console.log("╔════════════════════════════════════════════════════════════╗");
   console.log("║   HTTP API Error Handling with @deessejs/core            ║");
   console.log("╚════════════════════════════════════════════════════════════╝");

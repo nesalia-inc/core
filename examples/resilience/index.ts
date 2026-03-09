@@ -14,17 +14,17 @@ import { sleep, withTimeout, retryAsync, retry, fromPromise } from "@deessejs/co
 // Types
 // ============================================================================
 
-interface ApiError {
+type ApiError = {
   type: "TIMEOUT" | "NETWORK" | "SERVER";
   message: string;
   attempt?: number;
-}
+};
 
 // ============================================================================
 // Mock API
 // ============================================================================
 
-async function unreliableApi(delay: number, failureRate: number = 0): Promise<string> {
+const unreliableApi = async (delay: number, failureRate: number = 0): Promise<string> => {
   await new Promise((resolve) => setTimeout(resolve, delay));
 
   if (Math.random() < failureRate) {
@@ -34,7 +34,7 @@ async function unreliableApi(delay: number, failureRate: number = 0): Promise<st
   return "API response data";
 }
 
-async function slowApi(minDelay: number, maxDelay: number): Promise<string> {
+const slowApi = async (minDelay: number, maxDelay: number): Promise<string> => {
   const delay = minDelay + Math.random() * (maxDelay - minDelay);
   await new Promise((resolve) => setTimeout(resolve, delay));
   return "Slow response";
@@ -44,7 +44,7 @@ async function slowApi(minDelay: number, maxDelay: number): Promise<string> {
 // Example 1: Simple sleep/delay
 // ============================================================================
 
-async function demonstrateSleep() {
+const demonstrateSleep = async () => {
   console.log("\n=== Example 1: Sleep/Delay ===");
 
   console.log("  Starting task...");
@@ -60,7 +60,7 @@ async function demonstrateSleep() {
 // Example 2: Timeout with withTimeout
 // ============================================================================
 
-async function demonstrateTimeout() {
+const demonstrateTimeout = async () => {
   console.log("\n=== Example 2: Timeout ===");
 
   // Fast operation (completes within timeout)
@@ -94,7 +94,7 @@ async function demonstrateTimeout() {
 // Example 3: Retry with exponential backoff
 // ============================================================================
 
-async function demonstrateExponentialRetry() {
+const demonstrateExponentialRetry = async () => {
   console.log("\n=== Example 3: Exponential Backoff Retry ===");
 
   let attemptCount = 0;
@@ -127,7 +127,7 @@ async function demonstrateExponentialRetry() {
 // Example 4: Retry with linear backoff
 // ============================================================================
 
-async function demonstrateLinearRetry() {
+const demonstrateLinearRetry = async () => {
   console.log("\n=== Example 4: Linear Backoff Retry ===");
 
   let attemptCount = 0;
@@ -159,7 +159,7 @@ async function demonstrateLinearRetry() {
 // Example 5: Retry with predicate (conditional retry)
 // ============================================================================
 
-async function demonstrateConditionalRetry() {
+const demonstrateConditionalRetry = async () => {
   console.log("\n=== Example 5: Conditional Retry ===");
 
   class TransientError extends Error {
@@ -212,7 +212,7 @@ async function demonstrateConditionalRetry() {
 // Example 6: Cancellable timeout
 // ============================================================================
 
-async function demonstrateCancellableTimeout() {
+const demonstrateCancellableTimeout = async () => {
   console.log("\n=== Example 6: Cancellable Timeout ===");
 
   const controller = new AbortController();
@@ -247,7 +247,7 @@ async function demonstrateCancellableTimeout() {
 // Example 7: Rate limiting
 // ============================================================================
 
-async function demonstrateRateLimiting() {
+const demonstrateRateLimiting = async () => {
   console.log("\n=== Example 7: Rate Limiting ===");
 
   const requests = [1, 2, 3, 4, 5];
@@ -307,7 +307,7 @@ class ResilientApiClient {
   }
 }
 
-async function demonstrateApiClient() {
+const demonstrateApiClient = async () => {
   console.log("\n=== Example 8: Resilient API Client ===");
 
   const client = new ResilientApiClient();
@@ -327,7 +327,7 @@ async function demonstrateApiClient() {
 // Run all examples
 // ============================================================================
 
-async function main() {
+const main = async () => {
   console.log("╔════════════════════════════════════════════════════════════╗");
   console.log("║   Rate Limiting & Timeouts with @deessejs/core             ║");
   console.log("╚════════════════════════════════════════════════════════════╝");

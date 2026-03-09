@@ -21,7 +21,7 @@ import {
 // Types
 // ============================================================================
 
-interface DatabaseConfig {
+type DatabaseConfig = {
   host: string;
   port: number;
   username: string;
@@ -29,19 +29,19 @@ interface DatabaseConfig {
   database: string;
 }
 
-interface ServerConfig {
+type ServerConfig = {
   port: number;
   host: string;
   nodeEnv: "development" | "production" | "test";
 }
 
-interface FeatureFlags {
+type FeatureFlags = {
   newDashboard: boolean;
   betaFeatures: boolean;
   debugMode: boolean;
 }
 
-interface AppConfig {
+type AppConfig = {
   database: DatabaseConfig;
   server: ServerConfig;
   features: FeatureFlags;
@@ -51,11 +51,11 @@ interface AppConfig {
 // Helper: Parse environment variables with Maybe
 // ============================================================================
 
-function getEnvVar(key: string): ReturnType<typeof fromNullable<string>> {
+const getEnvVar = (key: string): ReturnType<typeof fromNullable<string>> => {
   return fromNullable(process.env[key]);
 }
 
-function getEnvVarInt(key: string): ReturnType<typeof fromNullable<number>> {
+const getEnvVarInt = (key: string): ReturnType<typeof fromNullable<number>> => {
   return fromNullable(process.env[key]).flatMap((value) => {
     const trimmed = value.trim();
     if (trimmed === "") {
@@ -66,7 +66,7 @@ function getEnvVarInt(key: string): ReturnType<typeof fromNullable<number>> {
   });
 }
 
-function getEnvVarBoolean(key: string): ReturnType<typeof fromNullable<boolean>> {
+const getEnvVarBoolean = (key: string): ReturnType<typeof fromNullable<boolean>> => {
   return fromNullable(process.env[key]).map((value) =>
     value.toLowerCase() === "true"
   );
@@ -76,7 +76,7 @@ function getEnvVarBoolean(key: string): ReturnType<typeof fromNullable<boolean>>
 // Example 1: Optional configuration with Maybe
 // ============================================================================
 
-function loadOptionalConfig() {
+const loadOptionalConfig = () => {
   console.log("\n=== Example 1: Optional Configuration ===");
 
   // Optional API key (may or may not be present)
@@ -104,7 +104,7 @@ function loadOptionalConfig() {
 // Example 2: Required configuration with Result
 // ============================================================================
 
-function loadRequiredConfig() {
+const loadRequiredConfig = () => {
   console.log("\n=== Example 2: Required Configuration ===");
 
   // Database configuration (all fields required)
@@ -146,7 +146,7 @@ function loadRequiredConfig() {
 // Example 3: Mixed required and optional fields
 // ============================================================================
 
-function loadServerConfig() {
+const loadServerConfig = () => {
   console.log("\n=== Example 3: Mixed Required and Optional ===");
 
   const nodeEnv = getEnvVar("NODE_ENV")
@@ -179,7 +179,7 @@ function loadServerConfig() {
 // Example 4: Feature flags with defaults
 // ============================================================================
 
-function loadFeatureFlags() {
+const loadFeatureFlags = () => {
   console.log("\n=== Example 4: Feature Flags ===");
 
   const features: FeatureFlags = {
@@ -200,7 +200,7 @@ function loadFeatureFlags() {
 // Example 5: Complete application configuration
 // ============================================================================
 
-function loadAppConfig(): Result<AppConfig, Error> {
+const loadAppConfig = (): Result<AppConfig, Error> => {
   console.log("\n=== Example 5: Complete App Configuration ===");
 
   // Load all configuration sections
@@ -264,7 +264,7 @@ function loadAppConfig(): Result<AppConfig, Error> {
 // Run all examples
 // ============================================================================
 
-async function main() {
+const main = async () => {
   console.log("╔════════════════════════════════════════════════════════════╗");
   console.log("║   Environment Configuration with @deessejs/core           ║");
   console.log("╚════════════════════════════════════════════════════════════╝");

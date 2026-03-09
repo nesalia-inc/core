@@ -14,33 +14,33 @@ import { ok, err, attempt, fromPromise, okAsync, errAsync } from "@deessejs/core
 // Types
 // ============================================================================
 
-interface User {
+type User = {
   id: number;
   name: string;
   email: string;
   createdAt: Date;
-}
+};
 
-interface Post {
+type Post = {
   id: number;
   userId: number;
   title: string;
   content: string;
   createdAt: Date;
-}
+};
 
-interface Comment {
+type Comment = {
   id: number;
   postId: number;
   userId: number;
   text: string;
   createdAt: Date;
-}
+};
 
-interface DatabaseError {
+type DatabaseError = {
   type: "NOT_FOUND" | "CONSTRAINT" | "CONNECTION" | "QUERY";
   message: string;
-}
+};
 
 // ============================================================================
 // Mock Database (simulating real DB operations)
@@ -128,7 +128,7 @@ const db = new Database();
 // Example 1: Simple query with AsyncResult
 // ============================================================================
 
-async function getUserById(id: number): Promise<Result<User, DatabaseError>> {
+const getUserById = async (id: number): Promise<Result<User, DatabaseError>> => {
   console.log(`\n=== Example 1: Find user by ID ===`);
   console.log(`Searching for user ${id}...`);
 
@@ -160,10 +160,10 @@ async function getUserById(id: number): Promise<Result<User, DatabaseError>> {
 // Example 2: Handling constraint violations
 // ============================================================================
 
-async function createNewUser(
+const createNewUser = async (
   name: string,
   email: string
-): Promise<Result<User, DatabaseError>> {
+): Promise<Result<User, DatabaseError>> => {
   console.log(`\n=== Example 2: Create new user ===`);
   console.log(`Creating user: ${name} (${email})...`);
 
@@ -197,7 +197,7 @@ async function createNewUser(
 // Example 3: Query with foreign key relationship
 // ============================================================================
 
-async function getUserWithPosts(userId: number) {
+const getUserWithPosts = async (userId: number) => {
   console.log(`\n=== Example 3: Get user with posts ===`);
 
   const result = await fromPromise(db.findUserById(userId))
@@ -229,17 +229,17 @@ async function getUserWithPosts(userId: number) {
       throw error;
     }
   );
-}
+};
 
 // ============================================================================
 // Example 4: Transaction-like behavior
 // ============================================================================
 
-async function createPostWithValidation(
+const createPostWithValidation = async (
   userId: number,
   title: string,
   content: string
-) {
+) => {
   console.log(`\n=== Example 4: Transaction-like operation ===`);
 
   // Verify user exists first
@@ -285,7 +285,7 @@ async function createPostWithValidation(
 // Example 5: Complex query with nested data
 // ============================================================================
 
-async function getPostWithComments(postId: number) {
+const getPostWithComments = async (postId: number) => {
   console.log(`\n=== Example 5: Get post with comments ===`);
 
   const result = await fromPromise(
@@ -328,12 +328,12 @@ async function getPostWithComments(postId: number) {
 // Example 6: Using Try for unsafe operations
 // ============================================================================
 
-interface DatabaseRecord {
+type DatabaseRecord = {
   user?: string;
   data?: unknown;
-}
+};
 
-function parseDatabaseJson(jsonString: string): Result<DatabaseRecord, DatabaseError> {
+const parseDatabaseJson = (jsonString: string): Result<DatabaseRecord, DatabaseError> => {
   console.log(`\n=== Example 6: Safe JSON parsing with Try ===`);
 
   return attempt(() => JSON.parse(jsonString))
@@ -357,7 +357,7 @@ function parseDatabaseJson(jsonString: string): Result<DatabaseRecord, DatabaseE
 // Example 7: Batch operations
 // ============================================================================
 
-async function createMultiplePosts(userId: number, postDataList: Array<{ title: string; content: string }>) {
+const createMultiplePosts = async (userId: number, postDataList: Array<{ title: string; content: string }>) => {
   console.log(`\n=== Example 7: Batch operations ===`);
 
   // Verify user exists
@@ -395,7 +395,7 @@ async function createMultiplePosts(userId: number, postDataList: Array<{ title: 
 // Run all examples
 // ============================================================================
 
-async function main() {
+const main = async () => {
   console.log("╔════════════════════════════════════════════════════════════╗");
   console.log("║   Database Operations with @deessejs/core                ║");
   console.log("╚════════════════════════════════════════════════════════════╝");

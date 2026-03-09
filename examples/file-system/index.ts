@@ -17,26 +17,26 @@ import { attempt, fromPromise, ok, err, okAsync, errAsync } from "@deessejs/core
 // Types
 // ============================================================================
 
-interface FileError {
+type FileError = {
   type: "NOT_FOUND" | "PERMISSION" | "PARSE" | "UNKNOWN";
   path: string;
   message: string;
-}
+};
 
-interface ConfigFile {
+type ConfigFile = {
   name: string;
   version: string;
   options: {
     debug: boolean;
     port: number;
   };
-}
+};
 
 // ============================================================================
 // Example 1: Safe file reading with Try
 // ============================================================================
 
-function readFileSyncSafe(path: string): Result<string, FileError> {
+const readFileSyncSafe = (path: string): Result<string, FileError> => {
   console.log(`\n=== Example 1: Read File Sync (Safe) ===`);
   console.log(`  Reading: ${path}`);
 
@@ -78,7 +78,7 @@ function readFileSyncSafe(path: string): Result<string, FileError> {
 // Example 2: Async file reading
 // ============================================================================
 
-async function readFileAsync(path: string): Promise<Result<string, FileError>> {
+const readFileAsync = async (path: string): Promise<Result<string, FileError>> => {
   console.log(`\n=== Example 2: Read File Async ===`);
   console.log(`  Reading: ${path}`);
 
@@ -113,7 +113,7 @@ async function readFileAsync(path: string): Promise<Result<string, FileError>> {
 // Example 3: Read and parse JSON config
 // ============================================================================
 
-async function readConfigFile(path: string): Promise<Result<ConfigFile, FileError>> {
+const readConfigFile = async (path: string): Promise<Result<ConfigFile, FileError>> => {
   console.log(`\n=== Example 3: Read Config File ===`);
   console.log(`  Reading: ${path}`);
 
@@ -167,7 +167,7 @@ async function readConfigFile(path: string): Promise<Result<ConfigFile, FileErro
 // Example 4: Read directory contents
 // ============================================================================
 
-async function readDirectory(path: string): Promise<Result<string[], FileError>> {
+const readDirectory = async (path: string): Promise<Result<string[], FileError>> => {
   console.log(`\n=== Example 4: Read Directory ===`);
   console.log(`  Reading: ${path}`);
 
@@ -194,16 +194,16 @@ async function readDirectory(path: string): Promise<Result<string[], FileError>>
 // Example 5: Recursive directory traversal
 // ============================================================================
 
-async function findFilesByExtension(
+const findFilesByExtension = async (
   dir: string,
   extension: string
-): Promise<Result<string[], FileError>> {
+): Promise<Result<string[], FileError>> => {
   console.log(`\n=== Example 5: Find Files by Extension ===`);
   console.log(`  Searching ${dir} for *${extension}`);
 
   const results: string[] = [];
 
-  async function traverse(currentPath: string): Promise<void> {
+  const traverse = async (currentPath: string): Promise<void> => {
     const entriesResult = await fromPromise(fs.readdir(currentPath, { withFileTypes: true }));
 
     if (entriesResult.isErr()) {
@@ -233,10 +233,10 @@ async function findFilesByExtension(
 // Example 6: Safe file writing with backup
 // ============================================================================
 
-async function writeFileSafe(
+const writeFileSafe = async (
   path: string,
   content: string
-): Promise<Result<void, FileError>> {
+): Promise<Result<void, FileError>> => {
   console.log(`\n=== Example 6: Write File Safe ===`);
   console.log(`  Writing: ${path}`);
 
@@ -272,7 +272,7 @@ async function writeFileSafe(
 // Example 7: Read package.json from current directory
 // ============================================================================
 
-async function readPackageJson(): Promise<Result<any, FileError>> {
+const readPackageJson = async (): Promise<Result<any, FileError>> => {
   console.log(`\n=== Example 7: Read package.json ===`);
 
   const __filename = fileURLToPath(import.meta.url);
@@ -286,7 +286,7 @@ async function readPackageJson(): Promise<Result<any, FileError>> {
 // Run all examples
 // ============================================================================
 
-async function main() {
+const main = async () => {
   console.log("╔════════════════════════════════════════════════════════════╗");
   console.log("║   File System Operations with @deessejs/core              ║");
   console.log("╚════════════════════════════════════════════════════════════╝");

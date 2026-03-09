@@ -14,7 +14,7 @@ import { some, none, fromNullable, ok, err, toResult } from "@deessejs/core";
 // Types
 // ============================================================================
 
-interface CliConfig {
+type CliConfig = {
   // Required arguments
   input: string;
   output: string;
@@ -25,38 +25,38 @@ interface CliConfig {
   dryRun: boolean;
   config?: string;
   threads?: number;
-}
+};
 
-interface ParseError {
+type ParseError = {
   arg: string;
   message: string;
-}
+};
 
 // ============================================================================
 // Example 1: Parse optional flags with Maybe
 // ============================================================================
 
-function parseOptionalFlag(args: string[], flag: string): boolean {
+const parseOptionalFlag = (args: string[], flag: string): boolean => {
   console.log(`  Checking flag: ${flag}`);
 
   return fromNullable(args.includes(flag))
     .map((present) => present)
     .getOrElse(false);
-}
+};
 
-function parseOptionalValue(args: string[], flag: string): Maybe<string> {
+const parseOptionalValue = (args: string[], flag: string): Maybe<string> => {
   const index = args.indexOf(flag);
   if (index === -1 || index === args.length - 1) {
     return none();
   }
   return some(args[index + 1]);
-}
+};
 
 // ============================================================================
 // Example 2: Parse required arguments with Result
 // ============================================================================
 
-function parseRequiredArg(args: string[], flag: string): Result<string, ParseError> {
+const parseRequiredArg = (args: string[], flag: string): Result<string, ParseError> => {
   console.log(`  Parsing required: ${flag}`);
 
   const index = args.indexOf(flag);
@@ -75,9 +75,9 @@ function parseRequiredArg(args: string[], flag: string): Result<string, ParseErr
   }
 
   return ok(args[index + 1]);
-}
+};
 
-function parseRequiredInt(args: string[], flag: string): Result<number, ParseError> {
+const parseRequiredInt = (args: string[], flag: string): Result<number, ParseError> => {
   return parseRequiredArg(args, flag).flatMap((value) => {
     const parsed = parseInt(value, 10);
     if (isNaN(parsed)) {
@@ -88,13 +88,13 @@ function parseRequiredInt(args: string[], flag: string): Result<number, ParseErr
     }
     return ok(parsed);
   });
-}
+};
 
 // ============================================================================
 // Example 3: Complete CLI parser
 // ============================================================================
 
-function parseCliArgs(args: string[]): Result<CliConfig, ParseError> {
+const parseCliArgs = (args: string[]): Result<CliConfig, ParseError> => {
   console.log("\n=== Parsing CLI Arguments ===");
   console.log(`  Raw args: ${args.join(" ")}`);
 
@@ -144,13 +144,13 @@ function parseCliArgs(args: string[]): Result<CliConfig, ParseError> {
 
 type SubCommand = "build" | "test" | "deploy";
 
-interface ParsedCommand {
+type ParsedCommand = {
   command: SubCommand;
   args: string[];
   options: Record<string, string | boolean>;
-}
+};
 
-function parseSubCommand(args: string[]): Result<ParsedCommand, ParseError> {
+const parseSubCommand = (args: string[]): Result<ParsedCommand, ParseError> => {
   console.log("\n=== Parsing Subcommand ===");
 
   const commands: SubCommand[] = ["build", "test", "deploy"];
@@ -191,13 +191,13 @@ function parseSubCommand(args: string[]): Result<ParsedCommand, ParseError> {
     args: remainingArgs.filter((a) => !a.startsWith("--")),
     options,
   });
-}
+};
 
 // ============================================================================
 // Example 5: Validate conflicting flags
 // ============================================================================
 
-function parseWithValidation(args: string[]): Result<CliConfig, ParseError> {
+const parseWithValidation = (args: string[]): Result<CliConfig, ParseError> => {
   console.log("\n=== Parse with Validation ===");
 
   const configResult = parseCliArgs(args);
@@ -226,13 +226,13 @@ function parseWithValidation(args: string[]): Result<CliConfig, ParseError> {
   console.log("✓ Configuration validated");
 
   return ok(config);
-}
+};
 
 // ============================================================================
 // Example 6: Build help text
 // ============================================================================
 
-function showHelp(parsed: Result<CliConfig, ParseError>) {
+const showHelp = (parsed: Result<CliConfig, ParseError>) => {
   console.log("\n=== CLI Tool Help ===\n");
 
   console.log("Usage: cli-tool [options]\n");
@@ -257,13 +257,13 @@ function showHelp(parsed: Result<CliConfig, ParseError>) {
     console.log(`Error: ${parsed.error.message}\n`);
     process.exit(1);
   }
-}
+};
 
 // ============================================================================
 // Run all examples
 // ============================================================================
 
-function main() {
+const main = () => {
   // Simulate command line arguments
   const processArgs = process.argv.slice(2);
 
@@ -312,6 +312,6 @@ function main() {
   console.log("\n╔════════════════════════════════════════════════════════════╗");
   console.log("║   CLI parsing completed                                   ║");
   console.log("╚════════════════════════════════════════════════════════════╝");
-}
+};
 
 main();

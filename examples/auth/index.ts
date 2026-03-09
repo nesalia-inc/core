@@ -14,30 +14,30 @@ import { fromPromise, okAsync, errAsync, success, cause, exception, ok, err } fr
 // Types
 // ============================================================================
 
-interface User {
+type User = {
   id: number;
   email: string;
   passwordHash: string;
   mfaEnabled: boolean;
-}
+};
 
-interface AuthToken {
+type AuthToken = {
   accessToken: string;
   refreshToken: string;
   expiresAt: Date;
-}
+};
 
-interface BusinessError {
+type BusinessError = {
   code: string;
   message: string;
   userMessage: string;
-}
+};
 
-interface SystemError {
+type SystemError = {
   type: string;
   message: string;
   internal: boolean;
-}
+};
 
 type AuthResult = Outcome<
   { user: User; token: AuthToken },
@@ -88,35 +88,35 @@ const db = new UserDatabase();
 // Mock Services
 // ============================================================================
 
-async function verifyPassword(password: string, hash: string): Promise<boolean> {
+const verifyPassword = async (password: string, hash: string): Promise<boolean> => {
   await delay(100);
   return password === "correctpassword"; // Simplified
-}
+};
 
-async function verifyMfaCode(userId: number, code: string): Promise<boolean> {
+const verifyMfaCode = async (userId: number, code: string): Promise<boolean> => {
   await delay(100);
   return code === "123456"; // Simplified
-}
+};
 
-async function generateToken(user: User): Promise<AuthToken> {
+const generateToken = async (user: User): Promise<AuthToken> => {
   await delay(50);
   return {
     accessToken: `access_${user.id}_${Date.now()}`,
     refreshToken: `refresh_${user.id}_${Date.now()}`,
     expiresAt: new Date(Date.now() + 3600000), // 1 hour
   };
-}
+};
 
-async function validateToken(token: string): Promise<{ userId: number } | null> {
+const validateToken = async (token: string): Promise<{ userId: number } | null> => {
   await delay(50);
   if (token.startsWith("access_")) {
     const userId = parseInt(token.split("_")[1]);
     return { userId };
   }
   return null;
-}
+};
 
-async function refreshAccessToken(refreshToken: string): Promise<AuthToken | null> {
+const refreshAccessToken = async (refreshToken: string): Promise<AuthToken | null> => {
   await delay(50);
   if (refreshToken.startsWith("refresh_")) {
     const userId = parseInt(refreshToken.split("_")[1]);
@@ -126,17 +126,17 @@ async function refreshAccessToken(refreshToken: string): Promise<AuthToken | nul
     }
   }
   return null;
-}
+};
 
-function delay(ms: number): Promise<void> {
+const delay = (ms: number): Promise<void> => {
   return new Promise((resolve) => setTimeout(resolve, ms));
-}
+};
 
 // ============================================================================
 // Example 1: Simple login with Outcome
 // ============================================================================
 
-async function login(email: string, password: string): Promise<AuthResult> {
+const login = async (email: string, password: string): Promise<AuthResult> => {
   console.log(`\n=== Example 1: Simple Login ===`);
   console.log(`  Login attempt for: ${email}`);
 
@@ -186,11 +186,11 @@ async function login(email: string, password: string): Promise<AuthResult> {
 // Example 2: Login with MFA
 // ============================================================================
 
-async function loginWithMfa(
+const loginWithMfa = async (
   email: string,
   password: string,
   mfaCode?: string
-): Promise<AuthResult> {
+): Promise<AuthResult> => {
   console.log(`\n=== Example 2: Login with MFA ===`);
   console.log(`  Login attempt for: ${email}`);
 
@@ -256,13 +256,13 @@ async function loginWithMfa(
 
   console.log(`  ✓ Login successful with MFA`);
   return success({ user, token: tokenResult.value });
-}
+};
 
 // ============================================================================
 // Example 3: Token validation
 // ============================================================================
 
-async function validateAuthToken(token: string): Promise<Outcome<User, BusinessError, SystemError>> {
+const validateAuthToken = async (token: string): Promise<Outcome<User, BusinessError, SystemError>> => {
   console.log(`\n=== Example 3: Token Validation ===`);
 
   const validation = await fromPromise(validateToken(token));
@@ -298,9 +298,9 @@ async function validateAuthToken(token: string): Promise<Outcome<User, BusinessE
 // Example 4: Token refresh
 // ============================================================================
 
-async function refreshAuthToken(
+const refreshAuthToken = async (
   refreshToken: string
-): Promise<Outcome<AuthToken, BusinessError, SystemError>> {
+): Promise<Outcome<AuthToken, BusinessError, SystemError>> => {
   console.log(`\n=== Example 4: Token Refresh ===`);
 
   const newToken = await fromPromise(refreshAccessToken(refreshToken));
@@ -316,13 +316,13 @@ async function refreshAuthToken(
 
   console.log(`  ✓ Token refreshed successfully`);
   return success(newToken.value);
-}
+};
 
 // ============================================================================
 // Example 5: Complete auth flow with error handling
 // ============================================================================
 
-async function completeAuthFlow() {
+const completeAuthFlow = async () => {
   console.log(`\n=== Example 5: Complete Auth Flow ===`);
 
   // Scenario 1: Successful login
@@ -378,7 +378,7 @@ async function completeAuthFlow() {
 // Run all examples
 // ============================================================================
 
-async function main() {
+const main = async () => {
   console.log("╔════════════════════════════════════════════════════════════╗");
   console.log("║   Authentication Flow with @deessejs/core                 ║");
   console.log("╚════════════════════════════════════════════════════════════╝");

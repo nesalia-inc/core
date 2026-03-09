@@ -14,44 +14,44 @@ import { fromPromise, okAsync, errAsync, race, all, traverse } from "@deessejs/c
 // Types
 // ============================================================================
 
-interface User {
+type User = {
   id: number;
   name: string;
   email: string;
-}
+};
 
-interface Post {
+type Post = {
   id: number;
   userId: number;
   title: string;
-}
+};
 
-interface Comment {
+type Comment = {
   id: number;
   postId: number;
   text: string;
-}
+};
 
-interface DataError {
+type DataError = {
   type: "NOT_FOUND" | "TIMEOUT" | "NETWORK";
   message: string;
-}
+};
 
 // ============================================================================
 // Mock API functions
 // ============================================================================
 
-async function fetchUser(id: number): Promise<User> {
+const fetchUser = async (id: number): Promise<User> => {
   await delay(100 + Math.random() * 100);
   return { id, name: `User ${id}`, email: `user${id}@example.com` };
 }
 
-async function fetchPost(id: number): Promise<Post> {
+const fetchPost = async (id: number): Promise<Post> => {
   await delay(100 + Math.random() * 100);
   return { id, userId: 1, title: `Post ${id}` };
 }
 
-async function fetchComments(postId: number): Promise<Comment[]> {
+const fetchComments = async (postId: number): Promise<Comment[]> => {
   await delay(100 + Math.random() * 100);
   return [
     { id: 1, postId, text: "Great!" },
@@ -59,7 +59,7 @@ async function fetchComments(postId: number): Promise<Comment[]> {
   ];
 }
 
-function delay(ms: number): Promise<void> {
+const delay = (ms: number): Promise<void> => {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
@@ -67,7 +67,7 @@ function delay(ms: number): Promise<void> {
 // Example 1: Fetch multiple users in parallel
 // ============================================================================
 
-async function fetchMultipleUsers(ids: number[]) {
+const fetchMultipleUsers = async (ids: number[]) => {
   console.log(`\n=== Example 1: Fetch Multiple Users in Parallel ===`);
   console.time("Fetch time");
 
@@ -94,7 +94,7 @@ async function fetchMultipleUsers(ids: number[]) {
 // Example 2: Race between multiple servers
 // ============================================================================
 
-async function fetchFromFastestServer(userId: number) {
+const fetchFromFastestServer = async (userId: number) => {
   console.log(`\n=== Example 2: Race Between Servers ===`);
   console.time("Race time");
 
@@ -131,7 +131,7 @@ async function fetchFromFastestServer(userId: number) {
 // Example 3: Traverse - Map array with async operations
 // ============================================================================
 
-async function fetchPostsForUsers(userIds: number[]) {
+const fetchPostsForUsers = async (userIds: number[]) => {
   console.log(`\n=== Example 3: Traverse Pattern ===`);
   console.time("Traverse time");
 
@@ -169,7 +169,7 @@ async function fetchPostsForUsers(userIds: number[]) {
 // Example 4: Aggregate data from multiple sources
 // ============================================================================
 
-async function aggregateUserData(userId: number) {
+const aggregateUserData = async (userId: number) => {
   console.log(`\n=== Example 4: Aggregate from Multiple Sources ===`);
 
   // Fetch all data in parallel
@@ -198,7 +198,7 @@ async function aggregateUserData(userId: number) {
 // Example 5: Batch processing with parallelism
 // ============================================================================
 
-async function processBatch(items: number[], batchSize: number = 3) {
+const processBatch = async (items: number[], batchSize: number = 3) => {
   console.log(`\n=== Example 5: Batch Processing ===`);
 
   const allResults: Array<{ id: number; data: User }> = [];
@@ -222,7 +222,7 @@ async function processBatch(items: number[], batchSize: number = 3) {
 // Example 6: Fallback pattern with race
 // ============================================================================
 
-async function fetchWithFallback(userId: number) {
+const fetchWithFallback = async (userId: number) => {
   console.log(`\n=== Example 6: Fallback Pattern ===`);
 
   // Try cache first, fallback to primary
@@ -253,7 +253,7 @@ async function fetchWithFallback(userId: number) {
 // Example 7: Complex data pipeline
 // ============================================================================
 
-async function buildUserDashboard(userId: number) {
+const buildUserDashboard = async (userId: number) => {
   console.log(`\n=== Example 7: Complex Data Pipeline ===`);
 
   const result = await fromPromise(fetchUser(userId))
@@ -291,7 +291,7 @@ async function buildUserDashboard(userId: number) {
 // Run all examples
 // ============================================================================
 
-async function main() {
+const main = async () => {
   console.log("╔════════════════════════════════════════════════════════════╗");
   console.log("║   Parallel Data Fetching with @deessejs/core              ║");
   console.log("╚════════════════════════════════════════════════════════════╝");
