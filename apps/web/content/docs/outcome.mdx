@@ -13,9 +13,9 @@ The `Outcome` type provides rich error handling with three variants: `Success` f
 type Outcome<T, C = unknown, E = unknown> = Success<T> | Cause<C> | Exception<E>;
 ```
 
-- **Success<T>** - Represents a successful operation with value `T`
-- **Cause<C>** - Represents an expected error with cause data `C`
-- **Exception<E>** - Represents an unexpected error with exception data `E`
+- **`Success<T>`** - Represents a successful operation with value `T`
+- **`Cause<C>`** - Represents an expected error with cause data `C`
+- **`Exception<E>`** - Represents an unexpected error with exception data `E`
 
 ## Creating an Outcome
 
