@@ -15,8 +15,8 @@ type AsyncResult<T, E = Error> = Promise<AsyncResultInner<T, E>>;
 type AsyncResultInner<T, E> = AsyncOk<T> | AsyncErr<E>;
 ```
 
-- **AsyncOk<T>** - Successful async result with value `T`
-- **AsyncErr<E>** - Failed async result with error `E`
+- **`AsyncOk<T>`** - Successful async result with value `T`
+- **`AsyncErr<E>`** - Failed async result with error `E`
 
 ## Creating an AsyncResult
 
