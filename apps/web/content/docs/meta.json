@@ -1,70 +1,21 @@
 {
-  "Getting Started": {
-    "title": "Getting Started",
-    "pages": [
-      {
-        "title": "Introduction",
-        "url": "/docs"
-      },
-      {
-        "title": "Installation",
-        "url": "/docs/installation"
-      }
-    ]
-  },
-  "Core Types": {
-    "title": "Core Types",
-    "pages": [
-      {
-        "title": "Result",
-        "url": "/docs/result"
-      },
-      {
-        "title": "Maybe",
-        "url": "/docs/maybe"
-      },
-      {
-        "title": "Try",
-        "url": "/docs/try"
-      },
-      {
-        "title": "Outcome",
-        "url": "/docs/outcome"
-      },
-      {
-        "title": "AsyncResult",
-        "url": "/docs/async-result"
-      }
-    ]
-  },
-  "Utilities": {
-    "title": "Utilities",
-    "pages": [
-      {
-        "title": "Sleep",
-        "url": "/docs/sleep"
-      },
-      {
-        "title": "Retry",
-        "url": "/docs/retry"
-      },
-      {
-        "title": "Conversions",
-        "url": "/docs/conversions"
-      }
-    ]
-  },
-  "Advanced": {
-    "title": "Advanced",
-    "pages": [
-      {
-        "title": "Examples",
-        "url": "/docs/examples"
-      },
-      {
-        "title": "FAQ",
-        "url": "/docs/faq"
-      }
-    ]
-  }
+  "title": "Documentation",
+  "pages": [
+    "---Getting Started---",
+    "index",
+    "installation",
+    "---Core Types---",
+    "result",
+    "maybe",
+    "try",
+    "outcome",
+    "async-result",
+    "---Utilities---",
+    "sleep",
+    "retry",
+    "conversions",
+    "---Advanced---",
+    "examples",
+    "faq"
+  ]
 }
