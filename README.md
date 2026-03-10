@@ -2,7 +2,7 @@
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="public/icon.png">
     <source media="(prefers-color-scheme: light)" srcset="public/icon.png">
-    <img src="public/icon.png" alt="@deessejs/core" width="150" height="150" style="border-radius: 50%;">
+    <img src="public/icon.png" alt="Nesalia Logo" width="100%">
   </picture>
 </p>
 
