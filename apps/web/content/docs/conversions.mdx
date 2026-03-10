@@ -1,0 +1,139 @@
+---
+title: Conversions
+description: Convert between Result, Maybe, Try, and Outcome types
+---
+
+# Conversions
+
+The library provides utilities to convert between different types: `Result`, `Maybe`, `Try`, and `Outcome`.
+
+## Maybe to Result
+
+### toResult - Convert Maybe to Result
+
+```typescript
+import { some, none, toResult } from "@deessejs/core";
+
+const success = toResult(some(42), () => "error");
+console.log(success.value); // 42
+
+const failure = toResult(none(), () => "error");
+console.log(failure.error); // "error"
+```
+
+### toResult Options
+
+```typescript
+interface ToResultOptions<E> {
+  /** Error to use when Maybe is None */
+  onNone: () => E;
+}
+```
+
+## Maybe to Outcome
+
+### toOutcome - Convert Maybe to Outcome
+
+```typescript
+import { some, toOutcome } from "@deessejs/core";
+
+const outcome = toOutcome(some(42));
+// Success(42)
+
+const cause = toOutcome(none());
+// Cause({ name: "NONE", message: "Value is none" })
+```
+
+## Result to Outcome
+
+### toOutcomeFromResult - Convert Result to Outcome
+
+```typescript
+import { ok, err, toOutcome } from "@deessejs/core";
+
+toOutcome(ok(42));      // Success(42)
+toOutcome(err("error")); // Cause({ message: "error" })
+```
+
+## Outcome to Result
+
+### toResultFromOutcome - Convert Outcome to Result
+
+```typescript
+import { success, cause, toResult } from "@deessejs/core";
+
+toResult(success(42));       // Ok(42)
+toResult(cause({ name: "E", message: "e" })); // Err(...)
+```
+
+## Result to Maybe
+
+### toMaybeFromResult - Convert Result to Maybe
+
+```typescript
+import { ok, err, toMaybe } from "@deessejs/core";
+
+toMaybe(ok(42));  // Some(42)
+toMaybe(err("e")); // None
+```
+
+## Outcome to Maybe
+
+### toMaybeFromOutcome - Convert Outcome to Maybe
+
+```typescript
+import { success, cause, toMaybe } from "@deessejs/core";
+
+toMaybe(success(42));       // Some(42)
+toMaybe(cause({ name: "E", message: "e" })); // None
+```
+
+## Undefined-able to Maybe
+
+### fromUndefinedable - Convert Undefined-able to Maybe
+
+```typescript
+import { fromUndefinedable } from "@deessejs/core";
+
+fromUndefinedable(42);    // Some(42)
+fromUndefinedable(undefined); // None
+```
+
+## Try to Outcome
+
+### toOutcomeFromTry - Convert Try to Outcome
+
+```typescript
+import { attempt, toOutcome } from "@deessejs/core";
+
+toOutcome(attempt(() => 42)); // Success(42)
+
+const failed = attempt(() => { throw new Error("fail"); });
+toOutcome(failed); // Exception({ name: "SYSTEM_ERROR", message: "fail" })
+```
+
+## Outcome to Try
+
+### toTryFromOutcome - Convert Outcome to Try
+
+```typescript
+import { success, cause, exception, toTry } from "@deessejs/core";
+
+toTry(success(42));       // Ok(42)
+toTry(cause({ name: "E", message: "e" })); // Err(Error: e)
+toTry(exception({ name: "E", message: "e" })); // Err(Error: e)
+```
+
+## API Reference
+
+| Function | Description |
+|----------|-------------|
+| `toResult(maybe, onNone)` | Maybe → Result |
+| `toOutcome(maybe, options?)` | Maybe → Outcome |
+| `toOutcomeFromResult(result)` | Result → Outcome |
+| `toResultFromOutcome(outcome)` | Outcome → Result |
+| `toMaybeFromResult(result)` | Result → Maybe |
+| `toMaybeFromOutcome(outcome)` | Outcome → Maybe |
+| `fromUndefinedable(value)` | undefined/null → Maybe |
+| `toOutcomeFromTry(t)` | Try → Outcome |
+| `toTryFromOutcome(outcome)` | Outcome → Try |

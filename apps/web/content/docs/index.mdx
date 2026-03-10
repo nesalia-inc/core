@@ -1,13 +1,56 @@
 ---
-title: Hello World
-description: Your first document
+title: Introduction
+description: Type-safe error handling for TypeScript with Result, Maybe, Try, Outcome, and AsyncResult monads
 ---
 
-Welcome to the docs! You can start writing documents in `/content/docs`.
+# @deessejs/core
 
-## What is Next?
+**@deessejs/core** is a TypeScript library that provides functional programming patterns for type-safe error handling. It offers zero-runtime-dependency monads with a clean, composable API.
 
-<Cards>
-  <Card title="Learn more about Next.js" href="https://nextjs.org/docs" />
-  <Card title="Learn more about Fumadocs" href="https://fumadocs.dev" />
-</Cards>
+## Why @deessejs/core?
+
+Traditional error handling in TypeScript often relies on exceptions and try-catch blocks, which can make code difficult to read and maintain. This library provides **algebraic data types** (ADTs) that make error handling explicit, composable, and type-safe.
+
+## Core Types
+
+| Type | Use Case |
+|------|----------|
+| **Result** | Explicit success/failure with typed errors |
+| **Maybe** | Handle optional values without null/undefined |
+| **Try** | Wrap synchronous functions that might throw |
+| **Outcome** | Rich error handling with cause and exception tracking |
+| **AsyncResult** | Async operations with proper error typing |
+
+## Features
+
+- **Zero runtime dependencies** - Lightweight bundle
+- **Full TypeScript support** - Complete type inference
+- **Composable API** - Chain operations easily
+- **Functional patterns** - map, flatMap, tap, match, and more
+- **Utilities** - Sleep, retry, conversions between types
+
+## Quick Example
+
+```typescript
+import { ok, err, map, getOrElse } from "@deessejs/core";
+
+// Traditional error handling
+const divide = (a: number, b: number): Result<number, string> => {
+  if (b === 0) return err("Division by zero");
+  return ok(a / b);
+};
+
+const result = divide(10, 2)
+  .map(x => x * 2)  // Transform the value
+  .getOrElse(0);    // Provide default if error
+```
+
+## Installation
+
+```bash
+pnpm add @deessejs/core
+```
+
+## License
+
+MIT

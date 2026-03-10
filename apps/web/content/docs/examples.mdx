@@ -1,0 +1,224 @@
+---
+title: Examples
+description: Real-world usage examples for @deessejs/core
+---
+
+# Examples
+
+Practical examples demonstrating how to use `@deessejs/core` in real applications.
+
+## HTTP API with Retry
+
+```typescript
+import { retryAsync, okAsync, errAsync } from "@deessejs/core";
+
+const fetchWithRetry = async <T>(url: string): Promise<T> => {
+  return retryAsync(
+    async () => {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.json() as Promise<T>;
+    },
+    {
+      attempts: 3,
+      delay: 1000,
+      backoff: "exponential",
+      predicate: (error) => error.message.includes("fetch"),
+    }
+  );
+};
+
+// Usage
+const user = await fetchWithRetry<User>("/api/user/1");
+```
+
+## Configuration Parsing
+
+```typescript
+import { fromNullable, map, getOrElse } from "@deessejs/core";
+
+interface Config {
+  apiUrl: string;
+  timeout: number;
+  retries: number;
+}
+
+const getConfig = (env: Record<string, string>): Config => ({
+  apiUrl: fromNullable(env.API_URL)
+    .map(url => url)
+    .getOrElse("https://api.default.com"),
+
+  timeout: fromNullable(env.TIMEOUT)
+    .map(Number)
+    .getOrElse(5000),
+
+  retries: fromNullable(env.RETRIES)
+    .map(Number)
+    .getOrElse(3),
+});
+```
+
+## Form Validation
+
+```typescript
+import { ok, err, Result, map2, map3 } from "@deessejs/core";
+
+interface User {
+  name: string;
+  email: string;
+  age: number;
+}
+
+const validateName = (name: string): Result<string, string> =>
+  name.length >= 2
+    ? ok(name)
+    : err("Name must be at least 2 characters");
+
+const validateEmail = (email: string): Result<string, string> =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    ? ok(email)
+    : err("Invalid email format");
+
+const validateAge = (age: number): Result<number, string> =>
+  age >= 18 && age <= 120
+    ? ok(age)
+    : err("Age must be between 18 and 120");
+
+const validateUser = (data: User): Result<User, string[]> => {
+  const nameResult = validateName(data.name);
+  const emailResult = validateEmail(data.email);
+  const ageResult = validateAge(data.age);
+
+  // Using map3 to combine results
+  return map3(
+    nameResult,
+    emailResult,
+    ageResult,
+    (name, email, age) => ({ name, email, age })
+  );
+};
+```
+
+## JSON Parsing
+
+```typescript
+import { attempt, map, getOrElse } from "@deessejs/core";
+
+interface User {
+  id: number;
+  name: string;
+}
+
+const parseJson = <T>(json: string): T =>
+  attempt(() => JSON.parse(json) as T)
+    .map(value => value as T)
+    .getOrElse(null as unknown as T);
+
+// Usage
+const user = parseJson<User>('{"id": 1, "name": "John"}');
+```
+
+## Database Queries
+
+```typescript
+import { ok, err, Result } from "@deessejs/core";
+
+interface User {
+  id: number;
+  name: string;
+}
+
+const findUser = async (id: string): Promise<Result<User, string>> => {
+  try {
+    const user = await db.users.findUnique({ where: { id } });
+    return user ? ok(user) : err("User not found");
+  } catch (error) {
+    return err(`Database error: ${error.message}`);
+  }
+};
+
+// Usage with chaining
+const result = await findUser("123")
+  .map(user => user.name)
+  .getOrElse("Unknown");
+```
+
+## Parallel API Calls
+
+```typescript
+import { okAsync, all, traverse, map } from "@deessejs/core";
+
+interface User {
+  id: number;
+  posts: Post[];
+}
+
+const fetchUser = (id: number) => okAsync({ id, posts: [] } as User);
+
+const fetchUsers = async (ids: number[]) => {
+  // Fetch all users in parallel
+  return all(...ids.map(fetchUser));
+};
+
+const fetchUserWithPosts = async (userId: number) => {
+  const user = await fetchUser(userId);
+  return map(user, u => ({
+    ...u,
+    posts: await traverse([1, 2, 3], id => fetchPost(id))
+  }));
+};
+```
+
+## Error Logging
+
+```typescript
+import { ok, tapErr } from "@deessejs/core";
+
+const logError = (error: unknown) => {
+  console.error(`[ERROR]`, error);
+};
+
+const result = ok(42)
+  .tapErr(error => logError(error)); // No-op for success
+
+const failed = err("error")
+  .tapErr(error => logError(error)); // Logs: error
+```
+
+## Chaining Operations
+
+```typescript
+import { ok, err, flatMap, map } from "@deessejs/core";
+
+const parseNumber = (s: string): Result<number, string> => {
+  const n = Number(s);
+  return isNaN(n) ? err("Invalid number") : ok(n);
+};
+
+const divide = (a: number, b: number): Result<number, string> =>
+  b === 0 ? err("Division by zero") : ok(a / b);
+
+const result = ok("10")
+  .flatMap(parseNumber)
+  .flatMap(n => divide(n, 2))
+  .map(n => n * 2);
+
+console.log(result.value); // 10
+```
+
+## Optional Values
+
+```typescript
+import { some, none, fromNullable, map, getOrElse } from "@deessejs/core";
+
+interface Config {
+  debug?: boolean;
+  logLevel?: "info" | "warn" | "error";
+}
+
+// Process optional values safely
+const processConfig = (config: Record<string, unknown>): Config => ({
+  debug: fromNullable(config.debug).getOrElse(false),
+  logLevel: fromNullable(config.logLevel).getOrElse("info"),
+});
+```

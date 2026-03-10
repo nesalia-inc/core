@@ -1,0 +1,138 @@
+---
+title: Outcome
+description: Rich error handling with Success, Cause, and Exception
+---
+
+# Outcome
+
+The `Outcome` type provides rich error handling with three variants: `Success` for successful operations, `Cause` for expected/business errors, and `Exception` for unexpected system errors.
+
+## Overview
+
+```typescript
+type Outcome<T, C = unknown, E = unknown> = Success<T> | Cause<C> | Exception<E>;
+```
+
+- **Success<T>** - Represents a successful operation with value `T`
+- **Cause<C>** - Represents an expected error with cause data `C`
+- **Exception<E>** - Represents an unexpected error with exception data `E`
+
+## Creating an Outcome
+
+### success - Create a Success
+
+```typescript
+import { success, isSuccess } from "@deessejs/core";
+
+const outcome = success(42);
+console.log(isSuccess(outcome)); // true
+console.log(outcome.value); // 42
+```
+
+### successUnit - Create Unit Success
+
+```typescript
+import { successUnit } from "@deessejs/core";
+
+const outcome = successUnit(); // Success<void>
+```
+
+### cause - Create a Cause (Business Error)
+
+```typescript
+import { cause, isCause } from "@deessejs/core";
+
+const outcome = cause({
+  name: "VALIDATION_ERROR",
+  message: "Invalid email format",
+  data: { field: "email" }
+});
+
+console.log(isCause(outcome)); // true
+console.log(outcome.message); // "Invalid email format"
+```
+
+### causeUnit - Create Unit Cause
+
+```typescript
+import { causeUnit } from "@deessejs/core";
+
+const outcome = causeUnit();
+// Cause with undefined data
+```
+
+### exception - Create an Exception (System Error)
+
+```typescript
+import { exception, isException } from "@deessejs/core";
+
+const outcome = exception({
+  name: "NETWORK_ERROR",
+  message: "Connection refused"
+});
+
+console.log(isException(outcome)); // true
+console.log(outcome.name); // "NETWORK_ERROR"
+```
+
+### exceptionWithStack - With Stack Trace
+
+```typescript
+import { exceptionWithStack } from "@deessejs/core";
+
+const outcome = exceptionWithStack({
+  name: "ERROR",
+  message: "Failed"
+});
+// Automatically captures stack trace
+```
+
+### exceptionUnit - Create Unit Exception
+
+```typescript
+import { exceptionUnit } from "@deessejs/core";
+
+const outcome = exceptionUnit();
+```
+
+## Type Guards
+
+### isSuccess - Check for Success
+
+```typescript
+import { success, cause, isSuccess } from "@deessejs/core";
+
+isSuccess(success(42)); // true
+isSuccess(cause({ name: "E", message: "e" })); // false
+```
+
+### isCause - Check for Cause
+
+```typescript
+import { cause, isCause } from "@deessejs/core";
+
+isCause(cause({ name: "E", message: "e" })); // true
+```
+
+### isException - Check for Exception
+
+```typescript
+import { exception, isException } from "@deessejs/core";
+
+isException(exception({ name: "E", message: "e" })); // true
+```
+
+## API Reference
+
+| Function | Description |
+|----------|-------------|
+| `success<T>(value: T)` | Create a Success |
+| `successUnit()` | Create a unit Success |
+| `cause<C>(options)` | Create a Cause with name, message, data |
+| `causeUnit()` | Create a unit Cause |
+| `exception<E>(options)` | Create an Exception |
+| `exceptionWithStack<E>(options)` | Exception with stack trace |
+| `exceptionUnit()` | Create a unit Exception |
+| `isSuccess(outcome)` | Type guard for Success |
+| `isCause(outcome)` | Type guard for Cause |
+| `isException(outcome)` | Type guard for Exception |

@@ -1,0 +1,198 @@
+---
+title: FAQ
+description: Frequently asked questions about @deessejs/core
+---
+
+# Frequently Asked Questions
+
+## General
+
+### What is @deessejs/core?
+
+`@deessejs/core` is a TypeScript library that provides functional programming patterns for type-safe error handling. It offers monads like `Result`, `Maybe`, `Try`, `Outcome`, and `AsyncResult`.
+
+### Why should I use this instead of try-catch?
+
+Traditional `try-catch` has several drawbacks:
+- Errors can escape unexpectedly
+- Error types are not statically verified
+- Error handling logic can become nested and messy
+- It's easy to forget to handle an error
+
+With `@deessejs/core`:
+- Errors are explicit in the type signature
+- You must handle both success and failure cases
+- Operations are composable and chainable
+- TypeScript ensures you handle all cases
+
+### When should I use each type?
+
+| Type | Use When |
+|------|----------|
+| **Result** | You need explicit error handling with typed errors |
+| **Maybe** | A value might or might not exist (optional) |
+| **Try** | Wrapping synchronous functions that might throw |
+| **Outcome** | You need rich error context (cause vs exception) |
+| **AsyncResult** | Async operations with error handling |
+
+## Usage
+
+### How do I create a Result?
+
+```typescript
+import { ok, err } from "@deessejs/core";
+
+const success = ok(42);
+const failure = err("Something went wrong");
+```
+
+### How do I handle errors?
+
+Use `match` for exhaustive handling:
+
+```typescript
+import { ok, err, match } from "@deessejs/core";
+
+const result = ok(42);
+const message = match(
+  result,
+  (value) => `Got: ${value}`,
+  (error) => `Error: ${error}`
+);
+```
+
+Or use `getOrElse` for simple default values:
+
+```typescript
+const value = result.getOrElse(0);
+```
+
+### How do I chain operations?
+
+Use `map` for transforming values:
+
+```typescript
+const result = ok(10)
+  .map(x => x * 2)  // Ok(20)
+  .map(x => x + 1); // Ok(21)
+```
+
+Use `flatMap` for chaining that returns Results:
+
+```typescript
+const result = ok("10")
+  .flatMap(s => parseNumber(s)) // Result<number, string>
+  .flatMap(n => divide(n, 2)); // Result<number, string>
+```
+
+### How do I convert between types?
+
+Use the conversion utilities:
+
+```typescript
+import { toResult, toMaybe, toOutcome } from "@deessejs/core";
+
+// Maybe → Result
+const result = toResult(maybe, () => "error");
+
+// Result → Maybe
+const maybe = toMaybe(result);
+
+// Result → Outcome
+const outcome = toOutcome(result);
+```
+
+## Performance
+
+### Is it performant?
+
+Yes! The library is designed with performance in mind:
+- Zero runtime dependencies
+- Minimal object allocations
+- All methods are inlined where possible
+- Tree-shakeable exports
+
+### Does it add bundle size?
+
+The entire library is very lightweight. Each type adds minimal overhead:
+- `Result`: ~1KB
+- `Maybe`: ~1KB
+- `Try`: ~1KB
+- `Outcome`: ~1KB
+- `AsyncResult`: ~1KB
+
+## TypeScript
+
+### Do I need strict mode?
+
+We recommend using TypeScript's strict mode for the best experience:
+
+```json
+{
+  "compilerOptions": {
+    "strict": true
+  }
+}
+```
+
+### Can I use with JavaScript?
+
+Yes, but you'll lose the type safety benefits. The library works with plain JavaScript.
+
+## Migration
+
+### How do I migrate from throwing exceptions?
+
+Instead of:
+
+```typescript
+function divide(a: number, b: number): number {
+  if (b === 0) throw new Error("Division by zero");
+  return a / b;
+}
+```
+
+Use:
+
+```typescript
+import { ok, err, Result } from "@deessejs/core";
+
+function divide(a: number, b: number): Result<number, string> {
+  if (b === 0) return err("Division by zero");
+  return ok(a / b);
+}
+```
+
+### How do I migrate from null/undefined?
+
+Instead of:
+
+```typescript
+function getConfig(key: string): string | undefined {
+  return config[key];
+}
+
+const value = getConfig("key") ?? "default";
+```
+
+Use:
+
+```typescript
+import { fromNullable, getOrElse } from "@deessejs/core";
+
+const value = fromNullable(config[key])
+  .getOrElse("default");
+```
+
+## Contributing
+
+### How can I contribute?
+
+See our GitHub repository for contribution guidelines.
+
+### Is this production ready?
+
+Yes, `@deessejs/core` is used in production. It has:
+- Comprehensive test coverage
+- Full TypeScript support
+- Well-documented API
