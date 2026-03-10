@@ -1,0 +1,140 @@
+---
+title: Sleep
+description: Async sleep and timeout utilities
+---
+
+# Sleep
+
+The `sleep` utility provides asynchronous delay functionality, essential for retry mechanisms, rate limiting, and testing.
+
+## sleep - Basic Delay
+
+```typescript
+import { sleep } from "@deessejs/core";
+
+await sleep(1000); // Wait 1 second
+```
+
+### With Zero Delay
+
+```typescript
+await sleep(0); // Yields to event loop
+```
+
+## withTimeout - Add Timeout to Promise
+
+```typescript
+import { withTimeout } from "@deessejs/core";
+
+try {
+  const result = await withTimeout(
+    fetch("/api/slow"),
+    5000, // 5 second timeout
+    { message: "Request timed out" }
+  );
+} catch (error) {
+  console.log(error.name); // "TIMEOUT"
+  console.log(error.message); // "Request timed out"
+}
+```
+
+### Custom Options
+
+```typescript
+const result = await withTimeout(promise, 5000, {
+  message: "Custom timeout",
+  name: "MY_TIMEOUT",
+  includeElapsed: true
+});
+```
+
+### Timeout Error Properties
+
+```typescript
+interface TimeoutError extends Error {
+  name: "TIMEOUT";
+  message: string;
+  timeout: number;
+  elapsed?: number; // Only if includeElapsed: true
+}
+```
+
+## sleepWithSignal - Sleep with Abort Support
+
+```typescript
+import { sleepWithSignal } from "@deessejs/core";
+
+const controller = new AbortController();
+
+// Start sleep
+const promise = sleepWithSignal(5000, controller.signal);
+
+// Abort after 1 second
+setTimeout(() => controller.abort(), 1000);
+
+try {
+  await promise;
+} catch (error) {
+  console.log(error.name); // "ABORTED"
+}
+```
+
+### Already Aborted
+
+```typescript
+const controller = new AbortController();
+controller.abort();
+
+await expect(sleepWithSignal(5000, controller.signal))
+  .rejects.toThrow("Sleep aborted");
+```
+
+## Use Cases
+
+### Retry with Delay
+
+```typescript
+import { sleep, retryAsync } from "@deessejs/core";
+
+await retryAsync(async () => {
+  const response = await fetch("/api");
+  if (!response.ok) throw new Error("Failed");
+  return response.json();
+}, { delay: 1000, attempts: 3 });
+```
+
+### Rate Limiting
+
+```typescript
+const API_LIMIT = 10;
+const DELAY = 1000;
+
+let count = 0;
+
+const rateLimitedRequest = async (url: string) => {
+  if (count >= API_LIMIT) {
+    await sleep(DELAY);
+    count = 0;
+  }
+  count++;
+  return fetch(url);
+};
+```
+
+## API Reference
+
+| Function | Description |
+|----------|-------------|
+| `sleep(ms)` | Async sleep for ms milliseconds |
+| `withTimeout(promise, ms, options?)` | Add timeout to promise |
+| `sleepWithSignal(ms, signal)` | Sleep with abort support |
+
+## TimeoutOptions
+
+```typescript
+interface TimeoutOptions {
+  message?: string;    // Custom error message
+  name?: string;       // Custom error name
+  includeElapsed?: boolean; // Include elapsed time in error
+}
+```

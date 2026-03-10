@@ -1,0 +1,184 @@
+---
+title: Result
+description: Type-safe success/failure handling with typed errors
+---
+
+# Result
+
+The `Result` type represents a value that can be either a success (`Ok`) or a failure (`Err`). It's the primary type for explicit error handling in your applications.
+
+## Overview
+
+```typescript
+type Result<T, E> = Ok<T> | Err<E>;
+```
+
+- **Ok<T>** - Represents a successful result containing a value of type `T`
+- **Err<E>** - Represents a failure containing an error of type `E`
+
+## Creating a Result
+
+### ok - Create a Success
+
+```typescript
+import { ok, err, isOk, isErr } from "@deessejs/core";
+
+const success: Result<number, string> = ok(42);
+console.log(isOk(success)); // true
+console.log(success.value);  // 42
+```
+
+### err - Create a Failure
+
+```typescript
+const failure: Result<number, string> = err("Something went wrong");
+console.log(isErr(failure)); // true
+console.log(failure.error);   // "Something went wrong"
+```
+
+## Transforming Results
+
+### map - Transform the Value
+
+```typescript
+import { ok, map, isOk } from "@deessejs/core";
+
+const result = ok(10)
+  .map(x => x * 2)
+  .map(x => x + 1);
+
+console.log(isOk(result)); // true
+console.log(result.value); // 21
+```
+
+### mapErr - Transform the Error
+
+```typescript
+import { err, mapErr } from "@deessejs/core";
+
+const result = err("error")
+  .mapErr(e => new Error(e));
+
+console.log(result.error); // Error: error
+```
+
+### flatMap - Chain Operations
+
+```typescript
+import { ok, flatMap, err } from "@deessejs/core";
+
+const findUser = (id: string): Result<User, string> => { /* ... */ };
+const getUserName = (user: User): Result<string, string> => ok(user.name);
+
+const result = ok("user-123")
+  .flatMap(findUser)
+  .flatMap(getUserName);
+```
+
+## Handling Results
+
+### getOrElse - Get Value or Default
+
+```typescript
+import { ok, err, getOrElse } from "@deessejs/core";
+
+const success = ok(10).getOrElse(0);  // 10
+const failure = err("e").getOrElse(0); // 0
+```
+
+### getOrCompute - Compute Default Lazily
+
+```typescript
+import { err, getOrCompute } from "@deessejs/core";
+
+const result = err("error").getOrCompute(() => {
+  console.log("Computing default...");
+  return 42;
+});
+// Logs: "Computing default..."
+```
+
+### match - Pattern Matching
+
+```typescript
+import { ok, err, match } from "@deessejs/core";
+
+const result = ok(42);
+const message = match(
+  result,
+  (value) => `Success: ${value}`,
+  (error) => `Error: ${error}`
+);
+// "Success: 42"
+```
+
+### tap - Side Effects
+
+```typescript
+import { ok, tap } from "@deessejs/core";
+
+ok(42).tap(value => console.log(value)); // Logs: 42
+```
+
+### tapErr - Side Effects on Error
+
+```typescript
+import { err, tapErr } from "@deessejs/core";
+
+err("error").tapErr(e => console.error(e)); // Logs: error
+```
+
+## Type Guards
+
+```typescript
+import { ok, err, isOk, isErr } from "@deessejs/core";
+
+const result = ok(42);
+
+if (isOk(result)) {
+  // TypeScript knows result is Ok<number>
+  console.log(result.value);
+}
+
+if (isErr(result)) {
+  // TypeScript knows result is Err<never>
+  console.log(result.error);
+}
+```
+
+## Converting
+
+### toMaybe - Convert to Maybe
+
+```typescript
+import { ok, err, toMaybe } from "@deessejs/core";
+
+toMaybe(ok(42)); // Some(42)
+toMaybe(err("e")); // None
+```
+
+### toOutcome - Convert to Outcome
+
+```typescript
+import { ok, err, toOutcome } from "@deessejs/core";
+
+toOutcome(ok(42)); // Success(42)
+toOutcome(err("e")); // Cause({ message: "e" })
+```
+
+## API Reference
+
+| Function | Description |
+|----------|-------------|
+| `ok<T>(value: T)` | Create a successful Result |
+| `err<E>(error: E)` | Create a failed Result |
+| `isOk(result)` | Type guard for Ok |
+| `isErr(result)` | Type guard for Err |
+| `map(result, fn)` | Transform the value |
+| `mapErr(result, fn)` | Transform the error |
+| `flatMap(result, fn)` | Chain operations |
+| `getOrElse(result, default)` | Get value or default |
+| `getOrCompute(result, fn)` | Compute default lazily |
+| `match(result, ok, err)` | Pattern matching |
+| `tap(result, fn)` | Side effect on value |
+| `tapErr(result, fn)` | Side effect on error |

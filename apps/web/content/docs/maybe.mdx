@@ -1,0 +1,171 @@
+---
+title: Maybe
+description: Handle optional values with Some and None
+---
+
+# Maybe
+
+The `Maybe` type represents an optional value - it can be either `Some` (has a value) or `None` (no value). It's perfect for handling values that might be null or undefined.
+
+## Overview
+
+```typescript
+type Maybe<T> = Some<T> | None;
+```
+
+- **Some<T>** - Represents a present value of type `T`
+- **None** - Represents the absence of a value
+
+## Creating a Maybe
+
+### some - Create a Present Value
+
+```typescript
+import { some, none, isSome, isNone } from "@deessejs/core";
+
+const present: Maybe<number> = some(42);
+console.log(isSome(present)); // true
+console.log(present.value);   // 42
+```
+
+### none - Create an Absent Value
+
+```typescript
+import { none, isNone } from "@deessejs/core";
+
+const absent: Maybe<number> = none();
+console.log(isNone(absent)); // true
+```
+
+### fromNullable - From Nullable Values
+
+```typescript
+import { fromNullable, isSome } from "@deessejs/core";
+
+fromNullable(42);    // Some(42)
+fromNullable(null);  // None
+fromNullable(undefined); // None
+```
+
+### fromUndefinedable - From Undefined-able Values
+
+```typescript
+import { fromUndefinedable } from "@deessejs/core";
+
+fromUndefinedable(42);      // Some(42)
+fromUndefinedable(undefined); // None
+```
+
+## Transforming Maybes
+
+### map - Transform the Value
+
+```typescript
+import { some, map } from "@deessejs/core";
+
+const result = some(10)
+  .map(x => x * 2)
+  .map(x => x + 1);
+
+console.log(result.value); // 21
+```
+
+### flatMap - Chain Operations
+
+```typescript
+import { some, flatMap } from "@deessejs/core";
+
+const findConfig = (key: string): Maybe<string> => some("value");
+const parseConfig = (value: string): Maybe<number> => some(value.length);
+
+const result = some("api_key")
+  .flatMap(findConfig)
+  .flatMap(parseConfig);
+```
+
+## Handling Maybes
+
+### getOrElse - Get Value or Default
+
+```typescript
+import { some, none, getOrElse } from "@deessejs/core";
+
+some(10).getOrElse(0); // 10
+none().getOrElse(0);    // 0
+```
+
+### getOrCompute - Compute Default Lazily
+
+```typescript
+import { none, getOrCompute } from "@deessejs/core";
+
+const result = none().getOrCompute(() => 42);
+```
+
+### match - Pattern Matching
+
+```typescript
+import { some, none, match } from "@deessejs/core";
+
+const result = some(42);
+const message = match(
+  result,
+  (value) => `Got: ${value}`,
+  () => "No value"
+);
+// "Got: 42"
+```
+
+### tap - Side Effects
+
+```typescript
+import { some, tap } from "@deessejs/core";
+
+some(42).tap(value => console.log(value)); // Logs: 42
+```
+
+## Type Guards
+
+```typescript
+import { some, none, isSome, isNone } from "@deessejs/core";
+
+const value: Maybe<number> = some(42);
+
+if (isSome(value)) {
+  console.log(value.value); // 42
+}
+
+if (isNone(value)) {
+  console.log("No value");
+}
+```
+
+## Unit Value
+
+### someUnit - Create a Unit Some
+
+```typescript
+import { someUnit, isSome } from "@deessejs/core";
+
+const unit = someUnit();
+console.log(isSome(unit)); // true
+console.log(unit.value);  // undefined
+```
+
+## API Reference
+
+| Function | Description |
+|----------|-------------|
+| `some<T>(value: T)` | Create a Some with a value |
+| `none()` | Create a None |
+| `fromNullable(value)` | Create from null/undefined |
+| `fromUndefinedable(value)` | Create from possibly undefined |
+| `someUnit()` | Create a Some with undefined |
+| `isSome(maybe)` | Type guard for Some |
+| `isNone(maybe)` | Type guard for None |
+| `map(maybe, fn)` | Transform the value |
+| `flatMap(maybe, fn)` | Chain operations |
+| `getOrElse(maybe, default)` | Get value or default |
+| `getOrCompute(maybe, fn)` | Compute default lazily |
+| `match(maybe, some, none)` | Pattern matching |
+| `tap(maybe, fn)` | Side effect on value |

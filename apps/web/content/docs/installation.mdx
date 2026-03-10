@@ -1,0 +1,76 @@
+---
+title: Installation
+description: How to install and set up @deessejs/core in your project
+---
+
+# Installation
+
+## Package Manager
+
+Install `@deessejs/core` using your preferred package manager:
+
+```bash
+# pnpm (recommended)
+pnpm add @deessejs/core
+
+# npm
+npm install @deessejs/core
+
+# yarn
+yarn add @deessejs/core
+```
+
+## Requirements
+
+- TypeScript 5.0 or higher
+- Node.js 18 or higher
+
+## Quick Start
+
+After installation, import the functions you need:
+
+```typescript
+import { ok, err, map, Result } from "@deessejs/core";
+
+// Create a Result
+const divide = (a: number, b: number): Result<number, string> => {
+  if (b === 0) return err("Cannot divide by zero");
+  return ok(a / b);
+};
+
+// Use it
+const result = divide(10, 2);
+if (result.ok) {
+  console.log(result.value); // 5
+}
+```
+
+## TypeScript Configuration
+
+No special TypeScript configuration is required. The library exports full type definitions out of the box.
+
+For best results, ensure your `tsconfig.json` has strict mode enabled:
+
+```json
+{
+  "compilerOptions": {
+    "strict": true
+  }
+}
+```
+
+## ESM Support
+
+The package is published as an ES module. Ensure your `package.json` has:
+
+```json
+{
+  "type": "module"
+}
+```
+
+Or import using the `.js` extension:
+
+```typescript
+import { ok } from "@deessejs/core/index.js";
+```
