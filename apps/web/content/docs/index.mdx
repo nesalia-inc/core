@@ -3,7 +3,13 @@ title: Introduction
 description: Type-safe error handling for TypeScript with Result, Maybe, Try, Outcome, and AsyncResult monads
 ---
 
+import { Callout, Cards, Card } from 'fumadocs-ui/components';
+
 **@deessejs/core** is a TypeScript library that brings functional programming patterns to error handling. It provides zero-runtime-dependency monads with a clean, composable API.
+
+<Callout>
+  This library is inspired by fp-ts, Rust's std::result, and other functional programming traditions—adapted for idiomatic TypeScript.
+</Callout>
 
 ## The Problem with Traditional Error Handling
 
@@ -30,6 +36,10 @@ This approach has fundamental issues:
 3. **Nested code** - Error handling logic becomes deeply nested and hard to read
 4. **Easy to forget** - It's simple to miss an error case
 
+<Callout type="warning">
+  Did you notice the function signature says it returns `number`, but it can actually throw? TypeScript doesn't tell you about the potential for failure.
+</Callout>
+
 ## Enter Result: Explicit Error Handling
 
 The `Result` type makes errors **explicit in your type signatures**. Instead of hoping a function won't throw, the return type tells you exactly what can go wrong:
@@ -50,6 +60,10 @@ const result = divide(10, 2)
 console.log(result); // 5
 ```
 
+<Callout type="success">
+  Now the type signature `Result<number, string>` tells you: "this returns a number, but it might fail with a string error."
+</Callout>
+
 ## Why @deessejs/core?
 
 | Feature | Benefit |
@@ -64,13 +78,23 @@ console.log(result); // 5
 
 Our library provides five interconnected types for different scenarios:
 
-| Type | Use Case |
-|------|----------|
-| **Maybe** | Handle optional values without null/undefined |
-| **Result** | Explicit success/failure with typed errors |
-| **Try** | Wrap synchronous functions that might throw |
-| **Outcome** | Rich error handling with cause and exception tracking |
-| **AsyncResult** | Async operations with proper error typing |
+<Cards>
+  <Card title="Maybe" href="/docs/maybe">
+    Handle optional values without null/undefined
+  </Card>
+  <Card title="Result" href="/docs/result">
+    Explicit success/failure with typed errors
+  </Card>
+  <Card title="Try" href="/docs/try">
+    Wrap synchronous functions that might throw
+  </Card>
+  <Card title="Outcome" href="/docs/outcome">
+    Rich error handling with cause and exception tracking
+  </Card>
+  <Card title="AsyncResult" href="/docs/async-result">
+    Async operations with proper error typing
+  </Card>
+</Cards>
 
 ## Getting Started
 
@@ -110,10 +134,20 @@ const greeting = name
 
 Ready to dive in? Here's where to go next:
 
-- **[Installation](/docs/installation)** - Set up @deessejs/core in your project
-- **[Maybe](/docs/maybe)** - Start with optional values
-- **[Result](/docs/result)** - The foundation of explicit error handling
-- **[Examples](/docs/examples)** - Real-world usage patterns
+<Cards>
+  <Card title="Installation" href="/docs/installation">
+    Set up @deessejs/core in your project
+  </Card>
+  <Card title="Maybe" href="/docs/maybe">
+    Start with optional values
+  </Card>
+  <Card title="Result" href="/docs/result">
+    The foundation of explicit error handling
+  </Card>
+  <Card title="Examples" href="/docs/examples">
+    Real-world usage patterns
+  </Card>
+</Cards>
 
 ## License
 

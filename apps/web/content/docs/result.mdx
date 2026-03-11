@@ -3,6 +3,8 @@ title: Result
 description: Type-safe success and failure handling with typed errors
 ---
 
+import { Callout, Tabs, Tab, Cards, Card } from 'fumadocs-ui/components';
+
 The `Result` type represents a value that can be either a success (`Ok`) or a failure (`Err`). It's the primary type for explicit error handling in your applications.
 
 ## Why Result?
@@ -30,6 +32,10 @@ This approach has fundamental problems:
 3. **Nested code** - Error handling quickly becomes deeply nested
 4. **Easy to forget** - It's simple to miss handling an error
 
+<Callout type="warning">
+  Did you notice the return type is `number`, but there's no way to know from the type signature that this function can throw?
+</Callout>
+
 ## Enter Result: Explicit Error Handling
 
 Result makes errors **explicit in your type signature**:
@@ -52,10 +58,16 @@ console.log(result); // 5
 
 The error is now **explicit**—it's part of the type signature.
 
+<Callout type="success">
+  Now `Result<number, string>` clearly says: "this returns a number, but it might fail with a string error."
+</Callout>
+
 ## Imperative vs Functional
 
 Here's a validation function the traditional way:
 
+<Tabs items={['Traditional (exceptions)', 'With Result']}>
+<Tab value="Traditional (exceptions)">
 ```typescript
 interface ValidationError {
   field: string;
@@ -76,9 +88,8 @@ try {
   // But what if we need to show multiple errors?
 }
 ```
-
-With Result, you get explicit error types:
-
+</Tab>
+<Tab value="With Result">
 ```typescript
 import { ok, err, Result } from "@deessejs/core";
 
@@ -90,8 +101,14 @@ const validateAge = (age: number): Result<number, ValidationError> => {
   return ok(age);
 };
 ```
+</Tab>
+</Tabs>
 
 Now you can collect multiple errors, compose validations, and the type system tracks everything.
+
+<Callout>
+  Notice how the error type is explicit: `Result<number, ValidationError>`. The caller knows exactly what kind of error to expect.
+</Callout>
 
 ## Overview
 
@@ -167,7 +184,9 @@ const failed = err("error")
 failed.error; // "error" - transformation was skipped
 ```
 
-Think of `map` as an assembly line: the value passes through transformations, but if something went wrong (error), the transformations are simply skipped.
+<Callout>
+  Think of `map` as an assembly line: the value passes through transformations, but if something went wrong (error), the transformations are simply skipped.
+</Callout>
 
 ### mapErr - Transform the Error
 
@@ -212,7 +231,9 @@ const result = ok("42")
 // Ok(210)
 ```
 
-Without `flatMap`, you'd get nested Results: `Result<Result<Result<number>, string>, string>`—a nightmare!
+<Callout type="warning">
+  Without `flatMap`, you'd get nested Results: `Result<Result<Result<number>, string>, string>`—a nightmare!
+</Callout>
 
 ## Handling Results
 
@@ -257,7 +278,9 @@ const message = match(
 // "Success: 42"
 ```
 
-**Why is this powerful?** TypeScript will warn you if you add new error types but forget to handle them!
+<Callout type="success">
+  Why is this powerful? TypeScript will warn you if you add new error types but forget to handle them!
+</Callout>
 
 ### tap - Side Effects
 
@@ -348,7 +371,17 @@ Use Result when:
 
 ## See Also
 
-- **[Maybe](/docs/maybe)** - For optional values without error context
-- **[Try](/docs/try)** - For wrapping synchronous functions that throw
-- **[Outcome](/docs/outcome)** - For rich error handling with cause/exception tracking
-- **[conversions](/docs/conversions)** - Convert between Result and other types
+<Cards>
+  <Card title="Maybe" href="/docs/maybe">
+    For optional values without error context
+  </Card>
+  <Card title="Try" href="/docs/try">
+    For wrapping synchronous functions that throw
+  </Card>
+  <Card title="Outcome" href="/docs/outcome">
+    For rich error handling with cause/exception tracking
+  </Card>
+  <Card title="Conversions" href="/docs/conversions">
+    Convert between Result and other types
+  </Card>
+</Cards>

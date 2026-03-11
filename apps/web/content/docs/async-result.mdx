@@ -3,6 +3,8 @@ title: AsyncResult
 description: Async operations with type-safe error handling
 ---
 
+import { Callout, Cards, Card } from 'fumadocs-ui/components';
+
 The `AsyncResult` type handles asynchronous operations with proper error typing. It wraps promises and provides the same functional patterns as `Result`.
 
 ## Why AsyncResult?
@@ -46,6 +48,10 @@ if (result.ok) {
   console.log(result.value);
 }
 ```
+
+<Callout>
+  AsyncResult brings the same type safety as Result to async operations. The error is explicit, and TypeScript forces you to handle both success and failure.
+</Callout>
 
 ## Overview
 
@@ -254,8 +260,14 @@ Use AsyncResult when:
 
 ## See Also
 
-- **[Result](/docs/result)** - For synchronous error handling
-- **[conversions](/docs/conversions)** - Convert between AsyncResult and other types
+<Cards>
+  <Card title="Result" href="/docs/result">
+    For synchronous error handling
+  </Card>
+  <Card title="Conversions" href="/docs/conversions">
+    Convert between AsyncResult and other types
+  </Card>
+</Cards>
 
 ## API Reference
 

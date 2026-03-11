@@ -3,6 +3,8 @@ title: Outcome
 description: Rich error handling with Success, Cause, and Exception
 ---
 
+import { Callout, Cards, Card } from 'fumadocs-ui/components';
+
 The `Outcome` type provides rich error handling with three variants: `Success` for successful operations, `Cause` for expected/business errors, and `Exception` for unexpected system errors.
 
 ## Why Outcome?
@@ -21,6 +23,10 @@ const result: Result<User, Error> = await fetchUser(id);
 // With Outcome, you know the difference
 const outcome: Outcome<User, ValidationError, SystemError> = await fetchUser(id);
 ```
+
+<Callout>
+  Outcome gives you three states: Success (happy path), Cause (expected errors you handle), and Exception (unexpected errors you might log and surface).
+</Callout>
 
 ## Overview
 
@@ -147,8 +153,14 @@ Use Outcome when:
 
 ## See Also
 
-- **[Result](/docs/result)** - For simpler success/failure cases
-- **[conversions](/docs/conversions)** - Convert between Outcome and other types
+<Cards>
+  <Card title="Result" href="/docs/result">
+    For simpler success/failure cases
+  </Card>
+  <Card title="Conversions" href="/docs/conversions">
+    Convert between Outcome and other types
+  </Card>
+</Cards>
 
 ## API Reference
 

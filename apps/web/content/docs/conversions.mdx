@@ -3,6 +3,8 @@ title: Conversions
 description: Convert between Result, Maybe, Try, and Outcome types
 ---
 
+import { Callout } from 'fumadocs-ui/components';
+
 The library provides utilities to convert between different types: `Result`, `Maybe`, `Try`, and `Outcome`.
 
 ## Why Convert Between Types?
@@ -15,6 +17,10 @@ Sometimes you need to work with different types in the same codebase:
 - **Result → Outcome**: When you need cause vs exception distinction
 
 These conversions let you transform between types while preserving the relevant information.
+
+<Callout>
+  Each conversion is designed to preserve the most relevant information. For example, Result → Maybe discards the error type since Maybe only cares about presence/absence.
+</Callout>
 
 ## Maybe to Result
 

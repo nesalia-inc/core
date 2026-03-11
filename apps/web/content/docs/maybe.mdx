@@ -3,6 +3,8 @@ title: Maybe
 description: Handle optional values with Some and None
 ---
 
+import { Callout, Tabs, Tab, Cards, Card } from 'fumadocs-ui/components';
+
 The `Maybe` type represents an optional value—it can either contain a value or be empty. It's perfect for handling values that might be null or undefined, but in a type-safe way.
 
 ## The Problem with null and undefined
@@ -23,6 +25,10 @@ function getPhone(user: User): string {
 ```
 
 The `?` makes `phone` optional at the type level, but it doesn't help you handle the "missing" case. You still have to remember to check for undefined everywhere.
+
+<Callout type="warning">
+  This is the "billion-dollar mistake" as Tony Hoare called it. null and undefined force you to constantly check for missing values.
+</Callout>
 
 ## Enter Maybe: Explicit Optional Values
 
@@ -45,6 +51,8 @@ if (isSome(userPhone)) {
 
 Here's how you'd traditionally handle optional values:
 
+<Tabs items={['Traditional', 'With Maybe']}>
+<Tab value="Traditional">
 ```typescript
 interface Config {
   debug?: boolean;
@@ -58,9 +66,8 @@ function processConfig(config: Record<string, unknown>): Config {
   };
 }
 ```
-
-With Maybe, the same code becomes clearer:
-
+</Tab>
+<Tab value="With Maybe">
 ```typescript
 import { some, none, fromNullable, map, getOrElse } from "@deessejs/core";
 
@@ -76,8 +83,14 @@ function processConfig(config: Record<string, unknown>): Config {
   };
 }
 ```
+</Tab>
+</Tabs>
 
 The intent is now **explicit**: "use this value, or fall back to this default."
+
+<Callout>
+  Notice how `fromNullable(config.debug).getOrElse(false)` clearly communicates: "try to get debug, but default to false if it's missing."
+</Callout>
 
 ## Creating Maybe
 
@@ -147,7 +160,9 @@ none()
   .map(x => x * 2); // None - transformation is skipped
 ```
 
-Think of `map` as an assembly line: the value passes through transformations, but if there's no value (None), the transformations are simply skipped.
+<Callout>
+  Think of `map` as an assembly line: the value passes through transformations, but if there's no value (None), the transformations are simply skipped.
+</Callout>
 
 ### flatMap - Chain Operations That Might Fail
 
@@ -231,7 +246,9 @@ const emptyMessage = none()
 // "No value"
 ```
 
-**Why is this powerful?** TypeScript will warn you if you add a new variant to Maybe but forget to handle it!
+<Callout type="warning">
+  Why is this powerful? TypeScript will warn you if you add a new variant to Maybe but forget to handle it!
+</Callout>
 
 ### tap - Side Effects
 
@@ -296,5 +313,11 @@ Use Maybe when:
 
 ## See Also
 
-- **[Result](/docs/result)** - For operations that can fail with an error
-- **[conversions](/docs/conversions)** - Convert between Maybe and Result
+<Cards>
+  <Card title="Result" href="/docs/result">
+    For operations that can fail with an error
+  </Card>
+  <Card title="Conversions" href="/docs/conversions">
+    Convert between Maybe and Result
+  </Card>
+</Cards>
