@@ -4,6 +4,7 @@
     "---Getting Started---",
     "index",
     "installation",
+    "comparison",
     "---Guides---",
     "guides/validating-input",
     "guides/parsing-external-data",
