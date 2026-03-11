@@ -5,6 +5,17 @@ description: Async sleep and timeout utilities
 
 The `sleep` utility provides asynchronous delay functionality, essential for retry mechanisms, rate limiting, and testing.
 
+## Why Sleep Utilities?
+
+When working with async code, you often need to:
+
+- **Add delays** between retry attempts
+- **Prevent timeouts** for long-running operations
+- **Implement rate limiting** to respect API limits
+- **Cancel operations** that take too long
+
+These utilities make async timing easy.
+
 ## sleep - Basic Delay
 
 ```typescript

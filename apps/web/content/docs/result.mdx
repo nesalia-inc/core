@@ -1,9 +1,97 @@
 ---
 title: Result
-description: Type-safe success/failure handling with typed errors
+description: Type-safe success and failure handling with typed errors
 ---
 
 The `Result` type represents a value that can be either a success (`Ok`) or a failure (`Err`). It's the primary type for explicit error handling in your applications.
+
+## Why Result?
+
+Traditional error handling in TypeScript relies on exceptions:
+
+```typescript
+function divide(a: number, b: number): number {
+  if (b === 0) throw new Error("Division by zero");
+  return a / b;
+}
+
+try {
+  const result = divide(10, 2);
+  console.log(result * 2);
+} catch (e) {
+  console.error(e.message);
+}
+```
+
+This approach has fundamental problems:
+
+1. **Exceptions can escape** - Nothing guarantees you'll catch all errors
+2. **No type safety** - The return type says `number`, but it can throw
+3. **Nested code** - Error handling quickly becomes deeply nested
+4. **Easy to forget** - It's simple to miss handling an error
+
+## Enter Result: Explicit Error Handling
+
+Result makes errors **explicit in your type signature**:
+
+```typescript
+import { ok, err, map, getOrElse } from "@deessejs/core";
+
+const divide = (a: number, b: number): Result<number, string> => {
+  if (b === 0) return err("Division by zero");
+  return ok(a / b);
+};
+
+// TypeScript forces you to handle both cases
+const result = divide(10, 2)
+  .map(x => x * 2)     // Transform the value
+  .getOrElse(0);       // Provide default if error
+
+console.log(result); // 5
+```
+
+The error is now **explicit**—it's part of the type signature.
+
+## Imperative vs Functional
+
+Here's a validation function the traditional way:
+
+```typescript
+interface ValidationError {
+  field: string;
+  message: string;
+}
+
+function validateAge(age: number): number {
+  if (age < 0) throw new Error("Age cannot be negative");
+  if (age > 150) throw new Error("Invalid age");
+  return age;
+}
+
+try {
+  const age = validateAge(userInput);
+  // use age...
+} catch (e) {
+  console.error(e.message);
+  // But what if we need to show multiple errors?
+}
+```
+
+With Result, you get explicit error types:
+
+```typescript
+import { ok, err, Result } from "@deessejs/core";
+
+type ValidationError = { field: string; message: string };
+
+const validateAge = (age: number): Result<number, ValidationError> => {
+  if (age < 0) return err({ field: "age", message: "Age cannot be negative" });
+  if (age > 150) return err({ field: "age", message: "Invalid age" });
+  return ok(age);
+};
+```
+
+Now you can collect multiple errors, compose validations, and the type system tracks everything.
 
 ## Overview
 
@@ -18,6 +106,8 @@ type Result<T, E> = Ok<T> | Err<E>;
 
 ### ok - Create a Success
 
+When an operation succeeds:
+
 ```typescript
 import { ok, err, isOk, isErr } from "@deessejs/core";
 
@@ -26,7 +116,22 @@ console.log(isOk(success)); // true
 console.log(success.value);  // 42
 ```
 
+But why wrap a simple value? Consider a validation function:
+
+```typescript
+const parseAge = (input: string): Result<number, string> => {
+  const age = Number(input);
+  if (isNaN(age)) return err("Invalid number");
+  if (age < 0) return err("Age cannot be negative");
+  return ok(age);
+};
+```
+
+By returning `Result`, you make it **impossible** for callers to ignore the error case—TypeScript forces them to handle it.
+
 ### err - Create a Failure
+
+When an operation fails:
 
 ```typescript
 const failure: Result<number, string> = err("Something went wrong");
@@ -37,6 +142,8 @@ console.log(failure.error);   // "Something went wrong"
 ## Transforming Results
 
 ### map - Transform the Value
+
+When you want to transform the value without losing error context:
 
 ```typescript
 import { ok, map, isOk } from "@deessejs/core";
@@ -49,7 +156,22 @@ console.log(isOk(result)); // true
 console.log(result.value); // 21
 ```
 
+If it's an error, transformations are skipped:
+
+```typescript
+import { err, map } from "@deessejs/core";
+
+const failed = err("error")
+  .map(x => x * 2);
+
+failed.error; // "error" - transformation was skipped
+```
+
+Think of `map` as an assembly line: the value passes through transformations, but if something went wrong (error), the transformations are simply skipped.
+
 ### mapErr - Transform the Error
+
+When you need to transform the error itself:
 
 ```typescript
 import { err, mapErr } from "@deessejs/core";
@@ -60,22 +182,43 @@ const result = err("error")
 console.log(result.error); // Error: error
 ```
 
+This is useful for normalizing errors:
+
+```typescript
+const result = validate(input)
+  .mapErr(errors => new ValidationError(errors));
+```
+
 ### flatMap - Chain Operations
+
+When your transformation returns a Result:
 
 ```typescript
 import { ok, flatMap, err } from "@deessejs/core";
 
-const findUser = (id: string): Result<User, string> => { /* ... */ };
-const getUserName = (user: User): Result<string, string> => ok(user.name);
+const parseNumber = (s: string): Result<number, string> => {
+  const n = Number(s);
+  return isNaN(n) ? err("Invalid number") : ok(n);
+};
 
-const result = ok("user-123")
-  .flatMap(findUser)
-  .flatMap(getUserName);
+const divide = (a: number, b: number): Result<number, string> =>
+  b === 0 ? err("Division by zero") : ok(a / b);
+
+// Chain them together!
+const result = ok("42")
+  .flatMap(parseNumber)     // Ok(42) - not Ok(Ok(42))
+  .flatMap(n => divide(n, 2))
+  .map(n => n * 10);
+// Ok(210)
 ```
+
+Without `flatMap`, you'd get nested Results: `Result<Result<Result<number>, string>, string>`—a nightmare!
 
 ## Handling Results
 
 ### getOrElse - Get Value or Default
+
+For simple cases where you want a fallback:
 
 ```typescript
 import { ok, err, getOrElse } from "@deessejs/core";
@@ -85,6 +228,8 @@ const failure = err("e").getOrElse(0); // 0
 ```
 
 ### getOrCompute - Compute Default Lazily
+
+When computing the default is expensive:
 
 ```typescript
 import { err, getOrCompute } from "@deessejs/core";
@@ -98,6 +243,8 @@ const result = err("error").getOrCompute(() => {
 
 ### match - Pattern Matching
 
+For exhaustive handling that forces you to deal with all cases:
+
 ```typescript
 import { ok, err, match } from "@deessejs/core";
 
@@ -110,23 +257,39 @@ const message = match(
 // "Success: 42"
 ```
 
+**Why is this powerful?** TypeScript will warn you if you add new error types but forget to handle them!
+
 ### tap - Side Effects
+
+When you want to do something with the value without changing it:
 
 ```typescript
 import { ok, tap } from "@deessejs/core";
 
-ok(42).tap(value => console.log(value)); // Logs: 42
+ok(42)
+  .tap(value => console.log("Got value:", value))
+  .tap(value => console.log("Doubled:", value * 2));
+// Logs: "Got value: 42"
+// Logs: "Doubled: 84"
 ```
 
 ### tapErr - Side Effects on Error
 
+When you want to handle errors with side effects:
+
 ```typescript
 import { err, tapErr } from "@deessejs/core";
 
-err("error").tapErr(e => console.error(e)); // Logs: error
+err("error")
+  .tapErr(e => console.error("Failed:", e));
+// Logs: "Failed: error"
 ```
 
 ## Type Guards
+
+### isOk / isErr
+
+Check what's inside without extracting:
 
 ```typescript
 import { ok, err, isOk, isErr } from "@deessejs/core";
@@ -139,7 +302,7 @@ if (isOk(result)) {
 }
 
 if (isErr(result)) {
-  // TypeScript knows result is Err<never>
+  // TypeScript knows result is Err<never> here
   console.log(result.error);
 }
 ```
@@ -148,6 +311,8 @@ if (isErr(result)) {
 
 ### toMaybe - Convert to Maybe
 
+Discard the error and keep only the value:
+
 ```typescript
 import { ok, err, toMaybe } from "@deessejs/core";
 
@@ -155,7 +320,15 @@ toMaybe(ok(42)); // Some(42)
 toMaybe(err("e")); // None
 ```
 
+Useful when you don't care about the specific error:
+
+```typescript
+const maybeName = toMaybe(validateUserName(input));
+```
+
 ### toOutcome - Convert to Outcome
+
+When you need richer error context:
 
 ```typescript
 import { ok, err, toOutcome } from "@deessejs/core";
@@ -164,19 +337,18 @@ toOutcome(ok(42)); // Success(42)
 toOutcome(err("e")); // Cause({ message: "e" })
 ```
 
-## API Reference
+## When to Use Result
 
-| Function | Description |
-|----------|-------------|
-| `ok<T>(value: T)` | Create a successful Result |
-| `err<E>(error: E)` | Create a failed Result |
-| `isOk(result)` | Type guard for Ok |
-| `isErr(result)` | Type guard for Err |
-| `map(result, fn)` | Transform the value |
-| `mapErr(result, fn)` | Transform the error |
-| `flatMap(result, fn)` | Chain operations |
-| `getOrElse(result, default)` | Get value or default |
-| `getOrCompute(result, fn)` | Compute default lazily |
-| `match(result, ok, err)` | Pattern matching |
-| `tap(result, fn)` | Side effect on value |
-| `tapErr(result, fn)` | Side effect on error |
+Use Result when:
+
+- An operation can fail in predictable ways
+- You need typed errors (not just `Error`)
+- You want to compose operations that might fail
+- You want TypeScript to force error handling
+
+## See Also
+
+- **[Maybe](/docs/maybe)** - For optional values without error context
+- **[Try](/docs/try)** - For wrapping synchronous functions that throw
+- **[Outcome](/docs/outcome)** - For rich error handling with cause/exception tracking
+- **[conversions](/docs/conversions)** - Convert between Result and other types

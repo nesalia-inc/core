@@ -5,6 +5,17 @@ description: Convert between Result, Maybe, Try, and Outcome types
 
 The library provides utilities to convert between different types: `Result`, `Maybe`, `Try`, and `Outcome`.
 
+## Why Convert Between Types?
+
+Sometimes you need to work with different types in the same codebase:
+
+- **Maybe → Result**: When a Maybe needs error context
+- **Result → Maybe**: When you don't care about the specific error
+- **Try → Result**: When you need typed errors instead of caught exceptions
+- **Result → Outcome**: When you need cause vs exception distinction
+
+These conversions let you transform between types while preserving the relevant information.
+
 ## Maybe to Result
 
 ### toResult - Convert Maybe to Result

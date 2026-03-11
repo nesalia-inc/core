@@ -5,6 +5,48 @@ description: Async operations with type-safe error handling
 
 The `AsyncResult` type handles asynchronous operations with proper error typing. It wraps promises and provides the same functional patterns as `Result`.
 
+## Why AsyncResult?
+
+Working with async code is notoriously tricky. Even with `async/await`, error handling is still error-prone:
+
+```typescript
+async function fetchUser(id: string): Promise<User> {
+  const response = await fetch(`/api/users/${id}`);
+  // What if this throws? What if response.ok is false?
+  return response.json();
+}
+
+try {
+  const user = await fetchUser("123");
+} catch (e) {
+  // TypeScript doesn't tell us what kind of error this could be
+}
+```
+
+AsyncResult brings the same type safety to async operations:
+
+```typescript
+import { okAsync, errAsync, AsyncResult } from "@deessejs/core";
+
+async function fetchUser(id: string): AsyncResult<User, Error> {
+  try {
+    const response = await fetch(`/api/users/${id}`);
+    if (!response.ok) {
+      return errAsync(new Error(`HTTP ${response.status}`));
+    }
+    return okAsync(await response.json());
+  } catch (e) {
+    return errAsync(e as Error);
+  }
+}
+
+// Now the error type is explicit!
+const result = await fetchUser("123");
+if (result.ok) {
+  console.log(result.value);
+}
+```
+
 ## Overview
 
 ```typescript
@@ -201,6 +243,19 @@ import { okAsync, toUndefined } from "@deessejs/core";
 await toUndefined(okAsync(42)); // 42
 await toUndefined(errAsync("e")); // undefined
 ```
+
+## When to Use AsyncResult
+
+Use AsyncResult when:
+
+- Making async API calls
+- Working with database queries
+- Any operation that returns a Promise and can fail
+
+## See Also
+
+- **[Result](/docs/result)** - For synchronous error handling
+- **[conversions](/docs/conversions)** - Convert between AsyncResult and other types
 
 ## API Reference
 

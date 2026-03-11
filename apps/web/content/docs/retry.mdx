@@ -5,6 +5,16 @@ description: Retry utilities for resilient operations
 
 The `retry` utilities provide resilient patterns for handling transient failures. They automatically retry failed operations with configurable backoff strategies.
 
+## Why Retry?
+
+Network requests, database queries, and external services can fail intermittently. Instead of failing immediately, it's often better to:
+
+1. **Retry automatically** - Give the operation a few chances to succeed
+2. **Wait between attempts** - Let transient issues resolve themselves
+3. **Exponential backoff** - Wait longer between each retry to avoid overwhelming the service
+
+These utilities handle all of this for you.
+
 ## retry - Synchronous Retry
 
 ```typescript

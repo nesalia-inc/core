@@ -5,6 +5,23 @@ description: Rich error handling with Success, Cause, and Exception
 
 The `Outcome` type provides rich error handling with three variants: `Success` for successful operations, `Cause` for expected/business errors, and `Exception` for unexpected system errors.
 
+## Why Outcome?
+
+Sometimes a simple success/failure isn't enough. You need to distinguish between:
+
+- **Business errors** - Expected failures your code should handle gracefully (validation errors, not found)
+- **System errors** - Unexpected failures you probably can't recover from (network errors, bugs)
+
+This distinction helps you decide how to handle each case:
+
+```typescript
+// With Result, both look the same
+const result: Result<User, Error> = await fetchUser(id);
+
+// With Outcome, you know the difference
+const outcome: Outcome<User, ValidationError, SystemError> = await fetchUser(id);
+```
+
 ## Overview
 
 ```typescript
@@ -119,6 +136,19 @@ import { exception, isException } from "@deessejs/core";
 
 isException(exception({ name: "E", message: "e" })); // true
 ```
+
+## When to Use Outcome
+
+Use Outcome when:
+
+- You need to distinguish between business errors and system errors
+- You want different handling strategies for expected vs unexpected failures
+- You need rich error context (name, message, data)
+
+## See Also
+
+- **[Result](/docs/result)** - For simpler success/failure cases
+- **[conversions](/docs/conversions)** - Convert between Outcome and other types
 
 ## API Reference
 
