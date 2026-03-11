@@ -21,6 +21,24 @@ This is a minimal API reference. For detailed explanations, see the Guides and C
 | `errAsync(error)` | Create failed AsyncResult |
 | `attempt(fn)` | Wrap sync function that might throw |
 | `attemptAsync(fn)` | Wrap async function |
+| `error(options)` | Create Error type builder (Python-like) |
+| `exceptionGroup(errors)` | Create ErrorGroup with multiple errors |
+| `raise(error)` | Functional throw for use in transformations |
+
+## Error System
+
+| Function | Description |
+|----------|-------------|
+| `error(options)` | Create structured Error type with name, args, notes, cause |
+| `exceptionGroup(errors)` | Group multiple errors together |
+| `raise(err)` | Convert Err for use in transformations |
+| `isError(value)` | Type guard for Error |
+| `isErrorGroup(value)` | Type guard for ErrorGroup |
+| `isErrWithError(result)` | Check if Result contains Error |
+| `isErrTryWithError(t)` | Check if Try contains Error |
+| `getErrorMessage(error)` | Get formatted error message |
+| `flattenErrorGroup(group)` | Flatten nested ErrorGroups |
+| `filterErrorsByName(group, name)` | Filter errors by name |
 
 ## Transforming
 
@@ -51,6 +69,10 @@ This is a minimal API reference. For detailed explanations, see the Guides and C
 | `isSuccess(outcome)` | Check if Success |
 | `isCause(outcome)` | Check if Cause |
 | `isException(outcome)` | Check if Exception |
+| `isError(value)` | Check if Error |
+| `isErrorGroup(value)` | Check if ErrorGroup |
+| `isErrWithError(result)` | Check if Result contains Error |
+| `isErrTryWithError(t)` | Check if Try contains Error |
 
 ## Converting
 
@@ -94,5 +116,6 @@ Looking for something specific?
 - **Parsing JSON** → Use `attempt()` + `Try`
 - **Network calls** → Use `AsyncResult`
 - **Rich errors** → Use `Outcome`
+- **Advanced error handling** → Use `error()` + `exceptionGroup()` (Python-inspired)
 
 See [Choosing a Type](/docs/concepts/choosing-type) for detailed guidance.
