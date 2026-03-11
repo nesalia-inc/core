@@ -332,35 +332,74 @@ if (isErr(result)) {
 }
 ```
 
-## Converting
+## Converting to Other Types
 
-### toMaybe - Convert to Maybe
+Sometimes you need to transform a Result into another type to integrate with different parts of your codebase. Here's when and why you'd use each conversion.
 
-Discard the error and keep only the value:
+### toMaybe - When You Don't Need Error Details
 
-```typescript
-import { ok, err, toMaybe } from "@deessejs/core";
+Use this when:
+- You started with a Result but later realized you don't care about the specific error
+- You're passing the result to code that expects a Maybe
 
-toMaybe(ok(42)); // Some(42)
-toMaybe(err("e")); // None
-```
-
-Useful when you don't care about the specific error:
+Imagine you're validating user input at the API boundary, but deep in your business logic you just want to know "do we have a valid value or not":
 
 ```typescript
+import { ok, err, toMaybe, isSome } from "@deessejs/core";
+
+// Validation returns Result with detailed errors
+const validateUserName = (input: string): Result<UserName, ValidationError> => {
+  if (input.length < 3) return err({ field: "username", message: "Too short" });
+  if (input.length > 20) return err({ field: "username", message: "Too long" });
+  return ok(input as UserName);
+};
+
+// But downstream code just wants to know if it's valid
 const maybeName = toMaybe(validateUserName(input));
+
+// Now it's Some("john") or None - no error details needed
+if (isSome(maybeName)) {
+  createUserProfile(maybeName.value);
+}
 ```
 
-### toOutcome - Convert to Outcome
+<Callout>
+  When you convert to Maybe, you lose the error type information. Use this only when the specific error doesn't matter downstream.
+</Callout>
 
-When you need richer error context:
+### toOutcome - When You Need Rich Error Tracking
+
+Use this when:
+- You're building a system that needs to track both business errors and system exceptions
+- You want to add cause information to errors
+- You're integrating with logging systems that expect the Outcome format
+
+The same error becomes more informative:
 
 ```typescript
-import { ok, err, toOutcome } from "@deessejs/core";
+import { ok, err, toOutcome, isSuccess, isCause, isException } from "@deessejs/core";
 
-toOutcome(ok(42)); // Success(42)
-toOutcome(err("e")); // Cause({ message: "e" })
+// Convert Result to Outcome for richer error tracking
+const outcome = toOutcome(validateUserName(input));
+
+// Now you have access to Success, Cause, or Exception variants
+if (isSuccess(outcome)) {
+  console.log("Valid user:", outcome.value);
+} else if (isCause(outcome)) {
+  // Track this for business metrics
+  analytics.track("validation_failed", {
+    field: outcome.cause.name,
+    message: outcome.cause.message
+  });
+} else if (isException(outcome)) {
+  // Log system errors differently
+  logger.error(outcome.exception);
+}
 ```
+
+<Callout type="info">
+  Outcome gives you three states: Success (happy path), Cause (business errors you expected), and Exception (unexpected system errors). This distinction helps you decide how to handle each case.
+</Callout>
 
 ## When to Use Result
 
