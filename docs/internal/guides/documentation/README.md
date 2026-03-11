@@ -2,7 +2,71 @@
 
 This guide establishes the standards for writing `@deessejs/core` documentation. It is inspired by best practices from Next.js, React, TypeScript, and fp-ts documentation.
 
+> **Important**: This guide documents the *current state* of our thinking. See [VERSION_NOTES.md](./VERSION_NOTES.md) for V2 plans that address fundamental issues with this approach.
+
 ## Core Principles
+
+### The Package is NOT the Product
+
+**The documentation IS the product. The package is just the solution.**
+
+A package exists to solve one or more problems. The documentation's role is to:
+1. Help users understand the problem they have
+2. Show how to solve it with the package
+3. Guide them from "knowing nothing" to "mastery"
+
+**This is backwards:**
+```markdown
+## Result
+
+The Result type represents a value that can be either a success or a failure.
+```
+
+**This is correct:**
+```markdown
+## Type-Safe Error Handling
+
+Every JavaScript developer faces this problem: you call a function that can fail, but there's no way to know from the type system whether it throws or what it throws. Exceptions escape, error types are unknown, and the compiler can't help you.
+
+This guide explains how to handle errors in a way that:
+- Makes potential failures explicit in the type signature
+- Forces the compiler to verify you've handled every error case
+- Turns runtime errors into compile-time errors
+```
+
+### Documentation is Teaching, Not Reference
+
+The best documentation (like discord.py) is a **guide**, not an API reference. Users come to learn, not to copy-paste.
+
+- **Reference API**: "What methods does Result have?"
+- **Guide Documentation**: "How do I handle errors safely in TypeScript?"
+
+A guide teaches. A reference just lists.
+
+### The Problem-Solution-Skill Progression
+
+Users go through three stages:
+
+1. **Problem Awareness**: "I have a pain point"
+2. **Solution Discovery**: "There's a way to solve this"
+3. **Skill Mastery**: "I can use this effectively"
+
+Your documentation must serve ALL three stages.
+
+| Stage | User Mindset | Documentation Role |
+|-------|--------------|-------------------|
+| Problem Awareness | "My code is a mess with try-catch" | Explain the pain |
+| Solution Discovery | "Result types exist?" | Introduce the concept |
+| Skill Mastery | "How do I chain operations?" | Show patterns & APIs |
+
+### The "I Know Nothing" Assumption
+
+Write for someone who:
+- Doesn't know the concept exists
+- Has never used functional programming
+- Needs step-by-step guidance
+
+If they can't learn from your documentation alone, it has failed.
 
 ### 1. Storytelling Before API
 
@@ -517,4 +581,339 @@ Why use Maybe?
 ## Common Patterns
 
 [Examples of frequent use cases]
+```
+
+---
+
+## Critical Self-Assessment
+
+### What's Wrong With This Guide (V1)
+
+This guide (V1) has fundamental issues:
+
+1. **Feature-centric, not problem-centric**: It organizes by type (Result, Maybe, Try) rather than by user problem (validation, parsing, fallback)
+
+2. **API-first thinking**: The structure still assumes users want to learn about types first, then methods
+
+3. **Missing the learning journey**: No clear progression from beginner to advanced
+
+4. **No "why this, not that"**: Users don't know when to use Result vs Maybe vs Try
+
+5. **Assumes knowledge**: Still uses terms like "monad", "functor" without explanation
+
+### When Package Features Are Insufficient
+
+Sometimes documentation feels thin because **the package doesn't solve enough problems**.
+
+Signs:
+- Every use case looks like "parse or validate"
+- No real-world scenarios beyond basic examples
+- Users constantly ask "how do I do X?"
+
+This is a **package problem**, not a documentation problem. The fix is to add features, not more documentation.
+
+### The discord.py Standard
+
+discord.py is the gold standard because:
+- Every feature has a dedicated guide
+- Guides are ordered by what users actually want to do
+- Code is embedded in realistic contexts
+- It teaches the Discord API, not just the library
+
+We should explain:
+- "How to validate user input safely"
+- "How to parse external API responses"
+- "How to handle configuration errors"
+- "How to chain fallbacks gracefully"
+
+NOT:
+- "Here's the Result type"
+- "Here's the map method"
+
+---
+
+## Global Documentation Patterns (from FastAPI, React, Next.js)
+
+### Documentation Structure Hierarchy
+
+The best documentation sites share a common structure:
+
+```
+/Learn or /Tutorial     # Step-by-step guides (problem-based)
+/Reference             # API documentation (feature-based)
+/How-to                # Recipes for specific tasks
+/Advanced              # Deep dives for advanced users
+/About                 # Meta information
+```
+
+**FastAPI example:**
+```
+/learn/
+  /tutorial/           # First Steps, Path Parameters, Query Parameters...
+  /advanced/           # Advanced topics
+  /deployment/         # Deployment guides
+/reference/             # FastAPI, Request, Response...
+/how-to/               # Recipes
+```
+
+**React example:**
+```
+/learn/                # Tutorials
+/reference/react/      # Hooks API reference
+/community/            # Community resources
+```
+
+**Key insight**: Tutorials and Reference are ALWAYS separated. Never mix them.
+
+### Page Naming Conventions
+
+**Task-based names (good):**
+- "Validating User Input"
+- "Handling API Errors"
+- "Parsing JSON Safely"
+- "Chaining Operations"
+
+**Feature-based names (avoid):**
+- "The Result Type"
+- "The map Method"
+- "Maybe vs Result"
+
+Users search for solutions, not types.
+
+### Step-by-Step Writing Style
+
+FastAPI excels at this. Each page breaks down into numbered steps:
+
+```markdown
+## Step 1: Import FastAPI
+
+```python
+from fastapi import FastAPI
+```
+
+## Step 2: Create the App
+
+```python
+app = FastAPI()
+```
+
+## Step 3: Define a Route
+
+...
+```
+
+**Apply to our docs:**
+```markdown
+## Step 1: Create a Result
+
+When an operation succeeds, wrap the value with `ok`:
+
+```typescript
+const success = ok(42);
+```
+
+## Step 2: Handle Errors
+
+When an operation fails, create an error with `err`:
+
+```typescript
+const failure = err("Something went wrong");
+```
+
+## Step 3: Chain Operations
+
+Use `map` to transform values:
+...
+```
+
+### Code-First Approach
+
+Show code immediately, then explain. FastAPI does this well:
+
+```markdown
+The simplest FastAPI file could look like this:
+
+```python
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/")
+async def root():
+    return {"message": "Hello World"}
+```
+
+Copy that to a file `main.py`.
+
+Run the live server:
+...
+```
+
+**Apply to our docs:**
+```markdown
+The simplest example creates a successful Result:
+
+```typescript
+const result = ok(42);
+```
+
+That's it. You've created a Result that represents a successful operation with the value `42`.
+
+But what if something goes wrong?
+...
+```
+
+### Technical Details in Collapsible Sections
+
+FastAPI uses "Technical Details" callouts:
+
+```markdown
+## Step 2: Create the App
+
+```python
+app = FastAPI()
+```
+
+Here the `app` variable will be an "instance" of the class `FastAPI`.
+
+> **Technical Details**
+>
+> `FastAPI` is a class that inherits directly from `Starlette`.
+> You can use all Starlette functionality with `FastAPI` too.
+
+This keeps the main flow clean while providing depth for advanced users.
+
+### Recap at the End of Every Page
+
+FastAPI always ends with a summary:
+
+```markdown
+## Recap
+
+- Import FastAPI
+- Create an app instance
+- Define routes with decorators
+- Run the server
+
+[Next: Path Parameters →]
+```
+
+**Every page should end with:**
+1. Summary of what was learned
+2. Link to next topic
+
+### Language: Documentation, Not Course
+
+**Avoid (course language):**
+- "In this chapter, you will learn..."
+- "Now let's move on to..."
+- "Congratulations, you now know..."
+- "Take the quiz below..."
+
+**Use (documentation language):**
+- "This guide explains..."
+- "This page covers..."
+- "Use this when..."
+- "See also: [related topic]"
+
+### Realistic Scope for a Library
+
+For a small error-handling library (not a framework):
+
+| Section | Pages | Content |
+|---------|-------|---------|
+| Getting Started | 2 | Intro + Quick Start |
+| Guides | 5-6 | Common use cases |
+| Concepts | 4 | Result, Maybe, Try, Comparison |
+| Reference | 2 | API details |
+
+**Total target**: ~14 pages
+
+This is realistic. Don't aim for 50+ pages like FastAPI - that comes with being a framework.
+
+### Navigation Structure Template
+
+```
+/docs
+  /getting-started/
+    introduction.mdx        # Why error handling matters
+    quick-start.mdx        # 5-minute overview
+
+  /guides/
+    validating-input.mdx   # How to validate user input
+    parsing-data.mdx       # How to parse external data
+    api-errors.mdx         # How to handle API failures
+    chaining.mdx           # How to chain operations
+    fallback.mdx           # How to provide defaults
+
+  /concepts/
+    result.mdx             # Understanding Result
+    maybe.mdx              # Understanding Maybe
+    try.mdx                # Understanding Try
+    when-to-use.mdx        # Choosing the right type
+
+  /reference/
+    api.mdx                # Full API reference
+```
+
+### The "Hello World" Pattern
+
+Start each concept with the simplest possible example:
+
+```markdown
+## Hello World of Result
+
+The simplest thing you can do is create a successful Result:
+
+```typescript
+const result = ok(42);
+```
+
+That's it. One line. The value `42` wrapped in a Result.
+
+Now let's see what you can do with it...
+```
+
+This grounds users in something concrete before introducing complexity.
+
+### Before/After Comparison
+
+Always show the transformation from imperative to functional:
+
+```markdown
+## Handling Parse Errors
+
+Here's how you'd traditionally parse JSON:
+
+```typescript
+function parseUser(json: string): User {
+  const data = JSON.parse(json);  // Can throw!
+  return data;
+}
+
+try {
+  const user = parseUser(input);
+} catch (e) {
+  console.error("Parse failed:", e);
+}
+```
+
+The problem: exceptions can escape, and TypeScript doesn't know this function can fail.
+
+With Result, the failure becomes explicit:
+
+```typescript
+const parseUser = (json: string): Result<User, string> => {
+  try {
+    return ok(JSON.parse(json));
+  } catch {
+    return err("Invalid JSON");
+  }
+};
+
+const result = parseUser(input);
+// TypeScript KNOWS this can fail
+```
+
+Now the compiler can help you handle errors properly.
 ```

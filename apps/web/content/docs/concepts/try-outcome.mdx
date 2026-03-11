@@ -1,0 +1,143 @@
+---
+title: Try, Outcome & AsyncResult
+description: Advanced error handling patterns
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Cards, Card } from 'fumadocs-ui/components/card';
+
+Beyond `Result` and `Maybe`, the library provides specialized types for specific error handling scenarios.
+
+## Try: Wrapping Exceptions
+
+Use `Try` to wrap synchronous functions that might throw:
+
+```typescript
+import { attempt, isOk, isErr } from "@deessejs/core";
+
+const result = attempt(() => JSON.parse(json));
+
+if (isOk(result)) {
+  console.log(result.value); // Parsed object
+}
+
+if (isErr(result)) {
+  console.error(result.error); // SyntaxError
+}
+```
+
+**When to use Try:**
+- Wrapping `JSON.parse`
+- File system operations
+- Any function that uses exceptions
+
+## Outcome: Rich Error Tracking
+
+Use `Outcome` when you need to distinguish between business errors and system errors:
+
+```typescript
+type Outcome<T, C = unknown, E = unknown> = Success<T> | Cause<C> | Exception<E>;
+```
+
+- **`Success<T>`** - Happy path
+- **`Cause<C>`** - Expected business error
+- **`Exception<E>`** - Unexpected system error
+
+```typescript
+import { success, cause, exception, isSuccess, isCause, isException } from "@deessejs/core";
+
+// Business error
+const validationError = cause({
+  name: "VALIDATION_ERROR",
+  message: "Invalid email"
+});
+
+// System error
+const systemError = exception({
+  name: "NETWORK_ERROR",
+  message: "Connection refused"
+});
+
+if (isCause(validationError)) {
+  // Track for business metrics
+  analytics.track("validation_failed");
+}
+
+if (isException(systemError)) {
+  // Log as system error
+  logger.error("System error:", systemError.exception);
+}
+```
+
+**When to use Outcome:**
+- Need to track business errors vs system errors
+- Want rich error context (name, message, data)
+- Different handling strategies for expected vs unexpected errors
+
+## AsyncResult: Async Error Handling
+
+Use `AsyncResult` for async operations:
+
+```typescript
+import { okAsync, errAsync } from "@deessejs/core";
+
+async function fetchUser(id: string): AsyncResult<User, Error> {
+  try {
+    const response = await fetch(`/api/users/${id}`);
+    if (!response.ok) {
+      return errAsync(new Error(`HTTP ${response.status}`));
+    }
+    return okAsync(await response.json());
+  } catch (e) {
+    return errAsync(e as Error);
+  }
+}
+```
+
+**When to use AsyncResult:**
+- Network requests
+- Database queries
+- Any Promise-based operation
+
+## Comparison
+
+| Type | Use When |
+|------|----------|
+| `Result` | Explicit success/failure with typed errors |
+| `Maybe` | Value might exist or not (no error context) |
+| `Try` | Wrapping sync functions that throw |
+| `Outcome` | Need cause vs exception distinction |
+| `AsyncResult` | Async operations with error handling |
+
+## Converting Between Types
+
+```typescript
+import { toResult, toMaybe, toOutcome } from "@deessejs/core";
+
+// Maybe → Result
+const result = toResult(maybe, () => "error");
+
+// Result → Maybe
+const maybe = toMaybe(result);
+
+// Result → Outcome
+const outcome = toOutcome(result);
+```
+
+<Callout>
+  Start with Result or Maybe. Use Try, Outcome, and AsyncResult when your use case specifically requires them.
+</Callout>
+
+## See Also
+
+<Cards>
+  <Card title="Handling API Errors" href="/docs/guides/handling-api-errors">
+    AsyncResult in practice
+  </Card>
+  <Card title="Parsing External Data" href="/docs/guides/parsing-external-data">
+    Try in practice
+  </Card>
+  <Card title="Choosing a Type" href="/docs/concepts/choosing-type">
+    Decision guide
+  </Card>
+</Cards>

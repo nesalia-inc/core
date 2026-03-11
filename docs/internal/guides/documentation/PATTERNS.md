@@ -2,6 +2,48 @@
 
 This guide captures the patterns learned from analyzing Next.js, React, and Rust documentation. It establishes why bad documentation fails and how good documentation succeeds.
 
+> **Meta-insight**: The documentation IS the product. The package is just the solution. Users come to learn how to solve their problems, not to learn about your types.
+
+---
+
+## The Fundamental Principle
+
+**Documentation is teaching. The package is the tool.**
+
+When someone reads your documentation, they want to:
+1. Understand the problem they have
+2. Learn how to solve it
+3. Apply the solution
+
+They do NOT want to:
+- Learn about your type system
+- Read API documentation
+- Understand functional programming concepts (unless relevant)
+
+> "I want to handle errors safely" → NOT → "I want to learn about Result"
+
+---
+
+## The Core Shift
+
+### Before (Package-Centered)
+```
+Documentation explains:
+- What is Result?
+- What methods does it have?
+- What is Maybe?
+- What is Try?
+```
+
+### After (Problem-Centered)
+```
+Documentation explains:
+- How do I validate user input?
+- How do I handle API errors?
+- How do I parse JSON safely?
+- How do I chain operations that might fail?
+```
+
 ## The Anti-Pattern: Title + One Sentence + Code
 
 **Never do this:**
@@ -379,3 +421,147 @@ Good documentation is not a reference manual—it's a teaching tool. Every secti
 4. **What if** I have questions? (troubleshooting)
 
 Never just show code. Tell a story.
+
+---
+
+## Structure Patterns (from FastAPI, React, Next.js)
+
+### The Three-Part Structure
+
+Every documentation site follows this pattern:
+
+```
+/Learn          # Tutorials - step-by-step guides
+/Reference      # API docs - complete reference
+/How-to         # Recipes - specific tasks
+```
+
+**FastAPI:**
+```
+/learn/tutorial/     # First Steps, Path Params, Query Params...
+/reference/         # FastAPI, Request, Response...
+/how-to/            # Recipes
+```
+
+**React:**
+```
+/learn/              # Tutorials
+/reference/react/   # Hooks API
+```
+
+**Key insight**: Never mix tutorials with reference. Keep them separate.
+
+### Task-Based Page Naming
+
+Users search for problems, not features.
+
+**Good (task-based):**
+- "Validating User Input"
+- "Handling API Errors"
+- "Parsing JSON Safely"
+- "Chaining Operations"
+
+**Bad (feature-based):**
+- "The Result Type"
+- "The map Method"
+- "Maybe vs Result"
+
+### Step-by-Step Writing
+
+FastAPI excels at numbered steps:
+
+```markdown
+## Step 1: Import
+
+```typescript
+import { ok, err } from '@deessejs/core';
+```
+
+## Step 2: Create a Success
+
+```typescript
+const result = ok(42);
+```
+
+## Step 3: Handle Failure
+
+```typescript
+const failed = err("Error message");
+```
+
+Apply this pattern to explain each concept.
+
+### Code-First, Then Explain
+
+Show code immediately, then break it down:
+
+```markdown
+The simplest thing you can do:
+
+```typescript
+const result = ok(42);
+```
+
+That's it. One line. The value `42` wrapped in a Result.
+
+But what if something goes wrong? Let's see...
+```
+
+### Recap at the End
+
+Every page should end with a summary:
+
+```markdown
+## Recap
+
+- Use `ok(value)` for successful operations
+- Use `err(message)` for failures
+- TypeScript forces you to handle both cases
+
+[See also: Chaining Operations →]
+```
+
+### Language: Documentation, Not Course
+
+**Avoid (course language):**
+- "In this chapter, you will learn..."
+- "Now let's move on to..."
+- "Congratulations!"
+
+**Use (documentation language):**
+- "This guide explains..."
+- "Use this when..."
+- "See also: [related topic]"
+
+### Realistic Scope for a Library
+
+For a small error-handling library:
+
+| Section | Pages |
+|---------|-------|
+| Getting Started | 2 |
+| Guides | 5-6 |
+| Concepts | 4 |
+| Reference | 2 |
+
+**Total**: ~14 pages
+
+Don't aim for 50+ pages like frameworks. Libraries are smaller.
+
+### The "Hello World" Pattern
+
+Start each concept with the simplest possible example:
+
+```markdown
+## Hello World of Result
+
+```typescript
+const result = ok(42);
+```
+
+That's it. The value `42` wrapped in a Result.
+
+Now let's see what you can do with it...
+```
+
+Ground users in something concrete before adding complexity.

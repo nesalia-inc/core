@@ -1,0 +1,212 @@
+---
+title: Validating Input
+description: How to validate user input with explicit error types
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Cards, Card } from 'fumadocs-ui/components/card';
+
+You need to validate user input. But validation can fail in many ways—missing fields, invalid formats, out-of-range values. How do you handle this cleanly?
+
+## The Problem
+
+Traditional validation often looks like this:
+
+```typescript
+interface ValidationResult {
+  valid: boolean;
+  errors: string[];
+}
+
+function validateAge(age: string): ValidationResult {
+  const errors: string[] = [];
+  const num = Number(age);
+
+  if (isNaN(num)) {
+    errors.push("Age must be a number");
+  }
+  if (num < 0) {
+    errors.push("Age cannot be negative");
+  }
+  if (num > 150) {
+    errors.push("Age seems unrealistic");
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+```
+
+Problems with this approach:
+- The return type doesn't tell callers what errors are possible
+- Easy to forget to check the `valid` flag
+- No type safety on error values
+
+<Callout type="warning">
+  With this approach, callers can ignore validation errors and proceed anyway. TypeScript can't help.
+</Callout>
+
+## The Solution: Explicit Error Types
+
+Use `Result` to make validation failures explicit in your type signature:
+
+```typescript
+import { ok, err, Result } from "@deessejs/core";
+
+interface AgeError {
+  field: "age";
+  code: "NOT_A_NUMBER" | "NEGATIVE" | "TOO_HIGH";
+  message: string;
+}
+
+const validateAge = (age: string): Result<number, AgeError> => {
+  const num = Number(age);
+
+  if (isNaN(num)) {
+    return err({
+      field: "age",
+      code: "NOT_A_NUMBER",
+      message: "Age must be a number"
+    });
+  }
+
+  if (num < 0) {
+    return err({
+      field: "age",
+      code: "NEGATIVE",
+      message: "Age cannot be negative"
+    });
+  }
+
+  if (num > 150) {
+    return err({
+      field: "age",
+      code: "TOO_HIGH",
+      message: "Age seems unrealistic"
+    });
+  }
+
+  return ok(num);
+};
+```
+
+Now callers **must** handle the error case:
+
+```typescript
+const result = validateAge(userInput);
+
+// This won't compile if you don't handle both cases!
+const message = result.match(
+  (age) => `Valid age: ${age}`,
+  (error) => `Error: ${error.message}`
+);
+```
+
+<Callout type="success">
+  TypeScript won't let callers ignore validation errors. The compiler becomes your pair programmer.
+</Callout>
+
+## Validating Multiple Fields
+
+Combine multiple validations with `map2`, `map3`, etc.:
+
+```typescript
+import { ok, err, Result, map2, map3 } from "@deessejs/core";
+
+interface User {
+  name: string;
+  email: string;
+  age: number;
+}
+
+interface FieldError {
+  field: string;
+  code: string;
+  message: string;
+}
+
+const validateName = (name: string): Result<string, FieldError> =>
+  name.length >= 2
+    ? ok(name)
+    : err({ field: "name", code: "TOO_SHORT", message: "Name must be at least 2 characters" });
+
+const validateEmail = (email: string): Result<string, FieldError> =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    ? ok(email)
+    : err({ field: "email", code: "INVALID_FORMAT", message: "Invalid email format" });
+
+const validateUser = (data: {
+  name: string;
+  email: string;
+  age: string;
+}): Result<User, FieldError[]> => {
+  const nameResult = validateName(data.name);
+  const emailResult = validateEmail(data.email);
+  const ageResult = validateAge(data.age).mapErr(e => [e]);
+
+  // Combine results
+  return map3(
+    nameResult,
+    emailResult,
+    ageResult,
+    (name, email, age) => ({ name, email, age })
+  );
+};
+```
+
+## Collecting All Errors
+
+Want to show all errors at once instead of failing on the first?
+
+```typescript
+import { ok, err, Result, map2 } from "@deessejs/core";
+
+const validateAll = <T, E>(
+  ...results: Result<T, E>[]
+): Result<T[], E[]> => {
+  const errors: E[] = [];
+  const values: T[] = [];
+
+  for (const result of results) {
+    if (result.isOk()) {
+      values.push(result.value);
+    } else {
+      errors.push(result.error);
+    }
+  }
+
+  return errors.length > 0 ? err(errors) : ok(values);
+};
+
+// Usage
+const allResults = validateAll(
+  validateName(input.name),
+  validateEmail(input.email),
+  validateAge(input.age)
+);
+
+// Now you have ALL errors to display
+if (allResults.isErr()) {
+  showErrors(allResults.error);
+}
+```
+
+## Recap
+
+- Use `Result<T, ErrorType>` to make validation failures explicit
+- TypeScript forces callers to handle all error cases
+- Use `map2`, `map3` to combine validations
+- Use array accumulation to collect all errors
+
+## See Also
+
+<Cards>
+  <Card title="Result" href="/docs/concepts/result">
+    Deep dive into Result type
+  </Card>
+  <Card title="Chaining Operations" href="/docs/guides/chaining-operations">
+    Compose multiple validations
+  </Card>
+  <Card title="Choosing a Type" href="/docs/concepts/choosing-type">
+    When to use Result vs Maybe
+  </Card>
+</Cards>
