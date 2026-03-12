@@ -29,7 +29,6 @@
       "Bash(taskkill*)",
 
       "Bash(git merge *)",
-      "Bash(git push *)",
       "Bash(git rebase *)",
       "Bash(git reset --hard*)",
       "Bash(git clean*)",

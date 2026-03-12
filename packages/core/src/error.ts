@@ -82,15 +82,12 @@ export const error = <T>(options: ErrorOptions<T>): ErrorBuilder<T> => {
       error: errorObj,
       isOk(): false { return false; },
       isErr(): true { return true; },
-      // @ts-expect-error - map signature is complex, we simplify for this implementation
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      map(_?: unknown): ErrWithMethods<T> { return this as ErrWithMethods<T>; },
-      // @ts-expect-error - flatMap signature is complex
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      flatMap(_?: unknown): ErrWithMethods<T> { return this as ErrWithMethods<T>; },
-      // @ts-expect-error - mapErr signature is complex
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      mapErr(_?: unknown): ErrWithMethods<T> { return this as ErrWithMethods<T>; },
+      // @ts-expect-error - simplified for ErrWithMethods
+      map(): unknown { return this; },
+      // @ts-expect-error - simplified for ErrWithMethods
+      flatMap(): unknown { return this; },
+      // @ts-expect-error - simplified for ErrWithMethods
+      mapErr(): unknown { return this; },
       getOrElse<T2>(defaultValue: T2): T2 { return defaultValue; },
       getOrCompute<T2>(fn: () => T2): T2 { return fn(); },
       tap(): ErrWithMethods<T> { return this as ErrWithMethods<T>; },
