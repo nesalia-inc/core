@@ -3,11 +3,11 @@ title: Examples
 description: Real-world usage examples for @deessejs/core
 ---
 
-# Examples
-
-Practical examples demonstrating how to use `@deessejs/core` in real applications.
+Real-world patterns showing how to apply `@deessejs/core` in your applications. These examples build on the concepts from the core type documentation.
 
 ## HTTP API with Retry
+
+Network requests can fail for many reasons—timeout, server error, or intermittent connectivity. This pattern shows how to wrap API calls with retry logic:
 
 ```typescript
 import { retryAsync, okAsync, errAsync } from "@deessejs/core";
@@ -33,6 +33,8 @@ const user = await fetchWithRetry<User>("/api/user/1");
 ```
 
 ## Configuration Parsing
+
+Environment variables come as strings but need to be parsed into their proper types. This pattern shows how to handle optional configuration with defaults:
 
 ```typescript
 import { fromNullable, map, getOrElse } from "@deessejs/core";

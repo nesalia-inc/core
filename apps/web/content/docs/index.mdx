@@ -1,57 +1,153 @@
 ---
 title: Introduction
-description: Type-safe error handling for TypeScript with Result, Maybe, Try, Outcome, AsyncResult, and Error monads
+description: Type-safe error handling for TypeScript with Result, Maybe, Try, AsyncResult, and Error monads
+icon: Shield
 ---
 
-# @deessejs/core
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Cards, Card } from 'fumadocs-ui/components/card';
 
-**@deessejs/core** is a TypeScript library that provides functional programming patterns for type-safe error handling. It offers zero-runtime-dependency monads with a clean, composable API.
+**@deessejs/core** is a TypeScript library that brings functional programming patterns to error handling. It provides zero-runtime-dependency monads with a clean, composable API.
 
-## Why @deessejs/core?
+<Callout>
+  This library is inspired by fp-ts, Rust's std::result, and other functional programming traditions—adapted for idiomatic TypeScript.
+</Callout>
 
-Traditional error handling in TypeScript often relies on exceptions and try-catch blocks, which can make code difficult to read and maintain. This library provides **algebraic data types** (ADTs) that make error handling explicit, composable, and type-safe.
+## The Problem with Traditional Error Handling
 
-## Core Types
+Traditional error handling in TypeScript relies heavily on exceptions and try-catch blocks:
 
-| Type | Use Case |
-|------|----------|
-| **Result** | Explicit success/failure with typed errors |
-| **Maybe** | Handle optional values without null/undefined |
-| **Try** | Wrap synchronous functions that might throw |
-| **Outcome** | Rich error handling with cause and exception tracking |
-| **AsyncResult** | Async operations with proper error typing |
-| **Error** | Structured errors with enrichment, chaining, and grouping (Python-inspired) |
+```typescript
+function divide(a: number, b: number): number {
+  if (b === 0) throw new Error("Division by zero");
+  return a / b;
+}
 
-## Features
+try {
+  const result = divide(10, 2);
+  console.log(result * 2);
+} catch (e) {
+  console.error(e.message);
+}
+```
 
-- **Zero runtime dependencies** - Lightweight bundle
-- **Full TypeScript support** - Complete type inference
-- **Composable API** - Chain operations easily
-- **Functional patterns** - map, flatMap, tap, match, and more
-- **Utilities** - Sleep, retry, conversions between types
-- **Error System** - Python-inspired error handling with notes, cause chains, and groups
+This approach has fundamental issues:
 
-## Quick Example
+1. **Exceptions can escape** - There's no guarantee you'll catch all errors
+2. **No static type checking** - TypeScript can't verify you've handled every error case
+3. **Nested code** - Error handling logic becomes deeply nested and hard to read
+4. **Easy to forget** - It's simple to miss an error case
+
+<Callout type="warning">
+  Did you notice the function signature says it returns `number`, but it can actually throw? TypeScript doesn't tell you about the potential for failure.
+</Callout>
+
+## Enter Result: Explicit Error Handling
+
+The `Result` type makes errors **explicit in your type signatures**. Instead of hoping a function won't throw, the return type tells you exactly what can go wrong:
 
 ```typescript
 import { ok, err, map, getOrElse } from "@deessejs/core";
 
-// Traditional error handling
 const divide = (a: number, b: number): Result<number, string> => {
   if (b === 0) return err("Division by zero");
   return ok(a / b);
 };
 
+// The type system forces you to handle both cases
 const result = divide(10, 2)
-  .map(x => x * 2)  // Transform the value
-  .getOrElse(0);    // Provide default if error
+  .map(x => x * 2)           // Transform the value
+  .getOrElse(0);             // Provide default if error
+
+console.log(result); // 5
 ```
 
-## Installation
+<Callout type="success">
+  Now the type signature `Result<number, string>` tells you: "this returns a number, but it might fail with a string error."
+</Callout>
+
+## Why @deessejs/core?
+
+| Feature | Benefit |
+|---------|---------|
+| **Zero runtime dependencies** | Lightweight bundle, no bloat |
+| **Full TypeScript support** | Complete type inference |
+| **Composable API** | Chain operations with map, flatMap |
+| **Functional patterns** | map, flatMap, tap, match, and more |
+| **Multiple types** | Result, Maybe, Try, AsyncResult |
+| **Error System** | Python-inspired error handling with notes, cause chains, and groups |
+
+## Core Types
+
+Our library provides multiple types for different scenarios:
+
+<Cards>
+  <Card title="Maybe" href="/docs/concepts/maybe">
+    Handle optional values without null/undefined
+  </Card>
+  <Card title="Result" href="/docs/concepts/result">
+    Explicit success/failure with typed errors
+  </Card>
+  <Card title="Try" href="/docs/concepts/try-outcome">
+    Wrap synchronous functions that might throw
+  </Card>
+  <Card title="AsyncResult" href="/docs/async-result">
+    Async operations with proper error typing
+  </Card>
+</Cards>
+
+## Getting Started
+
+Install the library:
 
 ```bash
 pnpm add @deessejs/core
 ```
+
+Then import and start using it:
+
+```typescript
+import { ok, err, map, getOrElse, some, none } from "@deessejs/core";
+
+// Create a Result
+const success = ok(42);
+const failure = err("Something went wrong");
+
+// Transform without losing error context
+const result = ok(10)
+  .map(x => x * 2)
+  .map(x => x + 1);
+
+// Extract the value
+const value = result.getOrElse(0);
+
+// Work with optional values
+const name = some("Alice");
+const noName = none();
+
+const greeting = name
+  .map(n => `Hello, ${n}!`)
+  .getOrElse("Hello, stranger!");
+```
+
+## Next Steps
+
+Ready to dive in? Here's where to go next:
+
+<Cards>
+  <Card title="Installation" href="/docs/installation">
+    Set up @deessejs/core in your project
+  </Card>
+  <Card title="Maybe" href="/docs/concepts/maybe">
+    Start with optional values
+  </Card>
+  <Card title="Result" href="/docs/concepts/result">
+    The foundation of explicit error handling
+  </Card>
+  <Card title="Examples" href="/docs/examples">
+    Real-world usage patterns
+  </Card>
+</Cards>
 
 ## License
 

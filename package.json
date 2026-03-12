@@ -45,5 +45,8 @@
     "error-handling",
     "monad"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "zod": "^4.3.6"
+  }
 }

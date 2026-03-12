@@ -1,0 +1,161 @@
+---
+title: Maybe
+description: Handle optional values without null/undefined
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Cards, Card } from 'fumadocs-ui/components/card';
+
+`Maybe` represents a value that can either be present (`Some`) or absent (`None`). Use it when a value might or might not exist.
+
+## The Type
+
+```typescript
+type Maybe<T> = Some<T> | None;
+```
+
+- **`Some<T>`** - Contains a value of type `T`
+- **`None`** - Represents absence
+
+## The Problem with null/undefined
+
+TypeScript's `null` and `undefined` don't help you handle missing values:
+
+```typescript
+interface User {
+  name: string;
+  phone?: string;  // Optional
+}
+
+const user: User = { name: "John" };
+
+// This crashes at runtime!
+console.log(user.phone.toUpperCase());
+```
+
+## Creating Maybes
+
+### some - Present Value
+
+```typescript
+import { some } from "@deessejs/core";
+
+const present: Maybe<number> = some(42);
+```
+
+### none - Absent Value
+
+```typescript
+import { none } from "@deessejs/core";
+
+const absent: Maybe<number> = none();
+```
+
+### fromNullable - From null/undefined
+
+```typescript
+import { fromNullable } from "@deessejs/core";
+
+fromNullable(42);         // Some(42)
+fromNullable(null);       // None
+fromNullable(undefined);  // None
+```
+
+This is useful for wrapping external APIs:
+
+```typescript
+interface Response {
+  data?: { name: string };
+}
+
+const getName = (response: Response): Maybe<string> =>
+  fromNullable(response.data?.name);
+```
+
+## Transforming
+
+### map - Transform the Value
+
+```typescript
+some(10)
+  .map(x => x * 2)   // Some(20)
+  .map(x => x + 1);  // Some(21)
+```
+
+Transformations are skipped if None:
+
+```typescript
+none()
+  .map(x => x * 2);  // None - unchanged
+```
+
+### flatMap - Chain Operations
+
+```typescript
+some({ id: 1 })
+  .flatMap(user => findUser(user.id)); // Maybe<User>
+```
+
+## Extracting
+
+### getOrElse - Default Value
+
+```typescript
+some(10).getOrElse(0);  // 10
+none().getOrElse(0);     // 0
+```
+
+### match - Pattern Matching
+
+```typescript
+some(42).match(
+  (value) => `Got: ${value}`,  // "Got: 42"
+  () => "No value"
+);
+```
+
+### tap - Side Effects
+
+```typescript
+some(42)
+  .tap(value => console.log(value))
+  .tap(value => saveToAnalytics(value));
+```
+
+## Type Guards
+
+```typescript
+import { isSome, isNone } from "@deessejs/core";
+
+if (isSome(value)) {
+  console.log(value.value); // TypeScript knows it's Some
+}
+
+if (isNone(value)) {
+  console.log("No value"); // TypeScript knows it's None
+}
+```
+
+## When to Use
+
+Use `Maybe` when:
+
+- A value might or might not exist
+- You're dealing with optional properties
+- You want to make absence explicit in your API
+- You don't need error context (use `Result` for that)
+
+<Callout type="success">
+  Maybe makes optionality explicit. TypeScript forces you to handle both present and absent cases.
+</Callout>
+
+## See Also
+
+<Cards>
+  <Card title="Providing Fallbacks" href="/docs/guides/providing-fallbacks">
+    Handle optional values with defaults
+  </Card>
+  <Card title="Choosing a Type" href="/docs/concepts/choosing-type">
+    Maybe vs Result
+  </Card>
+</Cards>

@@ -124,3 +124,18 @@ export {
   toTryFromOutcome,
 } from "./conversions.js";
 export type { ToResultOptions, ToResultFromOutcomeOptions } from "./conversions.js";
+
+// Error System
+export type { Error, ErrorGroup, ErrorOptions } from "./error.js";
+export {
+  error,
+  exceptionGroup,
+  raise,
+  isError,
+  isErrorGroup,
+  isErrWithError,
+  isErrTryWithError,
+  getErrorMessage,
+  flattenErrorGroup,
+  filterErrorsByName,
+} from "./error.js";
