@@ -98,15 +98,54 @@ This is a minimal API reference. For detailed explanations, see the Guides and C
 
 ```typescript
 interface RetryOptions {
+<<<<<<< HEAD
+  attempts?: number;        // Number of attempts (default: 3)
+  delay?: number;          // Initial delay in ms (default: 1000)
+  backoff?: "exponential" | "linear" | "constant" | ((attempt: number, delay: number) => number);
+=======
   attempts?: number;      // Default: 3
   delay?: number;         // Initial delay in ms, default: 1000
   backoff?: "exponential" | "linear" | "constant";
+>>>>>>> 5c98621aec8c6f639645434c4db208f29d0df90b
   predicate?: (error: Error) => boolean;
   onRetry?: (error: Error, attempt: number) => void;
   jitter?: boolean;
 }
 ```
 
+<<<<<<< HEAD
+### ErrorOptions
+
+```typescript
+type ErrorOptions<T> = {
+  name: string;
+  args: T;
+  defaultDescription?: string;
+};
+
+type ZodErrorOptions<T> = {
+  name: string;
+  schema: ZodSchema<T>;
+  defaultDescription?: string;
+};
+```
+
+### Error Type
+
+```typescript
+type Error<T = unknown> = {
+  readonly name: string;
+  readonly args: T;
+  readonly notes: readonly string[];
+  readonly cause: Error | null;
+};
+
+type ErrorGroup = {
+  readonly name: string;
+  readonly exceptions: readonly Error[];
+};
+```
+=======
 ## Quick Lookup
 
 Looking for something specific?
@@ -119,3 +158,4 @@ Looking for something specific?
 - **Advanced error handling** → Use `error()` + `exceptionGroup()` (Python-inspired)
 
 See [Choosing a Type](/docs/concepts/choosing-type) for detailed guidance.
+>>>>>>> 5c98621aec8c6f639645434c4db208f29d0df90b
