@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { retry, retryAsync, exponentialBackoff, linearBackoff, constantBackoff } from "../src/retry";
+import { retry, retryAsync, exponentialBackoff, linearBackoff, constantBackoff, calculateDelay, handleUnknownBackoff, throwIfUnreachable } from "../src/retry";
 
 describe("Retry", () => {
   describe("retry (sync)", () => {
@@ -99,6 +99,32 @@ describe("Retry", () => {
       expect(result).toBe(42);
       expect(attempts).toBe(3);
     });
+
+    it("should handle undefined backoff", () => {
+      // Test the undefined case in the switch
+      let attempts = 0;
+      const result = retry(() => {
+        attempts++;
+        if (attempts < 3) throw new Error("fail");
+        return 42;
+      }, { attempts: 3, delay: 10, backoff: undefined as unknown as "exponential" });
+
+      expect(result).toBe(42);
+      expect(attempts).toBe(3);
+    });
+
+    it("should handle invalid backoff type for coverage", () => {
+      // Test the default case in calculateDelay switch
+      let attempts = 0;
+      const result = retry(() => {
+        attempts++;
+        if (attempts < 3) throw new Error("fail");
+        return 42;
+      }, { attempts: 3, delay: 10, backoff: "invalid" as unknown as "exponential" });
+
+      expect(result).toBe(42);
+      expect(attempts).toBe(3);
+    });
   });
 
   describe("retryAsync", () => {
@@ -154,6 +180,32 @@ describe("Retry", () => {
       const elapsed = Date.now() - start;
       expect(elapsed).toBeGreaterThan(90);
     });
+
+    it("should handle undefined backoff", async () => {
+      // Test the undefined case in the switch for async
+      let attempts = 0;
+      const result = await retryAsync(async () => {
+        attempts++;
+        if (attempts < 3) throw new Error("fail");
+        return 42;
+      }, { attempts: 3, delay: 10, backoff: undefined as unknown as "exponential" });
+
+      expect(result).toBe(42);
+      expect(attempts).toBe(3);
+    });
+
+    it("should handle invalid backoff type for coverage", async () => {
+      // Test the default case in calculateDelay switch for async
+      let attempts = 0;
+      const result = await retryAsync(async () => {
+        attempts++;
+        if (attempts < 3) throw new Error("fail");
+        return 42;
+      }, { attempts: 3, delay: 10, backoff: "invalid" as unknown as "exponential" });
+
+      expect(result).toBe(42);
+      expect(attempts).toBe(3);
+    });
   });
 
   describe("Backoff strategies", () => {
@@ -173,6 +225,40 @@ describe("Retry", () => {
       expect(constantBackoff(1, 1000)).toBe(1000);
       expect(constantBackoff(2, 1000)).toBe(1000);
       expect(constantBackoff(3, 1000)).toBe(1000);
+    });
+  });
+
+  describe("Exported helpers for coverage", () => {
+    it("calculateDelay should handle function backoff", () => {
+      const fn = (attempt: number, delay: number) => delay * attempt;
+      expect(calculateDelay(2, 100, fn)).toBe(200);
+    });
+
+    it("calculateDelay should handle undefined backoff", () => {
+      expect(calculateDelay(1, 100, undefined)).toBe(100);
+      expect(calculateDelay(2, 100, undefined)).toBe(200);
+    });
+
+    it("handleUnknownBackoff should handle valid backoffs", () => {
+      expect(handleUnknownBackoff("exponential", 100, 1)).toBe(100);
+      expect(handleUnknownBackoff("linear", 100, 2)).toBe(200);
+      expect(handleUnknownBackoff("constant", 100, 3)).toBe(100);
+    });
+
+    it("handleUnknownBackoff should return fallback for invalid backoff", () => {
+      // For coverage, returns exponential as fallback
+      expect(handleUnknownBackoff("invalid" as "exponential", 100, 1)).toBe(100);
+    });
+
+    it("throwIfUnreachable should throw when succeeded is false", () => {
+      expect(() => throwIfUnreachable<number>(false, 0))
+        .toThrow("Retry failed");
+      expect(() => throwIfUnreachable<number>(false, 0, new Error("Custom error")))
+        .toThrow("Custom error");
+    });
+
+    it("throwIfUnreachable should return result when succeeded is true", () => {
+      expect(throwIfUnreachable<number>(true, 42)).toBe(42);
     });
   });
 });

@@ -1,0 +1,155 @@
+---
+title: Comparison
+description: How @deessejs/core compares to other error handling libraries
+icon: GitCompare
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Cards, Card } from 'fumadocs-ui/components/card';
+
+How does `@deessejs/core` compare to other error handling libraries in the TypeScript ecosystem?
+
+## Quick Comparison
+
+| Feature | @deessejs/core | fp-ts | neverthrow | ts-results |
+|---------|----------------|-------|------------|------------|
+| **Size (min+gzip)** | ~5KB | ~40KB | ~6KB | ~8KB |
+| **Runtime deps** | 0 | 1 (fp-ts) | 0 | 0 |
+| **Types** | 5 | 20+ | 3 | 3 |
+| **Async support** | Yes | Yes | No | No |
+| **Exhaustiveness checking** | Yes | Yes | Partial | Yes |
+
+## @deessejs/core vs fp-ts
+
+fp-ts is a comprehensive functional programming library with many types and utilities.
+
+**fp-ts:**
+- 40KB bundle size (8x larger)
+- Steep learning curve
+- Rich ecosystem of abstractions
+- Requires FP knowledge
+
+**@deessejs/core:**
+- ~5KB (lightweight)
+- Simple, pragmatic API
+- Focused on error handling only
+- No FP jargon
+
+<Callout>
+  Use fp-ts if you need the full ecosystem of functional programming abstractions. Use @deessejs/core if you just want type-safe error handling.
+</Callout>
+
+## @deessejs/core vs neverthrow
+
+neverthrow is a Result type library for TypeScript.
+
+**neverthrow:**
+- Only Result type
+- No async support
+- Similar size (~6KB)
+
+**@deessejs/core:**
+- 5 types (Result, Maybe, Try, Outcome, AsyncResult)
+- Built-in async handling
+- Conversion utilities between types
+- Slightly smaller
+
+<Callout>
+  If you only need Result, neverthrow is a solid choice. @deessejs/core gives you more types in a similar footprint.
+</Callout>
+
+## @deessejs/core vs ts-results
+
+ts-results is another Result type implementation.
+
+**ts-results:**
+- Only Result type
+- No Maybe or Try
+- Larger bundle (~8KB)
+
+**@deessejs/core:**
+- More types for different scenarios
+- Smaller bundle
+- Additional utilities (retry, sleep)
+
+## When to Choose @deessejs/core
+
+Choose @deessejs/core when you want:
+
+- **Lightweight** - ~5KB, zero runtime deps
+- **Comprehensive** - 5 types for different error scenarios
+- **Pragmatic** - No functional programming knowledge required
+- **TypeScript-first** - Full type inference, no magic
+- **Async-ready** - Built-in AsyncResult for network operations
+
+## Migration from other libraries
+
+### From neverthrow
+
+```typescript
+// neverthrow
+import { ok, err, Result } from "neverthrow";
+
+const divide = (a: number, b: number): Result<number, string> => {
+  if (b === 0) return err("Division by zero");
+  return ok(a / b);
+};
+
+// @deessejs/core - almost identical!
+import { ok, err, Result } from "@deessejs/core";
+
+const divide = (a: number, b: number): Result<number, string> => {
+  if (b === 0) return err("Division by zero");
+  return ok(a / b);
+};
+```
+
+### From fp-ts
+
+```typescript
+// fp-ts
+import { fromEither, tryCatch } from "fp-ts/TaskEither";
+
+const parseJson = (json: string) =>
+  tryCatch(
+    () => JSON.parse(json),
+    () => new Error("Parse failed")
+  );
+
+// @deessejs/core - simpler!
+import { attempt } from "@deessejs/core";
+
+const parseJson = (json: string) => attempt(() => JSON.parse(json));
+```
+
+### From throwing exceptions
+
+```typescript
+// Before
+function divide(a: number, b: number): number {
+  if (b === 0) throw new Error("Division by zero");
+  return a / b;
+}
+
+// After @deessejs/core
+import { ok, err, Result } from "@deessejs/core";
+
+const divide = (a: number, b: number): Result<number, string> => {
+  if (b === 0) return err("Division by zero");
+  return ok(a / b);
+};
+```
+
+## See Also
+
+<Cards>
+  <Card title="Getting Started" href="/docs">
+    Quick introduction
+  </Card>
+  <Card title="Choosing a Type" href="/docs/concepts/choosing-type">
+    Which type to use
+  </Card>
+  <Card title="API Reference" href="/docs/reference/api">
+    Full API
+  </Card>
+</Cards>

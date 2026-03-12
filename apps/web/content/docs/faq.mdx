@@ -3,13 +3,17 @@ title: FAQ
 description: Frequently asked questions about @deessejs/core
 ---
 
+import { Accordions, Accordion } from 'fumadocs-ui/components/accordion';
+
 ## General
 
-### What is @deessejs/core?
+<Accordions>
+<Accordion title="What is @deessejs/core?">
 
 `@deessejs/core` is a TypeScript library that provides functional programming patterns for type-safe error handling. It offers monads like `Result`, `Maybe`, `Try`, `Outcome`, and `AsyncResult`.
 
-### Why should I use this instead of try-catch?
+</Accordion>
+<Accordion title="Why should I use this instead of try-catch?">
 
 Traditional `try-catch` has several drawbacks:
 - Errors can escape unexpectedly
@@ -23,7 +27,8 @@ With `@deessejs/core`:
 - Operations are composable and chainable
 - TypeScript ensures you handle all cases
 
-### When should I use each type?
+</Accordion>
+<Accordion title="When should I use each type?">
 
 | Type | Use When |
 |------|----------|
@@ -33,9 +38,13 @@ With `@deessejs/core`:
 | **Outcome** | You need rich error context (cause vs exception) |
 | **AsyncResult** | Async operations with error handling |
 
+</Accordion>
+</Accordions>
+
 ## Usage
 
-### How do I create a Result?
+<Accordions>
+<Accordion title="How do I create a Result?">
 
 ```typescript
 import { ok, err } from "@deessejs/core";
@@ -44,7 +53,8 @@ const success = ok(42);
 const failure = err("Something went wrong");
 ```
 
-### How do I handle errors?
+</Accordion>
+<Accordion title="How do I handle errors?">
 
 Use `match` for exhaustive handling:
 
@@ -65,7 +75,8 @@ Or use `getOrElse` for simple default values:
 const value = result.getOrElse(0);
 ```
 
-### How do I chain operations?
+</Accordion>
+<Accordion title="How do I chain operations?">
 
 Use `map` for transforming values:
 
@@ -83,7 +94,8 @@ const result = ok("10")
   .flatMap(n => divide(n, 2)); // Result<number, string>
 ```
 
-### How do I convert between types?
+</Accordion>
+<Accordion title="How do I convert between types?">
 
 Use the conversion utilities:
 
@@ -100,9 +112,13 @@ const maybe = toMaybe(result);
 const outcome = toOutcome(result);
 ```
 
+</Accordion>
+</Accordions>
+
 ## Performance
 
-### Is it performant?
+<Accordions>
+<Accordion title="Is it performant?">
 
 Yes! The library is designed with performance in mind:
 - Zero runtime dependencies
@@ -110,7 +126,8 @@ Yes! The library is designed with performance in mind:
 - All methods are inlined where possible
 - Tree-shakeable exports
 
-### Does it add bundle size?
+</Accordion>
+<Accordion title="Does it add bundle size?">
 
 The entire library is very lightweight. Each type adds minimal overhead:
 - `Result`: ~1KB
@@ -119,9 +136,13 @@ The entire library is very lightweight. Each type adds minimal overhead:
 - `Outcome`: ~1KB
 - `AsyncResult`: ~1KB
 
+</Accordion>
+</Accordions>
+
 ## TypeScript
 
-### Do I need strict mode?
+<Accordions>
+<Accordion title="Do I need strict mode?">
 
 We recommend using TypeScript's strict mode for the best experience:
 
@@ -133,13 +154,18 @@ We recommend using TypeScript's strict mode for the best experience:
 }
 ```
 
-### Can I use with JavaScript?
+</Accordion>
+<Accordion title="Can I use with JavaScript?">
 
 Yes, but you'll lose the type safety benefits. The library works with plain JavaScript.
 
+</Accordion>
+</Accordions>
+
 ## Migration
 
-### How do I migrate from throwing exceptions?
+<Accordions>
+<Accordion title="How do I migrate from throwing exceptions?">
 
 Instead of:
 
@@ -161,7 +187,8 @@ function divide(a: number, b: number): Result<number, string> {
 }
 ```
 
-### How do I migrate from null/undefined?
+</Accordion>
+<Accordion title="How do I migrate from null/undefined?">
 
 Instead of:
 
@@ -182,15 +209,23 @@ const value = fromNullable(config[key])
   .getOrElse("default");
 ```
 
+</Accordion>
+</Accordions>
+
 ## Contributing
 
-### How can I contribute?
+<Accordions>
+<Accordion title="How can I contribute?">
 
 See our GitHub repository for contribution guidelines.
 
-### Is this production ready?
+</Accordion>
+<Accordion title="Is this production ready?">
 
 Yes, `@deessejs/core` is used in production. It has:
 - Comprehensive test coverage
 - Full TypeScript support
 - Well-documented API
+
+</Accordion>
+</Accordions>

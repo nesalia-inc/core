@@ -1,9 +1,12 @@
 ---
 title: Installation
 description: How to install and set up @deessejs/core in your project
+icon: Rocket
 ---
 
-## Package Manager
+Get up and running with @deessejs/core in just a few minutes.
+
+## Install the Package
 
 Install `@deessejs/core` using your preferred package manager:
 
@@ -30,24 +33,25 @@ After installation, import the functions you need:
 ```typescript
 import { ok, err, map, Result } from "@deessejs/core";
 
-// Create a Result
+// Create a Result - explicit about potential failure
 const divide = (a: number, b: number): Result<number, string> => {
   if (b === 0) return err("Cannot divide by zero");
   return ok(a / b);
 };
 
-// Use it
-const result = divide(10, 2);
-if (result.ok) {
-  console.log(result.value); // 5
-}
+// Use it - TypeScript forces you to handle errors
+const result = divide(10, 2)
+  .map(x => x * 2)
+  .getOrElse(0);
+
+console.log(result); // 5
 ```
 
 ## TypeScript Configuration
 
 No special TypeScript configuration is required. The library exports full type definitions out of the box.
 
-For best results, ensure your `tsconfig.json` has strict mode enabled:
+For the best experience, ensure your `tsconfig.json` has strict mode enabled:
 
 ```json
 {
@@ -56,6 +60,11 @@ For best results, ensure your `tsconfig.json` has strict mode enabled:
   }
 }
 ```
+
+Strict mode enables:
+- Strict null checks
+- No implicit any
+- Strict property initialization
 
 ## ESM Support
 
@@ -67,8 +76,37 @@ The package is published as an ES module. Ensure your `package.json` has:
 }
 ```
 
-Or import using the `.js` extension:
+If you're using CommonJS, import like this:
 
 ```typescript
 import { ok } from "@deessejs/core/index.js";
 ```
+
+## Importing from @deessejs/core
+
+### Individual Imports (Recommended)
+
+Import only what you need for smaller bundles:
+
+```typescript
+import { ok, err, map, getOrElse } from "@deessejs/core";
+```
+
+### All Exports
+
+Import everything if needed:
+
+```typescript
+import * as Deesse from "@deessejs/core";
+
+Deesse.ok(42);
+Deesse.err("error");
+```
+
+## Next Steps
+
+Now that you're set up:
+
+- **[Maybe](/docs/maybe)** - Handle optional values
+- **[Result](/docs/result)** - Type-safe error handling
+- **[Examples](/docs/examples)** - Real-world patterns

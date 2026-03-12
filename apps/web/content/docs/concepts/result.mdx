@@ -1,0 +1,132 @@
+---
+title: Result
+description: Explicit success and failure with typed errors
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Cards, Card } from 'fumadocs-ui/components/card';
+
+`Result` represents a value that can be either a success (`Ok`) or a failure (`Err`). Use it when operations can fail in predictable ways and you want type-safe error handling.
+
+## The Type
+
+```typescript
+type Result<T, E> = Ok<T> | Err<E>;
+```
+
+- **`Ok<T>`** - Contains a successful value of type `T`
+- **`Err<E>`** - Contains an error of type `E`
+
+## Creating Results
+
+### ok - Success
+
+```typescript
+import { ok } from "@deessejs/core";
+
+const success: Result<number, string> = ok(42);
+```
+
+### err - Failure
+
+```typescript
+import { err } from "@deessejs/core";
+
+const failure: Result<number, string> = err("Something went wrong");
+```
+
+## Transforming
+
+### map - Transform the Value
+
+```typescript
+ok(10)
+  .map(x => x * 2)   // Ok(20)
+  .map(x => x + 1);  // Ok(21)
+```
+
+If it's an error, transformations are skipped:
+
+```typescript
+err("error")
+  .map(x => x * 2);  // Err("error") - unchanged
+```
+
+### flatMap - Chain Operations
+
+```typescript
+ok("10")
+  .flatMap(s => parseNumber(s))  // Ok(10) or Err(...)
+  .flatMap(n => divide(n, 2))     // Ok(5) or Err(...)
+```
+
+### mapErr - Transform the Error
+
+```typescript
+err("error")
+  .mapErr(e => new Error(e)); // Err(Error: error)
+```
+
+## Extracting
+
+### getOrElse - Default Value
+
+```typescript
+ok(10).getOrElse(0);   // 10
+err("e").getOrElse(0);  // 0
+```
+
+### match - Pattern Matching
+
+```typescript
+ok(42).match(
+  (value) => `Got: ${value}`,  // "Got: 42"
+  (error) => `Error: ${error}`
+);
+```
+
+### tap - Side Effects
+
+```typescript
+ok(42)
+  .tap(value => console.log(value))  // Logs: 42
+  .tap(value => sendAnalytics(value));
+```
+
+## Type Guards
+
+```typescript
+import { isOk, isErr } from "@deessejs/core";
+
+if (isOk(result)) {
+  console.log(result.value); // TypeScript knows it's Ok
+}
+
+if (isErr(result)) {
+  console.log(result.error); // TypeScript knows it's Err
+}
+```
+
+## When to Use
+
+Use `Result` when:
+
+- An operation can fail in predictable ways
+- You need typed errors (not just `Error`)
+- You want to compose operations that might fail
+- You want TypeScript to force error handling
+
+<Callout type="success">
+  Result makes errors explicit in your type signature. The compiler won't let you forget to handle them.
+</Callout>
+
+## See Also
+
+<Cards>
+  <Card title="Validating Input" href="/docs/guides/validating-input">
+    Apply Result to validation
+  </Card>
+  <Card title="Choosing a Type" href="/docs/concepts/choosing-type">
+    Result vs Maybe vs Try
+  </Card>
+</Cards>

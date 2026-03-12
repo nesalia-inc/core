@@ -1,0 +1,139 @@
+---
+title: Choosing a Type
+description: Which type should you use?
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Cards, Card } from 'fumadocs-ui/components/card';
+
+Not sure which type to use? This guide helps you choose.
+
+## Quick Decision Tree
+
+```
+Does the operation can fail with specific error types?
+├─ YES → Use Result
+│       └─ Is it async? → Use AsyncResult
+│
+└─ NO → Is the value optional (might not exist)?
+        ├─ YES → Use Maybe
+        └─ NO → You probably don't need either
+```
+
+## Detailed Comparison
+
+| Scenario | Type | Why |
+|----------|------|-----|
+| Validate user input | `Result` | Multiple error types possible |
+| Parse JSON | `Try` | Can throw on invalid JSON |
+| Read config | `Maybe` | Config might not exist |
+| Fetch from API | `AsyncResult` | Network can fail |
+| Distinguish business vs system errors | `Outcome` | Different handling needed |
+
+## Examples
+
+### User Input Validation
+
+```typescript
+// Use Result - validation can fail with specific errors
+const validateEmail = (email: string): Result<string, EmailError> => {
+  if (!email.includes("@")) {
+    return err({ code: "INVALID_FORMAT", message: "Missing @" });
+  }
+  // ...
+};
+```
+
+### Optional Configuration
+
+```typescript
+// Use Maybe - value might not exist
+const getTimeout = (config: Config): Maybe<number> =>
+  fromNullable(config.timeout);
+```
+
+### JSON Parsing
+
+```typescript
+// Use Try - JSON.parse can throw
+const parseJson = <T>(json: string): Try<T> =>
+  attempt(() => JSON.parse(json));
+```
+
+### API Calls
+
+```typescript
+// Use AsyncResult - network operations can fail
+const fetchUser = (id: string): AsyncResult<User, ApiError> =>
+  // ...
+```
+
+### Rich Error Tracking
+
+```typescript
+// Use Outcome - need cause vs exception distinction
+const processOrder = (order: Order): Outcome<Order, BusinessError, SystemError> =>
+  // ...
+```
+
+## Common Mistakes
+
+### Mistake 1: Using Result for Optional Values
+
+```typescript
+// Wrong - using Result for something that's just optional
+const getName = (user: User): Result<string, undefined> =>
+  user.name ? ok(user.name) : err(undefined);
+
+// Correct - use Maybe
+const getName = (user: User): Maybe<string> =>
+  fromNullable(user.name);
+```
+
+### Mistake 2: Using Try When Result Is Better
+
+```typescript
+// Wrong - Try doesn't give you typed errors
+const validate = (input: string): Try<User, string> =>
+  attempt(() => parseAndValidate(input));
+
+// Correct - Result gives you explicit error types
+const validate = (input: string): Result<User, ValidationError> =>
+  parseAndValidate(input);
+```
+
+### Mistake 3: Not Using Any Type
+
+```typescript
+// Sometimes you don't need either!
+// If a value always exists and can't fail, just use the value
+const name = user.name; // No wrapper needed
+```
+
+<Callout type="success">
+  When in doubt: start with Result if there's a specific error type, Maybe if it's just optional.
+</Callout>
+
+## Summary Table
+
+| Type | Error Context | Async | Use Case |
+|------|---------------|-------|----------|
+| `Result` | Yes | No | Validation, explicit failures |
+| `Maybe` | No | No | Optional values |
+| `Try` | Yes (caught) | No | Wrapping throwable code |
+| `Outcome` | Yes (rich) | No | Business vs system errors |
+| `AsyncResult` | Yes | Yes | Network, database |
+
+## See Also
+
+<Cards>
+  <Card title="Result" href="/docs/concepts/result">
+    Explicit error handling
+  </Card>
+  <Card title="Maybe" href="/docs/concepts/maybe">
+    Optional values
+  </Card>
+  <Card title="Try, Outcome & AsyncResult" href="/docs/concepts/try-outcome">
+    Advanced patterns
+  </Card>
+</Cards>
