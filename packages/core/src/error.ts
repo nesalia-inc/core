@@ -119,7 +119,7 @@ export const error = <T>(options: ErrorOptions<T>): ErrorBuilder<T> => {
       createErrWithMethods(args, initialNotes, cause);
     return Object.assign(builderFn, {
       addNotes: (...notes: string[]): ErrorBuilder<T> =>
-        createBuilderWithNotes(notes),
+        createBuilderWithCause(cause, [...initialNotes, ...notes]),
       from: (newCause: Error | Err<Error>): ErrorBuilder<T> =>
         createBuilderWithCause(isError(newCause) ? newCause : newCause.error, initialNotes),
     });

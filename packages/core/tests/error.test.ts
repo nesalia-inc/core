@@ -106,6 +106,25 @@ describe("error()", () => {
 
       expect(e.error.cause?.name).toBe("NetworkError");
     });
+
+    it("should preserve cause when addNotes is called after from", () => {
+      const SizeError = error({
+        name: "SizeError",
+        args: {} as { current: number; wanted: number },
+      });
+
+      const NetworkError = error({
+        name: "NetworkError",
+        args: {} as { host: string },
+      });
+
+      const cause = NetworkError({ host: "api.example.com" });
+      // from().addNotes() should preserve the cause
+      const e = SizeError.from(cause.error).addNotes("Note after from")({ current: 3, wanted: 5 });
+
+      expect(e.error.cause?.name).toBe("NetworkError");
+      expect(e.error.notes).toEqual(["Note after from"]);
+    });
   });
 
   describe("addNotes()", () => {
