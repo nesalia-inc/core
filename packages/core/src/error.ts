@@ -5,6 +5,7 @@
 
 import { Err, Result } from "./result.js";
 import { Try, TryFailure } from "./try.js";
+import { ZodType, ZodSchema } from "zod";
 
 /**
  * Base Error type with enrichment and chaining
@@ -36,6 +37,16 @@ export type ErrorOptions<T> = {
 };
 
 /**
+ * Zod schema wrapper for error arguments validation
+ * @typeParam T - The type of error arguments
+ */
+export type ZodErrorOptions<T> = {
+  readonly name: string;
+  readonly schema: ZodSchema<T>;
+  readonly defaultDescription?: string;
+};
+
+/**
  * Err with error methods for fluent API
  */
 interface ErrWithMethods<T> extends Err<Error<T>> {
@@ -53,22 +64,43 @@ type ErrorBuilder<T> = {
 };
 
 /**
+ * Type guard to check if options has a Zod schema
+ */
+const hasSchema = (options: ErrorOptions<unknown> | ZodErrorOptions<unknown>): options is ZodErrorOptions<unknown> =>
+  "schema" in options && options.schema instanceof ZodType;
+
+/**
  * Creates an Error type builder
  * Use like Python exception classes
  *
  * @example
+ * // With Zod schema (recommended for validation)
  * const SizeError = error({
  *   name: "SizeError",
- *   args: z.object({ current: z.number(), wanted: z.number() })
+ *   schema: z.object({ current: z.number(), wanted: z.number() })
+ * });
+ *
+ * // Use as Err - args will be validated
+ * const e = SizeError({ current: 3, wanted: 5 });
+ *
+ * @example
+ * // Without Zod (plain type)
+ * const SizeError = error({
+ *   name: "SizeError",
+ *   args: {} as { current: number; wanted: number }
  * });
  *
  * // Use as Err
  * const e = SizeError({ current: 3, wanted: 5 });
  */
-export const error = <T>(options: ErrorOptions<T>): ErrorBuilder<T> => {
+export const error = <T>(options: ErrorOptions<T> | ZodErrorOptions<T>): ErrorBuilder<T> => {
+  const isZod = hasSchema(options);
+  const name = options.name;
+  const schema = isZod ? options.schema : null;
+
   const createError = (args: T, notes: string[] = [], cause: Error | null = null): Error<T> =>
     Object.freeze({
-      name: options.name,
+      name,
       args,
       notes: Object.freeze([...notes]),
       cause,
@@ -125,8 +157,45 @@ export const error = <T>(options: ErrorOptions<T>): ErrorBuilder<T> => {
     });
   };
 
+  // Main builder function that validates args if schema is provided
+  const validateAndCreate = (args: T): ErrWithMethods<T> => {
+    if (schema) {
+      const parsed = schema.safeParse(args);
+      if (!parsed.success) {
+        // Return error with validation issues as args
+        const validationError: Error<T> = Object.freeze({
+          name: `${name}ValidationError`,
+          args: parsed.error.issues as unknown as T,
+          notes: Object.freeze([parsed.error.message]),
+          cause: null,
+        });
+        const errResult: ErrWithMethods<T> = {
+          ok: false as const,
+          error: validationError,
+          isOk(): false { return false; },
+          isErr(): true { return true; },
+          // @ts-expect-error - simplified for validation error
+          map(): unknown { return this; },
+          // @ts-expect-error - simplified for validation error
+          flatMap(): unknown { return this; },
+          // @ts-expect-error - simplified for validation error
+          mapErr(): unknown { return this; },
+          getOrElse<T2>(defaultValue: T2): T2 { return defaultValue; },
+          getOrCompute<T2>(fn: () => T2): T2 { return fn(); },
+          tap(): ErrWithMethods<T> { return errResult; },
+          tapErr(): ErrWithMethods<T> { return errResult; },
+          match<T2>(_: unknown, errFn: (e: Error<T>) => T2): T2 { return errFn(validationError); },
+          addNotes: (): ErrWithMethods<T> => errResult,
+          from: (): ErrWithMethods<T> => errResult,
+        };
+        return Object.freeze(errResult);
+      }
+    }
+    return createErrWithMethods(args);
+  };
+
   const builder: ErrorBuilder<T> = Object.assign(
-    (args: T): ErrWithMethods<T> => createErrWithMethods(args),
+    validateAndCreate,
     {
       addNotes: (...notes: string[]): ErrorBuilder<T> => createBuilderWithNotes(notes),
       from: (cause: Error | Err<Error>): ErrorBuilder<T> =>

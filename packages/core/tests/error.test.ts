@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { z } from "zod";
 import {
   error,
   exceptionGroup,
@@ -15,6 +16,82 @@ import {
   isOk,
   isErr,
 } from "../src";
+
+describe("error() with Zod", () => {
+  describe("Zod schema validation", () => {
+    it("should create error with Zod schema and validate args", () => {
+      const SizeError = error({
+        name: "SizeError",
+        schema: z.object({
+          current: z.number(),
+          wanted: z.number(),
+        }),
+      });
+
+      const e = SizeError({ current: 3, wanted: 5 });
+
+      expect(isErr(e)).toBe(true);
+      expect(e.error.name).toBe("SizeError");
+      expect(e.error.args).toEqual({ current: 3, wanted: 5 });
+    });
+
+    it("should return validation error for invalid args", () => {
+      const SizeError = error({
+        name: "SizeError",
+        schema: z.object({
+          current: z.number(),
+          wanted: z.number(),
+        }),
+      });
+
+      // @ts-expect-error - intentionally passing wrong type
+      const e = SizeError({ current: "not a number", wanted: 5 });
+
+      expect(isErr(e)).toBe(true);
+      expect(e.error.name).toBe("SizeErrorValidationError");
+      expect(e.error.notes).toHaveLength(1);
+      expect(e.error.args).toBeDefined();
+    });
+
+    it("should work with addNotes on valid Zod error", () => {
+      const ValidationError = error({
+        name: "ValidationError",
+        schema: z.object({
+          field: z.string().min(1),
+        }),
+      });
+
+      // Valid args, then addNotes
+      const e = ValidationError({ field: "email" }).addNotes("Form submission failed");
+
+      expect(isErr(e)).toBe(true);
+      expect(e.error.notes).toEqual(["Form submission failed"]);
+    });
+
+    it("should work with from on Zod error", () => {
+      const SizeError = error({
+        name: "SizeError",
+        schema: z.object({
+          current: z.number(),
+          wanted: z.number(),
+        }),
+      });
+
+      const NetworkError = error({
+        name: "NetworkError",
+        schema: z.object({
+          host: z.string(),
+        }),
+      });
+
+      const cause = NetworkError({ host: "api.example.com" });
+      const e = SizeError({ current: 3, wanted: 5 }).from(cause.error);
+
+      expect(isErr(e)).toBe(true);
+      expect(e.error.cause?.name).toBe("NetworkError");
+    });
+  });
+});
 
 describe("error()", () => {
   describe("basic creation", () => {
