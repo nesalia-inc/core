@@ -101,7 +101,7 @@ export const retry = <T>(fn: () => T, options: RetryOptions = {}): T => {
       }
     }
   }
-  // This line is unreachable - the loop always returns or throws
+  // unreachable - satisfies TypeScript
   throw new Error("Retry failed");
 };
 
@@ -146,7 +146,7 @@ export const retryAsync = async <T>(fn: () => Promise<T>, options: RetryOptions 
       }
     }
   }
-  // This line is unreachable - the loop always returns or throws
+  // unreachable - satisfies TypeScript
   throw new Error("Retry failed");
 };
 

@@ -146,6 +146,19 @@ describe("error()", () => {
       expect(e.error.notes).toEqual(["Builder note"]);
     });
 
+    it("should chain addNotes on builder multiple times", () => {
+      const ValidationError = error({
+        name: "ValidationError",
+        args: {} as { field: string },
+      });
+
+      // Chain addNotes calls on the builder - covers createBuilderWithNotes.addNotes
+      const ErrorWithNotes = ValidationError.addNotes("Note 1").addNotes("Note 2");
+      const e = ErrorWithNotes({ field: "email" });
+
+      expect(e.error.notes).toEqual(["Note 1", "Note 2"]);
+    });
+
     it("should use from on builder before creating error", () => {
       const SizeError = error({
         name: "SizeError",
@@ -201,6 +214,49 @@ describe("error()", () => {
 
       expect(e.error.cause?.name).toBe("NetworkError");
       expect(e.error.notes).toEqual(["Note after from"]);
+    });
+
+    it("should use from on builder after addNotes", () => {
+      const SizeError = error({
+        name: "SizeError",
+        args: {} as { current: number; wanted: number },
+      });
+
+      const NetworkError = error({
+        name: "NetworkError",
+        args: {} as { host: string },
+      });
+
+      const cause = NetworkError({ host: "api.example.com" });
+      // addNotes().from() should work - covers createBuilderWithNotes.from()
+      const e = SizeError.addNotes("Initial note").from(cause.error)({ current: 3, wanted: 5 });
+
+      expect(e.error.notes).toEqual(["Initial note"]);
+      expect(e.error.cause?.name).toBe("NetworkError");
+    });
+
+    it("should chain from twice on builder", () => {
+      const SizeError = error({
+        name: "SizeError",
+        args: {} as { current: number; wanted: number },
+      });
+
+      const NetworkError = error({
+        name: "NetworkError",
+        args: {} as { host: string },
+      });
+
+      const AuthError = error({
+        name: "AuthError",
+        args: {} as { token: string },
+      });
+
+      const networkCause = NetworkError({ host: "api.example.com" });
+      const authCause = AuthError({ token: "abc123" });
+      // from().from() should override the cause - covers createBuilderWithCause.from()
+      const e = SizeError.from(networkCause.error).from(authCause.error)({ current: 3, wanted: 5 });
+
+      expect(e.error.cause?.name).toBe("AuthError");
     });
   });
 
