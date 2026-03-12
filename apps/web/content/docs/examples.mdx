@@ -222,3 +222,112 @@ const processConfig = (config: Record<string, unknown>): Config => ({
   logLevel: fromNullable(config.logLevel).getOrElse("info"),
 });
 ```
+
+## Structured Errors with Error System
+
+```typescript
+import { error, err, isErrWithError, exceptionGroup, filterErrorsByName } from "@deessejs/core";
+
+// Define error types like Python exception classes
+const ValidationError = error({
+  name: "ValidationError",
+  args: {} as { field: string }
+});
+
+const NetworkError = error({
+  name: "NetworkError",
+  args: {} as { url: string }
+});
+
+// Use with Result
+const validateEmail = (email: string): Result<string, Error> => {
+  if (!email.includes("@")) {
+    return err(ValidationError({ field: "email" }));
+  }
+  return ok(email);
+};
+
+// Check for structured errors
+const result = validateEmail("invalid");
+if (isErrWithError(result)) {
+  console.log(result.error.name); // "ValidationError"
+  console.log(result.error.args.field); // "email"
+}
+```
+
+## Error Chaining
+
+```typescript
+import { error, err, raise, flatMap } from "@deessejs/core";
+
+const NetworkError = error({
+  name: "NetworkError",
+  args: {} as { url: string }
+});
+
+const ValidationError = error({
+  name: "ValidationError",
+  args: {} as { field: string }
+});
+
+const fetchData = (url: string) => {
+  if (!url.startsWith("http")) {
+    return err(NetworkError({ url }));
+  }
+  return ok({ data: "success" });
+};
+
+const validateUrl = (url: string): Result<any, Error> => {
+  const result = fetchData(url);
+  // Use raise() to throw in flatMap chain
+  return result.isErr() ? raise(result) : result;
+};
+
+const processed = ok("https://api.example.com")
+  .flatMap(validateUrl)
+  .map(x => x.data);
+```
+
+## Error Groups
+
+```typescript
+import { error, exceptionGroup, filterErrorsByName } from "@deessejs/core";
+
+const ValidationError = error({
+  name: "ValidationError",
+  args: {} as { field: string }
+});
+
+const validateForm = (data: { email: string; name: string; age: number }) => {
+  const errors: Error[] = [];
+
+  if (!data.email.includes("@")) {
+    errors.push(ValidationError({ field: "email" }));
+  }
+  if (data.name.length < 2) {
+    errors.push(ValidationError({ field: "name" }));
+  }
+  if (data.age < 18) {
+    errors.push(ValidationError({ field: "age" }));
+  }
+
+  if (errors.length > 0) {
+    return err(exceptionGroup(errors));
+  }
+  return ok(data);
+};
+
+// Filter by error type
+const validateMany = (users: any[]) => {
+  const allErrors = users.map(validateForm).filter(r => r.isErr());
+
+  const group = exceptionGroup(
+    allErrors.map(r => r.error)
+  );
+
+  const emailErrors = filterErrorsByName(group, "ValidationError")
+    .filter(e => e.args.field === "email");
+
+  return emailErrors;
+};
+```

@@ -1,0 +1,250 @@
+---
+title: Error Type
+description: Deep dive into structured errors with name, args, notes, and cause
+---
+
+# Error Type
+
+The `Error` type provides structured error handling inspired by Python's exception system. Unlike plain errors, Error types are composable, enrichable, and groupable.
+
+## Overview
+
+```typescript
+type Error<T = unknown> = {
+  readonly name: string;        // Error type identifier
+  readonly args: T;            // Error-specific data
+  readonly notes: readonly string[];  // Context/debug info
+  readonly cause: Error | null; // Chained error (like Python's __cause__)
+};
+```
+
+## Creating Errors
+
+### Basic Error
+
+```typescript
+import { error } from "@deessejs/core";
+
+const ValidationError = error({
+  name: "ValidationError",
+  args: {} as { field: string }
+});
+
+const err = ValidationError({ field: "email" });
+// Error { name: "ValidationError", args: { field: "email" }, notes: [], cause: null }
+```
+
+### With Default Description
+
+```typescript
+const ValidationError = error({
+  name: "ValidationError",
+  args: {} as { field: string },
+  defaultDescription: "Validation failed"
+});
+```
+
+## Error Properties
+
+### name
+
+The error type identifier - used for filtering and type guards:
+
+```typescript
+console.log(err.name); // "ValidationError"
+```
+
+### args
+
+Error-specific data - typed for type safety:
+
+```typescript
+const SizeError = error({
+  name: "SizeError",
+  args: {} as { current: number; wanted: number }
+});
+
+const err = SizeError({ current: 3, wanted: 5 });
+console.log(err.args.current);  // 3
+console.log(err.args.wanted);   // 5
+```
+
+### notes
+
+Array of contextual information - useful for debugging:
+
+```typescript
+const err = ValidationError({ field: "email" })
+  .addNotes("Form submitted at /register")
+  .addNotes("IP: 192.168.1.1");
+
+console.log(err.notes);
+// ["Form submitted at /register", "IP: 192.168.1.1"]
+```
+
+### cause
+
+Chained error - preserves the error chain:
+
+```typescript
+const NetworkError = error({
+  name: "NetworkError",
+  args: {} as { url: string }
+});
+
+const ValidationError = error({
+  name: "ValidationError",
+  args: {} as { field: string }
+});
+
+const networkErr = NetworkError({ url: "/api/users" });
+const validationErr = ValidationError({ field: "email" }).from(networkErr);
+
+console.log(validationErr.cause?.name); // "NetworkError"
+console.log(validationErr.cause?.args); // { url: "/api/users" }
+```
+
+## Building Errors
+
+### Fluent API
+
+Errors use a fluent builder pattern:
+
+```typescript
+const err = ValidationError({ field: "email" })
+  .addNotes("User action: submit_form")
+  .addNotes("Source: checkout_page");
+```
+
+### Adding Cause
+
+Chain errors with `.from()`:
+
+```typescript
+const err = ValidationError({ field: "email" })
+  .from(previousError);
+```
+
+### Combining Notes and Cause
+
+```typescript
+const err = ValidationError({ field: "email" })
+  .addNotes("Processing order #12345")
+  .from(networkError);
+```
+
+## ErrorGroup
+
+Group multiple errors together:
+
+```typescript
+import { error, exceptionGroup, isErrorGroup } from "@deessejs/core";
+
+const ValidationError = error({
+  name: "ValidationError",
+  args: {} as { field: string }
+});
+
+const errors = [
+  ValidationError({ field: "email" }),
+  ValidationError({ field: "name" }),
+  ValidationError({ field: "age" })
+];
+
+const group = exceptionGroup(errors);
+// ErrorGroup { name: "ValidationError", exceptions: [...] }
+```
+
+### Nested Groups
+
+ErrorGroups can contain other ErrorGroups:
+
+```typescript
+const group1 = exceptionGroup([err1, err2]);
+const group2 = exceptionGroup([group1, err3]);
+```
+
+## Helper Functions
+
+### isError
+
+Type guard for Error:
+
+```typescript
+import { isError } from "@deessejs/core";
+
+if (isError(value)) {
+  console.log(value.name); // TypeScript knows it's Error
+}
+```
+
+### isErrorGroup
+
+Type guard for ErrorGroup:
+
+```typescript
+import { isErrorGroup } from "@deessejs/core";
+
+if (isErrorGroup(value)) {
+  console.log(value.exceptions.length);
+}
+```
+
+### flattenErrorGroup
+
+Flatten nested groups into a single array:
+
+```typescript
+import { flattenErrorGroup } from "@deessejs/core";
+
+const flat = flattenErrorGroup(nestedGroup);
+```
+
+### filterErrorsByName
+
+Filter by error name:
+
+```typescript
+import { filterErrorsByName } from "@deessejs/core";
+
+const networkErrors = filterErrorsByName(group, "NetworkError");
+```
+
+### getErrorMessage
+
+Get formatted error message:
+
+```typescript
+import { getErrorMessage } from "@deessejs/core";
+
+const message = getErrorMessage(error);
+```
+
+## Integration with Result
+
+### isErrWithError
+
+Check if a Result contains an Error:
+
+```typescript
+import { isErrWithError, err } from "@deessejs/core";
+
+const result: Result<string, Error> = err(someError);
+
+if (isErrWithError(result)) {
+  console.log(result.error.name); // Works!
+}
+```
+
+### isErrTryWithError
+
+Check if a Try contains an Error:
+
+```typescript
+import { isErrTryWithError, attempt } from "@deessejs/core";
+
+const t = attempt(() => mightThrow());
+
+if (isErrTryWithError(t)) {
+  console.log(t.error.name);
+}

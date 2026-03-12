@@ -146,6 +146,30 @@ if (isErr(result)) {
 }
 ```
 
+### isErrTryWithError - Check for Structured Error
+
+Use with the Error system for rich error handling:
+
+```typescript
+import { attempt, isErrTryWithError, error } from "@deessejs/core";
+
+const ValidationError = error({
+  name: "ValidationError",
+  args: {} as { field: string }
+});
+
+// Try with Error type
+const t: Try<string, Error> = attempt(() => {
+  throw ValidationError({ field: "email" });
+});
+
+if (isErrTryWithError(t)) {
+  // TypeScript knows t.error is Error
+  console.log(t.error.name); // "ValidationError"
+  console.log(t.error.args.field); // "email"
+}
+```
+
 ## API Reference
 
 | Function | Description |

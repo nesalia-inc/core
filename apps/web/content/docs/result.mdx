@@ -146,6 +146,29 @@ if (isErr(result)) {
 }
 ```
 
+### isErrWithError - Check for Structured Error
+
+Use with the Error system for rich error handling:
+
+```typescript
+import { ok, err, isErrWithError, error } from "@deessejs/core";
+
+const ValidationError = error({
+  name: "ValidationError",
+  args: {} as { field: string }
+});
+
+// Result with Error type
+const result: Result<string, Error> = err(ValidationError({ field: "email" }));
+
+if (isErrWithError(result)) {
+  // TypeScript knows result.error is Error
+  console.log(result.error.name); // "ValidationError"
+  console.log(result.error.args.field); // "email"
+  console.log(result.error.notes); // []
+}
+```
+
 ## Converting
 
 ### toMaybe - Convert to Maybe
