@@ -6,11 +6,6 @@ on:
   pull_request_review_comment:
     types: [created, edited]
 
-# Prevent workflow from running when the comment is from a bot (including Marty itself)
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.issue.number }}
-  cancel-in-progress: true
-
 permissions:
   contents: read
   issues: write
@@ -19,12 +14,50 @@ permissions:
 jobs:
   respond:
     runs-on: ubuntu-latest
-    if: ${{ github.event.sender.type != 'Bot' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Check if comment is from a bot - skip bot-triggered comments
+      - name: Check if bot comment
+        id: bot-check
+        run: |
+          AUTHOR_TYPE="${{ github.event.comment.user.type }}"
+          AUTHOR_LOGIN="${{ github.event.comment.user.login }}"
+
+          # List of known bots to skip
+          KNOWN_BOTS="vercel\[bot]|github-actions\[bot]|dependabot\[bot]|renovate\[bot]|codecov\[bot]|netlify\[bot]|heroku\[bot]"
+
+          echo "Author: $AUTHOR_LOGIN (type: $AUTHOR_TYPE)"
+
+          # Skip if it's a Bot type or known bot username
+          if [ "$AUTHOR_TYPE" == "Bot" ]; then
+            echo "Skipping: Comment from Bot type"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          elif echo "$AUTHOR_LOGIN" | grep -qiE "$KNOWN_BOTS"; then
+            echo "Skipping: Known bot detected"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      # Check if Marty is actually mentioned
+      - name: Check Marty mention
+        id: mention-check
+        if: steps.bot-check.outputs.skip != 'true'
+        run: |
+          COMMENT_BODY="${{ github.event.comment.body }}"
+
+          if echo "$COMMENT_BODY" | grep -qi "@martyy-code"; then
+            echo "Marty mentioned - will respond"
+            echo "should_respond=true" >> $GITHUB_OUTPUT
+          else
+            echo "Marty not mentioned - skipping"
+            echo "should_respond=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Generate Marty token
+        if: steps.mention-check.outputs.should_respond == 'true'
         id: marty-token
         uses: actions/create-github-app-token@v2
         with:
@@ -32,6 +65,7 @@ jobs:
           private-key: ${{ secrets.MARTY_APP_PRIVATE_KEY }}
 
       - name: Run Marty Comment Response
+        if: steps.mention-check.outputs.should_respond == 'true'
         uses: nesalia-inc/marty-action@1.0.0
         with:
           github_token: ${{ steps.marty-token.outputs.token }}
@@ -166,6 +200,22 @@ jobs:
             4. Be respectful and professional at all times
             5. If the question was already answered in the thread, reference that
             6. Keep responses focused and actionable
+
+            ## Step 7: POST YOUR RESPONSE
+
+            CRITICAL: After generating your response, you MUST post it as a comment on the issue!
+
+            Use this command to post your response:
+            ```
+            gh issue comment {issue_number} --body "Your response here"
+            ```
+
+            Example:
+            ```
+            gh issue comment 58 --body "Hey! Good question - here's my thoughts..."
+            ```
+
+            Your response will NOT be visible unless you post it as a comment!
 
             ## Output
 
