@@ -1,31 +1,18 @@
 /**
  * @deessejs/core - Functional programming patterns for TypeScript
  *
- * Types: Outcome, Result, Maybe
- * Constructs: Success, Cause, Exception, Unit
+ * Types: Result, Maybe, Try, Error
+ * Constructs: Unit
  * Utilities: retry, sleep, try, conversions
  */
 
 // Re-export all types
 export type { Unit } from "./unit.js";
-export type { Success } from "./success.js";
-export type { Cause, CauseOptions } from "./cause.js";
-export type { Exception, ExceptionOptions } from "./exception.js";
-export type { Outcome } from "./outcome.js";
 export type { Maybe, Some, None } from "./maybe.js";
 export type { Result, Ok, Err } from "./result.js";
 
 // Unit
 export { unit, isUnit } from "./unit.js";
-
-// Success
-export { success, successUnit, isSuccess } from "./success.js";
-
-// Cause
-export { cause, causeUnit, isCause } from "./cause.js";
-
-// Exception
-export { exception, exceptionWithStack, exceptionUnit, isException } from "./exception.js";
 
 // Maybe
 export {
@@ -113,17 +100,10 @@ export type { RetryOptions } from "./retry.js";
 // Conversions
 export {
   toResult,
-  toOutcome,
-  toOutcomeFromResult,
-  toResultFromOutcome,
   toMaybeFromResult,
-  toMaybeFromOutcome,
   fromUndefinedable,
-  toResultFromOutcome_ as toResultFromOutcomeWithOptions,
-  toOutcomeFromTry,
-  toTryFromOutcome,
 } from "./conversions.js";
-export type { ToResultOptions, ToResultFromOutcomeOptions } from "./conversions.js";
+export type { ToResultOptions } from "./conversions.js";
 
 // Error System
 export type { Error, ErrorGroup, ErrorOptions } from "./error.js";

@@ -2,13 +2,13 @@
  * Authentication Flow Example
  *
  * This example demonstrates how to use @deessejs/core for:
- * - Using Outcome to distinguish business vs system errors
+ * - Using Result with Error type for rich error handling
  * - Handling authentication flows
  * - Token validation and refresh
  * - Multi-factor authentication
  */
 
-import { fromPromise, okAsync, errAsync, success, cause, exception, ok, err, some, none, Maybe } from "@deessejs/core";
+import { fromPromise, okAsync, errAsync, ok, err, some, none, Maybe, error, Error, isErr } from "@deessejs/core";
 
 // ============================================================================
 // Types
@@ -27,23 +27,14 @@ type AuthToken = {
   expiresAt: Date;
 };
 
-type BusinessError = {
+type AuthError = Error<{
   code: string;
   message: string;
   userMessage: string;
-};
+  internal?: boolean;
+}>;
 
-type SystemError = {
-  type: string;
-  message: string;
-  internal: boolean;
-};
-
-type AuthResult = Outcome<
-  { user: User; token: AuthToken },
-  BusinessError,
-  SystemError
->;
+type AuthResult = Result<{ user: User; token: AuthToken }, AuthError>;
 
 // ============================================================================
 // Mock Database
@@ -134,8 +125,20 @@ const delay = (ms: number): void => {
   setTimeout(() => {}, ms);
 };
 
+// Helper to create auth errors
+const authError = (
+  code: string,
+  message: string,
+  userMessage: string,
+  internal = false
+): AuthError =>
+  error({
+    name: code,
+    args: { code, message, userMessage, internal },
+  });
+
 // ============================================================================
-// Example 1: Simple login with Outcome
+// Example 1: Simple login with Result
 // ============================================================================
 
 const login = async (email: string, password: string): Promise<AuthResult> => {
@@ -147,11 +150,13 @@ const login = async (email: string, password: string): Promise<AuthResult> => {
 
   if (userResult.isErr() || !userResult.value) {
     console.log(`  ✗ User not found`);
-    return cause({
-      code: "INVALID_CREDENTIALS",
-      message: "User not found",
-      userMessage: "Invalid email or password",
-    });
+    return err(
+      authError(
+        "INVALID_CREDENTIALS",
+        "User not found",
+        "Invalid email or password"
+      )
+    );
   }
 
   const user = userResult.value;
@@ -161,11 +166,13 @@ const login = async (email: string, password: string): Promise<AuthResult> => {
 
   if (passwordValid.isErr() || !passwordValid.value) {
     console.log(`  ✗ Invalid password`);
-    return cause({
-      code: "INVALID_CREDENTIALS",
-      message: "Password verification failed",
-      userMessage: "Invalid email or password",
-    });
+    return err(
+      authError(
+        "INVALID_CREDENTIALS",
+        "Password verification failed",
+        "Invalid email or password"
+      )
+    );
   }
 
   // Generate token
@@ -173,15 +180,18 @@ const login = async (email: string, password: string): Promise<AuthResult> => {
 
   if (tokenResult.isErr()) {
     console.log(`  ✗ Token generation failed`);
-    return exception({
-      type: "TOKEN_SERVICE_ERROR",
-      message: "Failed to generate authentication token",
-      internal: true,
-    });
+    return err(
+      authError(
+        "TOKEN_SERVICE_ERROR",
+        "Failed to generate authentication token",
+        "Authentication failed",
+        true
+      )
+    );
   }
 
   console.log(`  ✓ Login successful for ${user.email}`);
-  return success({ user, token: tokenResult.value });
+  return ok({ user, token: tokenResult.value });
 }
 
 // ============================================================================
@@ -200,11 +210,13 @@ const loginWithMfa = async (
   const userResult = await fromPromise(db.findByEmail(email));
 
   if (userResult.isErr() || !userResult.value) {
-    return cause({
-      code: "INVALID_CREDENTIALS",
-      message: "User not found",
-      userMessage: "Invalid email or password",
-    });
+    return err(
+      authError(
+        "INVALID_CREDENTIALS",
+        "User not found",
+        "Invalid email or password"
+      )
+    );
   }
 
   const user = userResult.value;
@@ -213,21 +225,25 @@ const loginWithMfa = async (
   const passwordValid = await fromPromise(verifyPassword(password, user.passwordHash));
 
   if (passwordValid.isErr() || !passwordValid.value) {
-    return cause({
-      code: "INVALID_CREDENTIALS",
-      message: "Password verification failed",
-      userMessage: "Invalid email or password",
-    });
+    return err(
+      authError(
+        "INVALID_CREDENTIALS",
+        "Password verification failed",
+        "Invalid email or password"
+      )
+    );
   }
 
   // Check if MFA is enabled
   if (user.mfaEnabled && !mfaCode) {
     console.log(`  ⚠ MFA required`);
-    return cause({
-      code: "MFA_REQUIRED",
-      message: "Multi-factor authentication required",
-      userMessage: "Please enter your MFA code",
-    });
+    return err(
+      authError(
+        "MFA_REQUIRED",
+        "Multi-factor authentication required",
+        "Please enter your MFA code"
+      )
+    );
   }
 
   // Verify MFA code
@@ -237,11 +253,13 @@ const loginWithMfa = async (
 
     if (mfaValid.isErr() || !mfaValid.value) {
       console.log(`  ✗ Invalid MFA code`);
-      return cause({
-        code: "INVALID_MFA",
-        message: "MFA code verification failed",
-        userMessage: "Invalid authentication code",
-      });
+      return err(
+        authError(
+          "INVALID_MFA",
+          "MFA code verification failed",
+          "Invalid authentication code"
+        )
+      );
     }
   }
 
@@ -249,33 +267,38 @@ const loginWithMfa = async (
   const tokenResult = await fromPromise(generateToken(user));
 
   if (tokenResult.isErr()) {
-    return exception({
-      type: "TOKEN_SERVICE_ERROR",
-      message: "Failed to generate authentication token",
-      internal: true,
-    });
+    return err(
+      authError(
+        "TOKEN_SERVICE_ERROR",
+        "Failed to generate authentication token",
+        "Authentication failed",
+        true
+      )
+    );
   }
 
   console.log(`  ✓ Login successful with MFA`);
-  return success({ user, token: tokenResult.value });
+  return ok({ user, token: tokenResult.value });
 };
 
 // ============================================================================
 // Example 3: Token validation
 // ============================================================================
 
-const validateAuthToken = async (token: string): Promise<Outcome<User, BusinessError, SystemError>> => {
+const validateAuthToken = async (token: string): Promise<Result<User, AuthError>> => {
   console.log(`\n=== Example 3: Token Validation ===`);
 
   const validation = await validateToken(token);
 
   if (!validation.ok) {
     console.log(`  ✗ Invalid token`);
-    return cause({
-      code: "INVALID_TOKEN",
-      message: "Token validation failed",
-      userMessage: "Please log in again",
-    });
+    return err(
+      authError(
+        "INVALID_TOKEN",
+        "Token validation failed",
+        "Please log in again"
+      )
+    );
   }
 
   const { userId } = validation.value;
@@ -285,15 +308,17 @@ const validateAuthToken = async (token: string): Promise<Outcome<User, BusinessE
 
   if (userResult.isErr() || !userResult.value) {
     console.log(`  ✗ User not found (may have been deleted)`);
-    return cause({
-      code: "USER_NOT_FOUND",
-      message: "User associated with token not found",
-      userMessage: "Please log in again",
-    });
+    return err(
+      authError(
+        "USER_NOT_FOUND",
+        "User associated with token not found",
+        "Please log in again"
+      )
+    );
   }
 
   console.log(`  ✓ Token valid for ${userResult.value.email}`);
-  return success(userResult.value);
+  return ok(userResult.value);
 }
 
 // ============================================================================
@@ -302,22 +327,24 @@ const validateAuthToken = async (token: string): Promise<Outcome<User, BusinessE
 
 const refreshAuthToken = async (
   refreshToken: string
-): Promise<Outcome<AuthToken, BusinessError, SystemError>> => {
+): Promise<Result<AuthToken, AuthError>> => {
   console.log(`\n=== Example 4: Token Refresh ===`);
 
   const newToken = await refreshAccessToken(refreshToken);
 
   if (!newToken.ok) {
     console.log(`  ✗ Invalid refresh token`);
-    return cause({
-      code: "INVALID_REFRESH_TOKEN",
-      message: "Refresh token is invalid or expired",
-      userMessage: "Please log in again",
-    });
+    return err(
+      authError(
+        "INVALID_REFRESH_TOKEN",
+        "Refresh token is invalid or expired",
+        "Please log in again"
+      )
+    );
   }
 
   console.log(`  ✓ Token refreshed successfully`);
-  return success(newToken.value);
+  return ok(newToken.value);
 };
 
 // ============================================================================
@@ -330,36 +357,34 @@ const completeAuthFlow = async () => {
   // Scenario 1: Successful login
   console.log(`\n  Scenario 1: Successful login`);
   const result1 = await login("user@example.com", "correctpassword");
-  if (result1.isSuccess()) {
+  if (result1.isOk()) {
     console.log(`    ✓ User authenticated: ${result1.value.user.email}`);
-  } else if (result1.isCause()) {
-    console.log(`    ✗ Business error: ${result1.value.userMessage}`);
-  } else if (result1.isException()) {
-    console.log(`    ✗ System error: ${result1.value.message}`);
+  } else {
+    console.log(`    ✗ Auth error: ${result1.error.args.userMessage}`);
   }
 
   // Scenario 2: Invalid credentials
   console.log(`\n  Scenario 2: Invalid credentials`);
   const result2 = await login("user@example.com", "wrongpassword");
-  if (result2.isCause()) {
-    console.log(`    ✗ ${result2.value.userMessage}`);
+  if (isErr(result2)) {
+    console.log(`    ✗ ${result2.error.args.userMessage}`);
   }
 
   // Scenario 3: User not found
   console.log(`\n  Scenario 3: User not found`);
   const result3 = await login("nonexistent@example.com", "password");
-  if (result3.isCause()) {
-    console.log(`    ✗ ${result3.value.userMessage}`);
+  if (isErr(result3)) {
+    console.log(`    ✗ ${result3.error.args.userMessage}`);
   }
 
   // Scenario 4: MFA login
   console.log(`\n  Scenario 4: MFA login`);
   const result4a = await loginWithMfa("mfa@example.com", "correctpassword");
-  if (result4a.isCause() && result4a.value.code === "MFA_REQUIRED") {
-    console.log(`    ⚠ ${result4a.value.userMessage}`);
+  if (isErr(result4a) && result4a.error.args.code === "MFA_REQUIRED") {
+    console.log(`    ⚠ ${result4a.error.args.userMessage}`);
 
     const result4b = await loginWithMfa("mfa@example.com", "correctpassword", "123456");
-    if (result4b.isSuccess()) {
+    if (result4b.isOk()) {
       console.log(`    ✓ MFA verified, user logged in`);
     }
   }
@@ -367,10 +392,10 @@ const completeAuthFlow = async () => {
   // Scenario 5: Token validation
   console.log(`\n  Scenario 5: Token validation`);
   const authResult = await login("user@example.com", "correctpassword");
-  if (authResult.isSuccess()) {
+  if (authResult.isOk()) {
     const token = authResult.value.token.accessToken;
     const validation = await validateAuthToken(token);
-    if (validation.isSuccess()) {
+    if (validation.isOk()) {
       console.log(`    ✓ Token is valid`);
     }
   }
@@ -396,13 +421,13 @@ const main = async () => {
 
     // Example 3: Token validation
     const authResult = await login("user@example.com", "correctpassword");
-    if (authResult.isSuccess()) {
+    if (authResult.isOk()) {
       await validateAuthToken(authResult.value.token.accessToken);
       await validateAuthToken("invalid_token");
     }
 
     // Example 4: Token refresh
-    if (authResult.isSuccess()) {
+    if (authResult.isOk()) {
       await refreshAuthToken(authResult.value.token.refreshToken);
       await refreshAuthToken("invalid_refresh_token");
     }

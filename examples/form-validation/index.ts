@@ -4,11 +4,11 @@
  * This example demonstrates how to use @deessejs/core for:
  * - Chaining multiple validation rules
  * - Accumulating validation errors
- * - Distinguishing business errors from system errors
+ * - Using Result with Error type for rich error handling
  * - Type-safe form data handling
  */
 
-import { ok, err, success, cause, exception } from "@deessejs/core";
+import { ok, err, error, Error, isErr } from "@deessejs/core";
 
 // ============================================================================
 // Types
@@ -29,16 +29,12 @@ type User = {
   age: number;
 };
 
-type ValidationError = {
+type ValidationError = Error<{
   field: string;
   code: string;
   message: string;
-};
-
-type SystemError = {
-  type: string;
-  message: string;
-};
+  internal?: boolean;
+}>;
 
 // ============================================================================
 // Validation Rules
@@ -46,27 +42,30 @@ type SystemError = {
 
 const validateName = (name: string): Result<string, ValidationError> => {
   if (name.length < 2) {
-    return err({
-      field: "name",
-      code: "TOO_SHORT",
-      message: "Name must be at least 2 characters",
-    });
+    return err(
+      error({
+        name: "TOO_SHORT",
+        args: { field: "name", code: "TOO_SHORT", message: "Name must be at least 2 characters" },
+      })
+    );
   }
 
   if (name.length > 50) {
-    return err({
-      field: "name",
-      code: "TOO_LONG",
-      message: "Name must not exceed 50 characters",
-    });
+    return err(
+      error({
+        name: "TOO_LONG",
+        args: { field: "name", code: "TOO_LONG", message: "Name must not exceed 50 characters" },
+      })
+    );
   }
 
   if (!/^[a-zA-Z\s]+$/.test(name)) {
-    return err({
-      field: "name",
-      code: "INVALID_CHARS",
-      message: "Name can only contain letters and spaces",
-    });
+    return err(
+      error({
+        name: "INVALID_CHARS",
+        args: { field: "name", code: "INVALID_CHARS", message: "Name can only contain letters and spaces" },
+      })
+    );
   }
 
   return ok(name);
@@ -76,19 +75,21 @@ const validateEmail = (email: string): Result<string, ValidationError> => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   if (!email) {
-    return err({
-      field: "email",
-      code: "REQUIRED",
-      message: "Email is required",
-    });
+    return err(
+      error({
+        name: "REQUIRED",
+        args: { field: "email", code: "REQUIRED", message: "Email is required" },
+      })
+    );
   }
 
   if (!emailRegex.test(email)) {
-    return err({
-      field: "email",
-      code: "INVALID_FORMAT",
-      message: "Email format is invalid",
-    });
+    return err(
+      error({
+        name: "INVALID_FORMAT",
+        args: { field: "email", code: "INVALID_FORMAT", message: "Email format is invalid" },
+      })
+    );
   }
 
   return ok(email);
@@ -96,19 +97,21 @@ const validateEmail = (email: string): Result<string, ValidationError> => {
 
 const validateAge = (age: number): Result<number, ValidationError> => {
   if (age < 13) {
-    return err({
-      field: "age",
-      code: "TOO_YOUNG",
-      message: "You must be at least 13 years old",
-    });
+    return err(
+      error({
+        name: "TOO_YOUNG",
+        args: { field: "age", code: "TOO_YOUNG", message: "You must be at least 13 years old" },
+      })
+    );
   }
 
   if (age > 120) {
-    return err({
-      field: "age",
-      code: "INVALID",
-      message: "Please enter a valid age",
-    });
+    return err(
+      error({
+        name: "INVALID",
+        args: { field: "age", code: "INVALID", message: "Please enter a valid age" },
+      })
+    );
   }
 
   return ok(age);
@@ -116,35 +119,39 @@ const validateAge = (age: number): Result<number, ValidationError> => {
 
 const validatePassword = (password: string): Result<string, ValidationError> => {
   if (password.length < 8) {
-    return err({
-      field: "password",
-      code: "TOO_SHORT",
-      message: "Password must be at least 8 characters",
-    });
+    return err(
+      error({
+        name: "TOO_SHORT",
+        args: { field: "password", code: "TOO_SHORT", message: "Password must be at least 8 characters" },
+      })
+    );
   }
 
   if (!/[A-Z]/.test(password)) {
-    return err({
-      field: "password",
-      code: "NO_UPPERCASE",
-      message: "Password must contain at least one uppercase letter",
-    });
+    return err(
+      error({
+        name: "NO_UPPERCASE",
+        args: { field: "password", code: "NO_UPPERCASE", message: "Password must contain at least one uppercase letter" },
+      })
+    );
   }
 
   if (!/[a-z]/.test(password)) {
-    return err({
-      field: "password",
-      code: "NO_LOWERCASE",
-      message: "Password must contain at least one lowercase letter",
-    });
+    return err(
+      error({
+        name: "NO_LOWERCASE",
+        args: { field: "password", code: "NO_LOWERCASE", message: "Password must contain at least one lowercase letter" },
+      })
+    );
   }
 
   if (!/[0-9]/.test(password)) {
-    return err({
-      field: "password",
-      code: "NO_NUMBER",
-      message: "Password must contain at least one number",
-    });
+    return err(
+      error({
+        name: "NO_NUMBER",
+        args: { field: "password", code: "NO_NUMBER", message: "Password must contain at least one number" },
+      })
+    );
   }
 
   return ok(password);
@@ -155,11 +162,12 @@ const validatePasswordConfirmation = (
   confirmPassword: string
 ): Result<void, ValidationError> => {
   if (password !== confirmPassword) {
-    return err({
-      field: "confirmPassword",
-      code: "MISMATCH",
-      message: "Passwords do not match",
-    });
+    return err(
+      error({
+        name: "MISMATCH",
+        args: { field: "confirmPassword", code: "MISMATCH", message: "Passwords do not match" },
+      })
+    );
   }
 
   return ok(undefined);
@@ -198,9 +206,9 @@ const validateFormSequential = (
 // Example 2: Validate all fields (accumulate errors)
 // ============================================================================
 
-type FormErrors = {
+type FormErrors = Error<{
   errors: ValidationError[];
-};
+}>;
 
 const validateFormAll = (form: RegistrationForm): Result<RegistrationForm, FormErrors> => {
   console.log("\n=== Example 2: Validate All Fields (Accumulate Errors) ===");
@@ -227,71 +235,72 @@ const validateFormAll = (form: RegistrationForm): Result<RegistrationForm, FormE
   if (confirmResult.isErr()) errors.push(confirmResult.error);
 
   if (errors.length > 0) {
-    return err({ errors });
+    return err(
+      error({
+        name: "VALIDATION_ERRORS",
+        args: { errors },
+      })
+    );
   }
 
   return ok(form);
 }
 
 // ============================================================================
-// Example 3: Using Outcome for rich error context
+// Example 3: Using Result with Error for rich error context
 // ============================================================================
 
-const validateFormWithOutcome = (
+const validateFormWithError = (
   form: RegistrationForm
-): Outcome<RegistrationForm, ValidationError, SystemError> {
-  console.log("\n=== Example 3: Using Outcome (Business vs System Errors) ===");
+): Result<RegistrationForm, ValidationError> {
+  console.log("\n=== Example 3: Using Result with Error (Business vs System Errors) ===");
 
   // Business validation errors (expected, user-correctable)
   const nameValid = validateName(form.name);
   if (nameValid.isErr()) {
-    return cause(nameValid.error);
+    return nameValid;
   }
 
   // Simulate a system error (unexpected, e.g., database check fails)
   try {
     // This would be a real database check
     if (form.email === "taken@example.com") {
-      return exception({
-        type: "DATABASE_ERROR",
-        message: "Failed to check email availability",
-      });
+      return err(
+        error({
+          name: "DATABASE_ERROR",
+          args: { field: "email", code: "DATABASE_ERROR", message: "Failed to check email availability", internal: true },
+        })
+      );
     }
   } catch (e) {
-    return exception({
-      type: "SYSTEM_ERROR",
-      message: e instanceof Error ? e.message : "Unknown system error",
-    });
+    return err(
+      error({
+        name: "SYSTEM_ERROR",
+        args: { field: "email", code: "SYSTEM_ERROR", message: e instanceof Error ? e.message : "Unknown system error", internal: true },
+      })
+    );
   }
 
   // Continue with other validations
   return ok(form)
     .flatMap((data) => {
       const result = validateEmail(data.email);
-      return result.isErr()
-        ? cause(result.error)
-        : success(data);
+      return result.isErr() ? err(result.error) : ok(data);
     })
     .flatMap((data) => {
       const result = validateAge(data.age);
-      return result.isErr()
-        ? cause(result.error)
-        : success(data);
+      return result.isErr() ? err(result.error) : ok(data);
     })
     .flatMap((data) => {
       const result = validatePassword(data.password);
-      return result.isErr()
-        ? cause(result.error)
-        : success(data);
+      return result.isErr() ? err(result.error) : ok(data);
     })
     .flatMap((data) => {
       const result = validatePasswordConfirmation(
         data.password,
         data.confirmPassword
       );
-      return result.isErr()
-        ? cause(result.error)
-        : success(data);
+      return result.isErr() ? err(result.error) : ok(data);
     });
 }
 
@@ -325,11 +334,12 @@ const validateUserProfile = (profile: UserProfile): Result<UserProfile, Validati
       if (data.website) {
         const urlRegex = /^https?:\/\/.+/;
         if (!urlRegex.test(data.website)) {
-          return err({
-            field: "website",
-            code: "INVALID_URL",
-            message: "Website must be a valid URL",
-          });
+          return err(
+            error({
+              name: "INVALID_URL",
+              args: { field: "website", code: "INVALID_URL", message: "Website must be a valid URL" },
+            })
+          );
         }
       }
       return ok(data);
@@ -339,11 +349,12 @@ const validateUserProfile = (profile: UserProfile): Result<UserProfile, Validati
       if (data.twitter) {
         const twitterRegex = /^@[\w]+$/;
         if (!twitterRegex.test(data.twitter)) {
-          return err({
-            field: "twitter",
-            code: "INVALID_TWITTER",
-            message: "Twitter handle must start with @",
-          });
+          return err(
+            error({
+              name: "INVALID_TWITTER",
+              args: { field: "twitter", code: "INVALID_TWITTER", message: "Twitter handle must start with @" },
+            })
+          );
         }
       }
       return ok(data);
@@ -362,7 +373,7 @@ const emailExists = async (email: string): Promise<boolean> => {
 
 const validateFormWithAsyncCheck = async (
   form: RegistrationForm
-): Promise<Result<RegistrationForm, ValidationError>> {
+): Promise<Result<RegistrationForm, ValidationError>> => {
   console.log("\n=== Example 5: Async Validation ===");
 
   // First do sync validation
@@ -374,11 +385,12 @@ const validateFormWithAsyncCheck = async (
   // Then do async validation
   const exists = await emailExists(form.email);
   if (exists) {
-    return err({
-      field: "email",
-      code: "ALREADY_EXISTS",
-      message: "An account with this email already exists",
-    });
+    return err(
+      error({
+        name: "ALREADY_EXISTS",
+        args: { field: "email", code: "ALREADY_EXISTS", message: "An account with this email already exists" },
+      })
+    );
   }
 
   return ok(form);
@@ -415,8 +427,8 @@ const main = async () => {
     console.log("\n--- Testing invalid form (sequential) ---");
     const result1 = validateFormSequential(invalidForm);
     if (result1.isErr()) {
-      console.log(`✗ Validation failed: ${result1.error.message}`);
-      console.log(`  Field: ${result1.error.field}, Code: ${result1.error.code}`);
+      console.log(`✗ Validation failed: ${result1.error.args.message}`);
+      console.log(`  Field: ${result1.error.args.field}, Code: ${result1.error.name}`);
     }
 
     console.log("\n--- Testing valid form (sequential) ---");
@@ -429,21 +441,20 @@ const main = async () => {
     console.log("\n--- Testing invalid form (all errors) ---");
     const result3 = validateFormAll(invalidForm);
     if (result3.isErr()) {
-      console.log(`✗ Found ${result3.error.errors.length} validation errors:`);
-      result3.error.errors.forEach((err) => {
-        console.log(`  • [${err.field}] ${err.code}: ${err.message}`);
+      const formErrors = result3.error.args as { errors: ValidationError[] };
+      console.log(`✗ Found ${formErrors.errors.length} validation errors:`);
+      formErrors.errors.forEach((err) => {
+        console.log(`  • [${err.args.field}] ${err.name}: ${err.args.message}`);
       });
     }
 
-    // Example 3: Using Outcome
-    console.log("\n--- Testing with Outcome ---");
-    const result4 = validateFormWithOutcome(validForm);
-    if (result4.isSuccess()) {
+    // Example 3: Using Result with Error
+    console.log("\n--- Testing with Result and Error ---");
+    const result4 = validateFormWithError(validForm);
+    if (result4.isOk()) {
       console.log("✓ Form validated successfully!");
-    } else if (result4.isCause()) {
-      console.log(`✗ Business error: ${result4.value.message}`);
-    } else if (result4.isException()) {
-      console.log(`✗ System error: ${result4.value.message}`);
+    } else {
+      console.log(`✗ Error: ${result4.error.args.message}`);
     }
 
     // Example 4: Conditional validation
@@ -458,7 +469,7 @@ const main = async () => {
 
     const result5 = validateUserProfile(profile);
     if (result5.isErr()) {
-      console.log(`✗ ${result5.error.message}`);
+      console.log(`✗ ${result5.error.args.message}`);
     }
 
     // Example 5: Async validation
@@ -470,7 +481,7 @@ const main = async () => {
 
     const result6 = await validateFormWithAsyncCheck(formWithExistingEmail);
     if (result6.isErr()) {
-      console.log(`✗ ${result6.error.message}`);
+      console.log(`✗ ${result6.error.args.message}`);
     }
 
   } catch (error) {
