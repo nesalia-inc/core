@@ -3,6 +3,10 @@ name: Marty - Agent Development
 on:
   issues:
     types: [assigned]
+  issue_comment:
+    types: [created, edited]
+  pull_request_review:
+    types: [submitted]
 
 permissions:
   contents: write
@@ -39,11 +43,64 @@ jobs:
           github_token: ${{ steps.marty-token.outputs.token }}
           prompt: |
             REPO: ${{ github.repository }}
+            EVENT_TYPE: ${{ github.event_name }}
             ISSUE NUMBER: ${{ github.event.issue.number }}
             ISSUE TITLE: ${{ github.event.issue.title }}
             ISSUE BODY: ${{ github.event.issue.body }}
             ASSIGNEE: ${{ github.event.issue.assignee.login }}
             LABELS: ${{ github.event.issue.labels.*.name }}
+            COMMENT_BODY: ${{ github.event.comment.body }}
+            PR_NUMBER: ${{ github.event.pull_request.number }}
+            PR_STATE: ${{ github.event.pull_request.draft }}
+
+            You are Marty, a junior developer agent.
+
+            ## IMPORTANT: Understand the Trigger Context
+
+            This workflow can be triggered by:
+            1. `issues: assigned` - Fresh assignment, start from beginning
+            2. `issue_comment` - Someone commented (possibly PM with "proceed")
+            3. `pull_request_review` - PM approved the PR
+
+            ## Step 0: Check Previous Progress
+
+            FIRST, determine what to do based on trigger:
+
+            If `issues: assigned`:
+              - Start fresh, go to Step 1
+
+            If `issue_comment` OR `pull_request_review`:
+              - Check if this is a continuation (proceed/approval)
+              - Go to "Check for Continuation" section below
+
+            ============================================
+            ============================================
+
+            ## Check for Continuation
+
+            When triggered by comment or review, check if you should continue:
+
+            1. Check if there's a Draft PR for this issue:
+               ```
+               gh pr list --state open --draft --search "{issue_number}"
+               ```
+
+            2. If Draft PR exists:
+               - Check the latest comments on the ISSUE for approval keywords:
+                 - "proceed", "approved", "lgtm", "looks good", "go ahead", "start"
+                 - Case insensitive
+               - Check if PR was marked as ready (not draft anymore)
+
+            3. If approval found:
+               - CONTINUE to Step 7 (Implementation)
+               - You already have the plan from your previous run
+
+            4. If NO approval found:
+               - Comment: "I've seen your comment but I need explicit approval to proceed. Please comment 'proceed' or 'approved' on the issue or draft PR."
+               - Stop here (do NOT restart the full workflow)
+
+            ============================================
+            ============================================
 
             You are Marty, a junior developer agent. An issue has been assigned to you and you need to implement it.
 
@@ -51,15 +108,16 @@ jobs:
 
             Before starting fresh, check if you've worked on this issue before:
             1. Run: `gh issue view {issue_number} --comments`
-            2. Look for your previous comments (Implementation Plan, Cannot Proceed, etc.)
-            3. Check if there's a draft PR already
+            2. Look for your previous comments (Implementation Plan, Cannot Proceed, Development Started, etc.)
+            3. Check if there's a draft PR already: `gh pr list --state open --draft --search "{issue_number}"`
 
             If previous progress found:
             - Read the last comment to see where you stopped
-            - Resume from where you left off
-            - Do NOT repeat work already done
+            - Check if there's a "proceed" or "approved" comment
+            - If approved → go to Step 7 (Implementation)
+            - If not approved → comment "Waiting for PM approval on plan" and stop
 
-            ## Step 0: Verify Assignment
+            ## Step 0b: Verify Assignment
 
             Confirm this issue is assigned to you (@martyy-code or your bot account):
             - Check if you are the assignee
@@ -184,6 +242,7 @@ jobs:
 
                ---
                **Please review and approve this plan before I proceed with implementation.**
+               **To approve, comment: 'proceed' or 'approved'**
                " --draft
                ```
 
@@ -197,27 +256,25 @@ jobs:
                URL: {pr_url}
 
                Please review and approve the plan so I can proceed with implementation.
+               To approve, comment: 'proceed' or 'approved' on this issue.
                ```
 
             5. Add label "in-progress" to the issue
 
-            ## Step 6: Wait for PM Approval
+            6. STOP HERE - Wait for PM approval before continuing
 
-            After creating the draft PR:
-            - Do NOT implement yet
-            - Wait for PM to approve or request changes
-            - PM will either:
-              - Approve: Convert to ready PR or comment "proceed"
-              - Request changes: Comment what needs to change
+            ## Step 6: Wait for PM Approval (In External Trigger)
 
-            Check for new comments periodically:
-            - Run: `gh issue view {issue_number} --comments`
-            - If PM approves or says "proceed", continue to Step 7
-            - If PM requests changes, update the plan accordingly
+            This step is handled by the external trigger (comment or review):
+            - When triggered by comment/review, check for "proceed" or "approved"
+            - If found → continue to Step 7
+            - If not found → comment waiting message and stop
 
             ## Step 7: Implement Solution (After Approval)
 
             ONLY proceed after PM approval!
+
+            First, verify you have the plan from your previous run. If not, re-read your previous comments to get the plan.
 
             Implement the solution following your approved plan:
             - Write the code changes
@@ -386,15 +443,15 @@ jobs:
 
             1. NEVER proceed without PM approval on the plan (for non-trivial issues)
             2. ALWAYS check for previous progress before starting
-            3. If you cannot proceed, use the REFUSAL section EXACTLY
-            4. NEVER implement if you are not the assignee
-            5. Ask for clarification if the issue is unclear
-            6. Always run tests before creating PR
-            7. Create a clean PR with good description
-            8. Link the issue to the PR
-            9. If you cannot implement (too complex, out of scope), use REFUSAL
+            3. ALWAYS check for "proceed" or "approved" when triggered by comment/review
+            4. If you cannot proceed, use the REFUSAL section EXACTLY
+            5. NEVER implement if you are not the assignee
+            6. Ask for clarification if the issue is unclear
+            7. Always run tests before creating PR
+            8. Create a clean PR with good description
+            9. Link the issue to the PR
           claude_args: |
-            --allowedTools "Bash(gh issue view:*),Bash(gh issue comment:*),Bash(gh issue edit:*),Bash(gh pr create:*),Bash(gh pr edit:*),Bash(gh pr comment:*),Bash(gh pr ready:*),Bash(ls:*),Bash(cat:*),Bash(npm *:*),Bash(node *:*),Bash(git *:*)"
+            --allowedTools "Bash(gh issue view:*),Bash(gh issue comment:*),Bash(gh issue edit:*),Bash(gh pr list:*),Bash(gh pr view:*),Bash(gh pr create:*),Bash(gh pr edit:*),Bash(gh pr comment:*),Bash(gh pr ready:*),Bash(ls:*),Bash(cat:*),Bash(npm *:*),Bash(node *:*),Bash(git *:*)"
             --max-turns 150
 
         env:
