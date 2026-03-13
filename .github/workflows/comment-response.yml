@@ -141,6 +141,17 @@ jobs:
             echo "already_done=false" >> $GITHUB_OUTPUT
           fi
 
+      # Add reaction to show processing started
+      - name: Add eyes reaction
+        if: steps.mention-check.outputs.should_respond == 'true' && steps.already-responded.outputs.already_done != 'true' && steps.rate-limit.outputs.rate_limited != 'true'
+        run: |
+          COMMENT_ID="${{ github.event.comment.id }}"
+          gh api repos/${{ github.repository }}/issues/comments/$COMMENT_ID/reactions \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -d '{"content":"eyes"}' \
+            2>/dev/null || echo "Reaction already exists or failed"
+
       - name: Generate Marty token
         if: steps.mention-check.outputs.should_respond == 'true' && steps.already-responded.outputs.already_done != 'true' && steps.rate-limit.outputs.rate_limited != 'true'
         id: marty-token
@@ -267,6 +278,38 @@ jobs:
           ANTHROPIC_DEFAULT_SONNET_MODEL: MiniMax-M2.5
           ANTHROPIC_DEFAULT_HAIKU_MODEL: MiniMax-M2.5
           ANTHROPIC_DEFAULT_OPUS_MODEL: MiniMax-M2.5
+
+      # Add reaction to show success
+      - name: Add success reaction
+        if: success() && steps.mention-check.outputs.should_respond == 'true' && steps.rate-limit.outputs.rate_limited != 'true'
+        run: |
+          COMMENT_ID="${{ github.event.comment.id }}"
+          # First remove the eyes reaction, then add check mark
+          REACTIONS=$(gh api repos/${{ github.repository }}/issues/comments/$COMMENT_ID/reactions --jq '.[].id' 2>/dev/null)
+          for reaction_id in $REACTIONS; do
+            gh api repos/${{ github.repository }}/issues/comments/$COMMENT_ID/reactions/$reaction_id -X DELETE 2>/dev/null || true
+          done
+          gh api repos/${{ github.repository }}/issues/comments/$COMMENT_ID/reactions \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -d '{"content":"white_check_mark"}' \
+            2>/dev/null || echo "Failed to add reaction"
+
+      # Add reaction to show error
+      - name: Add error reaction
+        if: failure() && steps.mention-check.outputs.should_respond == 'true' && steps.rate-limit.outputs.rate_limited != 'true'
+        run: |
+          COMMENT_ID="${{ github.event.comment.id }}"
+          # First remove the eyes reaction, then add x
+          REACTIONS=$(gh api repos/${{ github.repository }}/issues/comments/$COMMENT_ID/reactions --jq '.[].id' 2>/dev/null)
+          for reaction_id in $REACTIONS; do
+            gh api repos/${{ github.repository }}/issues/comments/$COMMENT_ID/reactions/$reaction_id -X DELETE 2>/dev/null || true
+          done
+          gh api repos/${{ github.repository }}/issues/comments/$COMMENT_ID/reactions \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -d '{"content":"x"}' \
+            2>/dev/null || echo "Failed to add reaction"
 
       - name: Success
         if: steps.mention-check.outputs.should_respond == 'true' && steps.rate-limit.outputs.rate_limited != 'true'
