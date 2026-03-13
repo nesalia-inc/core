@@ -12,8 +12,8 @@ permissions:
 jobs:
   review:
     runs-on: ubuntu-latest
-    # Allow human-triggered runs and skip PRs created by marty-action (self-review)
-    if: ${{ github.event.sender.type == 'User' && github.event.pull_request.user.login != 'marty-action' }}
+    # Allow human and bot triggered runs
+    if: ${{ github.event.sender.type == 'User' || github.event.sender.type == 'Bot' }}
     steps:
       - name: Checkout PR branch
         uses: actions/checkout@v4
@@ -31,6 +31,7 @@ jobs:
         uses: nesalia-inc/marty-action@1.0.0
         with:
           github_token: ${{ steps.marty-token.outputs.token }}
+          allowed_bots: '*'
           prompt: |
             REPO: ${{ github.repository }}
             PR NUMBER: ${{ github.event.pull_request.number }}
