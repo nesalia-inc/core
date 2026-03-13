@@ -73,9 +73,9 @@ jobs:
           app-id: ${{ secrets.MARTY_APP_ID }}
           private-key: ${{ secrets.MARTY_APP_PRIVATE_KEY }}
 
-      - name: Run Claude Code
+      - name: Run Marty
         if: steps.mention-check.outputs.should_respond == 'true' && steps.already-responded.outputs.already_done != 'true'
-        uses: anthropics/claude-code-action@v1
+        uses: nesalia-inc/marty-action@1.0.0
         with:
           github_token: ${{ steps.marty-token.outputs.token }}
           prompt: |
