@@ -16,7 +16,7 @@ jobs:
     if: ${{ github.event.sender.type == 'User' || github.event.sender.type == 'Bot' }}
     steps:
       - name: Checkout PR branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 1
 
