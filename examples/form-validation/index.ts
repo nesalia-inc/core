@@ -8,7 +8,7 @@
  * - Type-safe form data handling
  */
 
-import { ok, err, success, cause, exception } from "@deessejs/core";
+import { ok, err } from "@deessejs/core";
 
 // ============================================================================
 // Types
@@ -32,11 +32,6 @@ type User = {
 type ValidationError = {
   field: string;
   code: string;
-  message: string;
-};
-
-type SystemError = {
-  type: string;
   message: string;
 };
 
@@ -234,69 +229,7 @@ const validateFormAll = (form: RegistrationForm): Result<RegistrationForm, FormE
 }
 
 // ============================================================================
-// Example 3: Using Outcome for rich error context
-// ============================================================================
-
-const validateFormWithOutcome = (
-  form: RegistrationForm
-): Outcome<RegistrationForm, ValidationError, SystemError> {
-  console.log("\n=== Example 3: Using Outcome (Business vs System Errors) ===");
-
-  // Business validation errors (expected, user-correctable)
-  const nameValid = validateName(form.name);
-  if (nameValid.isErr()) {
-    return cause(nameValid.error);
-  }
-
-  // Simulate a system error (unexpected, e.g., database check fails)
-  try {
-    // This would be a real database check
-    if (form.email === "taken@example.com") {
-      return exception({
-        type: "DATABASE_ERROR",
-        message: "Failed to check email availability",
-      });
-    }
-  } catch (e) {
-    return exception({
-      type: "SYSTEM_ERROR",
-      message: e instanceof Error ? e.message : "Unknown system error",
-    });
-  }
-
-  // Continue with other validations
-  return ok(form)
-    .flatMap((data) => {
-      const result = validateEmail(data.email);
-      return result.isErr()
-        ? cause(result.error)
-        : success(data);
-    })
-    .flatMap((data) => {
-      const result = validateAge(data.age);
-      return result.isErr()
-        ? cause(result.error)
-        : success(data);
-    })
-    .flatMap((data) => {
-      const result = validatePassword(data.password);
-      return result.isErr()
-        ? cause(result.error)
-        : success(data);
-    })
-    .flatMap((data) => {
-      const result = validatePasswordConfirmation(
-        data.password,
-        data.confirmPassword
-      );
-      return result.isErr()
-        ? cause(result.error)
-        : success(data);
-    });
-}
-
-// ============================================================================
-// Example 4: Conditional validation
+// Example 3: Conditional validation
 // ============================================================================
 
 type UserProfile = {
@@ -308,7 +241,7 @@ type UserProfile = {
 };
 
 const validateUserProfile = (profile: UserProfile): Result<UserProfile, ValidationError> => {
-  console.log("\n=== Example 4: Conditional Validation ===");
+  console.log("\n=== Example 3: Conditional Validation ===");
 
   return ok(profile)
     .flatMap((data) =>
@@ -351,7 +284,7 @@ const validateUserProfile = (profile: UserProfile): Result<UserProfile, Validati
 }
 
 // ============================================================================
-// Example 5: Async validation (e.g., check if email already exists)
+// Example 4: Async validation (e.g., check if email already exists)
 // ============================================================================
 
 const emailExists = async (email: string): Promise<boolean> => {
@@ -363,7 +296,7 @@ const emailExists = async (email: string): Promise<boolean> => {
 const validateFormWithAsyncCheck = async (
   form: RegistrationForm
 ): Promise<Result<RegistrationForm, ValidationError>> {
-  console.log("\n=== Example 5: Async Validation ===");
+  console.log("\n=== Example 4: Async Validation ===");
 
   // First do sync validation
   const syncResult = validateFormSequential(form);
@@ -435,18 +368,7 @@ const main = async () => {
       });
     }
 
-    // Example 3: Using Outcome
-    console.log("\n--- Testing with Outcome ---");
-    const result4 = validateFormWithOutcome(validForm);
-    if (result4.isSuccess()) {
-      console.log("✓ Form validated successfully!");
-    } else if (result4.isCause()) {
-      console.log(`✗ Business error: ${result4.value.message}`);
-    } else if (result4.isException()) {
-      console.log(`✗ System error: ${result4.value.message}`);
-    }
-
-    // Example 4: Conditional validation
+    // Example 3: Conditional validation
     console.log("\n--- Testing conditional validation ---");
     const profile: UserProfile = {
       name: "Jane Doe",
@@ -461,7 +383,7 @@ const main = async () => {
       console.log(`✗ ${result5.error.message}`);
     }
 
-    // Example 5: Async validation
+    // Example 4: Async validation
     console.log("\n--- Testing async validation ---");
     const formWithExistingEmail: RegistrationForm = {
       ...validForm,
