@@ -4,7 +4,7 @@ on:
   issues:
     types: [opened, edited]
 
-# Prevent workflow from running when the issue is modified by a bot (including Marty itself)
+# Prevent multiple workflows from running on the same issue
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.issue.number }}
   cancel-in-progress: true
@@ -16,7 +16,6 @@ permissions:
 jobs:
   triage:
     runs-on: ubuntu-latest
-    if: ${{ github.event.sender.type != 'Bot' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
