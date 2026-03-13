@@ -52,6 +52,10 @@ pnpm add @deessejs/core
 yarn add @deessejs/core
 ```
 
+## Documentation
+
+For full documentation, visit [core.deessejs.com](https://core.deessejs.com).
+
 ## Quick Start
 
 ```typescript
