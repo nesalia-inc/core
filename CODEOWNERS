@@ -1,25 +1,8 @@
 # Code Owners
 
-This file defines the code owners for this repository.
+# Default owner
+* @AliiiBenn
 
-## Default Owner
-
-All changes require approval from at least one maintainer:
-
-* **@AliiiBenn** - Primary maintainer
-
-## Review Requirements
-
-- At least one approval required for all changes
-- Two approvals required for changes to:
-  - `.github/`
-  - `packages/core/src/`
-
-## Emeritus
-
-Former maintainers who retain historical review knowledge:
-- (none currently)
-
----
-
-For questions about this file, contact the maintainers.
+# Require 2 approvals for these paths
+.github/ @AliiiBenn
+packages/core/src/ @AliiiBenn
