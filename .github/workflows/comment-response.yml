@@ -24,55 +24,64 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Check if comment is from a bot - skip bot-triggered comments
+      # Check if comment is from a bot account
       - name: Check if bot comment
         id: bot-check
         run: |
           AUTHOR_TYPE="${{ github.event.comment.user.type }}"
           AUTHOR_LOGIN="${{ github.event.comment.user.login }}"
 
-          # List of known bots to skip
-          KNOWN_BOTS="vercel\[bot]|github-actions\[bot]|dependabot\[bot]|renovate\[bot]|codecov\[bot]|netlify\[bot]|heroku\[bot]"
-
-          echo "Author: $AUTHOR_LOGIN (type: $AUTHOR_TYPE)"
-
-          # Skip if it's a Bot type or known bot username
+          # Skip if it's a Bot type
           if [ "$AUTHOR_TYPE" == "Bot" ]; then
-            echo "Skipping: Comment from Bot type"
-            echo "skip=true" >> $GITHUB_OUTPUT
-          elif echo "$AUTHOR_LOGIN" | grep -qiE "$KNOWN_BOTS"; then
-            echo "Skipping: Known bot detected"
+            echo "Skipping: Comment from Bot type ($AUTHOR_LOGIN)"
             echo "skip=true" >> $GITHUB_OUTPUT
           else
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
 
-      # Check if Marty is actually mentioned
+      # Check if Marty is mentioned
       - name: Check Marty mention
         id: mention-check
         if: steps.bot-check.outputs.skip != 'true'
         run: |
           COMMENT_BODY="${{ github.event.comment.body }}"
-
           if echo "$COMMENT_BODY" | grep -qi "@martyy-code"; then
-            echo "Marty mentioned - will respond"
+            echo "Marty mentioned"
             echo "should_respond=true" >> $GITHUB_OUTPUT
           else
-            echo "Marty not mentioned - skipping"
+            echo "Marty not mentioned"
             echo "should_respond=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Generate Marty token
+      # Check if Marty already responded to this specific comment
+      - name: Check if already responded
+        id: already-responded
         if: steps.mention-check.outputs.should_respond == 'true'
+        run: |
+          COMMENT_ID="${{ github.event.comment.id }}"
+
+          # Check if this specific comment already has a reply from marty-action
+          RESPONSE_EXISTS=$(gh api repos/${{ github.repository }}/issues/comments/$COMMENT_ID/reactions --paginate 2>/dev/null | grep -c "marty-action" || echo "0")
+
+          if [ "$RESPONSE_EXISTS" -gt "0" ]; then
+            echo "Already responded to this comment"
+            echo "already_done=true" >> $GITHUB_OUTPUT
+          else
+            echo "Need to respond"
+            echo "already_done=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate Marty token
+        if: steps.mention-check.outputs.should_respond == 'true' && steps.already-responded.outputs.already_done != 'true'
         id: marty-token
         uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ secrets.MARTY_APP_ID }}
           private-key: ${{ secrets.MARTY_APP_PRIVATE_KEY }}
 
-      - name: Run Marty Comment Response
-        if: steps.mention-check.outputs.should_respond == 'true'
-        uses: nesalia-inc/marty-action@1.0.0
+      - name: Run Claude Code
+        if: steps.mention-check.outputs.should_respond == 'true' && steps.already-responded.outputs.already_done != 'true'
+        uses: anthropics/claude-code-action@v1
         with:
           github_token: ${{ steps.marty-token.outputs.token }}
           prompt: |
@@ -83,135 +92,19 @@ jobs:
             ISSUE_TITLE: ${{ github.event.issue.title }}
             ISSUE_BODY: ${{ github.event.issue.body }}
 
-            You are Marty, an AI assistant. Someone has mentioned you in a comment and you need to respond appropriately.
+            You are Marty, an AI assistant. Respond to the @mention appropriately.
 
-            ## Step 1: Analyze the Comment
+            ## Instructions
 
-            First, determine if this mention requires a response:
-            - Is Marty (@martyy-code) mentioned?
-            - Is this a question asking for help?
-            - Is this a request for information?
-            - Is this a status update request?
+            1. Analyze if you need to respond (only if @martyy-code is mentioned)
+            2. Gather context about the issue: `gh issue view {issue_number}`
+            3. Check full conversation history: `gh issue view {issue_number} --comments`
+            4. Determine response type (question, help request, acknowledgment, etc.)
+            5. Generate and POST your response
 
-            If this is NOT a request for Marty (e.g., someone just referencing an issue number), do not respond.
+            ## CRITICAL: POST YOUR RESPONSE
 
-            ## Step 2: Gather Context
-
-            If a response is needed:
-            1. Fetch the issue/PR details: `gh issue view {number}`
-            2. Fetch ALL comments (not just recent): `gh issue view {number} --comments`
-            3. Check if there's a linked PR: `gh issue view {number} --json pullRequest`
-            4. Look at the FULL conversation history to understand:
-               - What has been discussed so far
-               - Did Marty (martyy-code) already respond previously?
-               - Is this a reply to Marty's previous response?
-               - What was Marty's last message about?
-
-            IMPORTANT: This could be:
-            - A NEW request (first time mentioned)
-            - A REPLY to Marty's previous response (continue the conversation)
-            - A FOLLOW-UP question based on Marty's answer
-
-            Analyze the conversation flow to determine which it is.
-
-            ## Step 3: Determine Response Type
-
-            Categorize what the user is asking:
-
-            ### NEW REQUEST (first mention)
-            - This is the first time Marty is mentioned in this issue/PR
-            - Treat as a fresh request
-            - Provide complete information
-
-            ### REPLY TO MARTY (continuing conversation)
-            - User is responding to Marty's previous message
-            - This is a follow-up, clarification, or thank you
-            - Look at Marty's last message to understand the context
-            - Keep the conversation flowing naturally
-
-            ### Simple Question
-            - Direct question that can be answered from context
-            - Provide a clear, helpful answer
-            - Be concise and friendly
-
-            ### Clarification Needed
-            - Not enough context to answer
-            - Ask follow-up questions
-            - Be polite about needing more information
-
-            ### Technical Help
-            - User needs help with code/config/etc.
-            - Provide specific guidance
-            - Point to relevant documentation if available
-
-            ### Feature Request / Bug Report
-            - User describing a new need or problem
-            - Acknowledge the request
-            - Suggest creating a proper issue if needed
-
-            ### Acknowledgment
-            - Just being mentioned, no question
-            - Brief acknowledgment if appropriate
-            - Otherwise, no response needed
-
-            ### Thank You / Confirmation
-            - User is thanking Marty for help
-            - Brief acknowledgment is sufficient
-
-            ## Step 4: Generate Response
-
-            Based on the type, generate an appropriate response:
-            - Be helpful and friendly
-            - Be concise
-            - If you don't know, say so
-            - Provide actionable guidance
-
-            ## Step 5: Issue Modifications (if requested)
-
-            The user might ask Marty to modify the issue. Check for requests like:
-            - "Add label X"
-            - "Change title to..."
-            - "Set priority to..."
-            - "Assign to..."
-
-            If the user requests an issue modification:
-            1. Parse the requested change
-            2. Confirm the change in your response
-            3. Apply the change using:
-               - `gh issue edit {number} --add-label label1,label2`
-               - `gh issue edit {number} --title "new title"`
-               - `gh issue edit {number} --add-assignee username`
-
-            Example responses for modifications:
-            - "Sure, I've added the 'bug' label to this issue."
-            - "Done! I've updated the title to '...'"
-            - "I've assigned this to @username."
-
-            ## Step 6: Escalation Rules
-
-            Do NOT attempt to answer if:
-            - Security-related questions requiring immediate attention
-            - Questions about billing or accounts
-            - Requests that violate project guidelines
-
-            For these cases:
-            - Politely explain that this requires human attention
-            - Tag a human maintainer in your response
-
-            ## Important Rules
-
-            1. NEVER respond to spam or inappropriate content
-            2. NEVER make up information you don't have
-            3. NEVER respond to mentions that aren't directed at you
-            4. Be respectful and professional at all times
-            5. If the question was already answered in the thread, reference that
-            6. Keep responses focused and actionable
-
-            ## Step 7: POST YOUR RESPONSE
-
-            CRITICAL: After generating your response, you MUST post it as a comment on the issue!
-
-            Use this command to post your response:
+            After generating your response, you MUST post it as a comment:
             ```
             gh issue comment {issue_number} --body "Your response here"
             ```
@@ -221,23 +114,22 @@ jobs:
             gh issue comment 58 --body "Hey! Good question - here's my thoughts..."
             ```
 
-            Your response will NOT be visible unless you post it as a comment!
+            Your response will NOT be visible unless you post it!
 
-            ## Output
+            ## Issue Modifications
 
-            If a response is needed:
-            1. Post a helpful comment responding to the user
-            2. Use appropriate tone (helpful, professional, concise)
-
-            If no response is needed:
-            - Do nothing (don't comment)
+            If asked to modify the issue (add label, change title, assign):
+            - Parse the request
+            - Execute: `gh issue edit {number} --add-label label`
+            - Confirm in your response
           claude_args: |
             --allowedTools "Bash(gh issue view:*),Bash(gh issue comment:*),Bash(gh issue edit:*),Bash(gh pr view:*)"
-            --max-turns 40
+            --max-turns 30
 
         env:
-          ANTHROPIC_BASE_URL: https://api.minimax.io/anthropic
-          ANTHROPIC_AUTH_TOKEN: ${{ secrets.MINIMAX_API_KEY }}
-          ANTHROPIC_DEFAULT_SONNET_MODEL: MiniMax-M2.5
-          ANTHROPIC_DEFAULT_HAIKU_MODEL: MiniMax-M2.5
-          ANTHROPIC_DEFAULT_OPUS_MODEL: MiniMax-M2.5
+          ANTHROPIC_API_KEY: ${{ secrets.MINIMAX_API_KEY }}
+
+      - name: Success
+        if: steps.mention-check.outputs.should_respond == 'true'
+        run: |
+          echo "Comment processing completed"
