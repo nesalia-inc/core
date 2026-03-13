@@ -12,6 +12,8 @@ permissions:
 jobs:
   review:
     runs-on: ubuntu-latest
+    # Allow both human and bot (Marty) triggered runs
+    if: ${{ github.event.sender.type == 'User' || github.event.sender.login == 'marty-action[bot]' }}
     steps:
       - name: Checkout PR branch
         uses: actions/checkout@v4
