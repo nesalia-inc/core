@@ -181,9 +181,9 @@ jobs:
         if: success()
         run: |
           ISSUE_NUMBER="${{ github.event.issue.number }}"
-          # Remove eyes reaction
-          REACTIONS=$(gh api repos/${{ github.repository }}/issues/$ISSUE_NUMBER/reactions --jq '.[].id' 2>/dev/null)
-          for reaction_id in $REACTIONS; do
+          # Only remove eyes reaction from this workflow (user ID 41898282 is marty-action)
+          EYES_REACTIONS=$(gh api repos/${{ github.repository }}/issues/$ISSUE_NUMBER/reactions --jq '.[] | select(.user.id == 41898282 and .content == "eyes").id' 2>/dev/null)
+          for reaction_id in $EYES_REACTIONS; do
             gh api repos/${{ github.repository }}/issues/$ISSUE_NUMBER/reactions/$reaction_id -X DELETE 2>/dev/null || true
           done
           gh api repos/${{ github.repository }}/issues/$ISSUE_NUMBER/reactions \
@@ -197,9 +197,9 @@ jobs:
         if: failure()
         run: |
           ISSUE_NUMBER="${{ github.event.issue.number }}"
-          # Remove eyes reaction
-          REACTIONS=$(gh api repos/${{ github.repository }}/issues/$ISSUE_NUMBER/reactions --jq '.[].id' 2>/dev/null)
-          for reaction_id in $REACTIONS; do
+          # Only remove eyes reaction from this workflow
+          EYES_REACTIONS=$(gh api repos/${{ github.repository }}/issues/$ISSUE_NUMBER/reactions --jq '.[] | select(.user.id == 41898282 and .content == "eyes").id' 2>/dev/null)
+          for reaction_id in $EYES_REACTIONS; do
             gh api repos/${{ github.repository }}/issues/$ISSUE_NUMBER/reactions/$reaction_id -X DELETE 2>/dev/null || true
           done
           gh api repos/${{ github.repository }}/issues/$ISSUE_NUMBER/reactions \
