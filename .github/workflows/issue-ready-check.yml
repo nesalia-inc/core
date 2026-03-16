@@ -1,0 +1,131 @@
+name: Marty - Issue Ready Check
+
+on:
+  issue_comment:
+    types: [created, edited]
+
+# Prevent conflicts
+concurrency:
+  group: marty-is-ready-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  is-ready:
+    runs-on: ubuntu-latest
+    if: >
+      contains(github.event.comment.body, '/is-ready')
+
+    steps:
+      - name: Generate Marty token
+        id: marty-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.MARTY_APP_ID }}
+          private-key: ${{ secrets.MARTY_APP_PRIVATE_KEY }}
+
+      - name: Get issue details
+        id: issue
+        run: |
+          ISSUE=$(gh issue view ${{ github.event.issue.number }} --json number,title,body,author,labels,assignees,comments)
+          echo "issue=$ISSUE" >> $GITHUB_OUTPUT
+
+      - name: Check if already ready
+        id: check-ready
+        run: |
+          ISSUE_LABELS="${{ fromJson(steps.issue.outputs.issue).labels.*.name }}"
+          if echo "$ISSUE_LABELS" | grep -qw "ready:yes"; then
+            echo "already_ready=true" >> $GITHUB_OUTPUT
+          else
+            echo "already_ready=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run Ready Analysis
+        if: steps.check-ready.outputs.already_ready != 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          github_token: ${{ steps.marty-token.outputs.token }}
+          prompt: |
+            # Issue Ready Analysis
+
+            Analyze issue #{{ github.event.issue.number }} to determine if it's ready for implementation.
+
+            ## Issue Details
+            ```
+            {{ steps.issue.outputs.issue }}
+            ```
+
+            ## What to Check
+
+            ### Must Have (Blocking) - If ANY is missing, NOT READY
+            - [ ] **Clear problem statement** - What is the issue trying to solve?
+            - [ ] **At least one acceptance criterion** - How do we know it's done?
+            - [ ] **Relevant context** - Files, components, or at least a hint about where to look
+
+            ### Should Have (Warnings) - If missing, probably NOT READY
+            - [ ] Technical approach mentioned or obvious
+            - [ ] Edge cases considered (or not applicable)
+            - [ ] User impact described
+
+            ### Nice to Have (Info) - Nice but not blocking
+            - [ ] Design links or mockups
+            - [ ] Related issues linked
+            - [ ] Success metrics or KPIs
+
+            ## Your Task
+
+            1. Read the issue carefully
+            2. Check each item above
+            3. Decide: **READY** or **NOT READY**
+
+            If NOT READY, you MUST list SPECIFIC items that are missing. Be constructive - explain HOW to fix, don't just say "it's unclear".
+
+            ## Output FORMAT (MUST follow exactly)
+
+            Comment on the issue with this format:
+
+            ```
+            ## Issue Readiness Assessment
+
+            ### Status: ✅ READY / ❌ NOT READY
+
+            ### Checks:
+            - [x] Clear problem statement  OR  - [ ] Clear problem statement - REASON
+            - [x] At least one acceptance criterion  OR  - [ ] At least one acceptance criterion - REASON
+            - [x] Relevant context  OR  - [ ] Relevant context - REASON
+            // ... continue for all checks
+
+            ### Summary:
+            [Short explanation]
+
+            ### If NOT READY - What needs to be added:
+            1. [Specific item 1]
+            2. [Specific item 2]
+            3. [Specific item 3]
+            ```
+
+            Then add labels:
+            - If READY: `ready:yes`, `agent:ready`
+            - If NOT READY: `ready:no`, `needs:clarification`
+
+          claude_args: |
+            --allowedTools "Bash(gh issue view:*),Bash(gh issue comment:*),Bash(gh issue edit:*),Bash(gh issue label add:*),Bash(gh issue label remove:*),Bash(gh api:*)"
+            --max-turns 50
+
+        env:
+          ANTHROPIC_BASE_URL: https://api.minimax.io/anthropic
+          ANTHROPIC_AUTH_TOKEN: ${{ secrets.MINIMAX_API_KEY }}
+          ANTHROPIC_DEFAULT_SONNET_MODEL: MiniMax-M2.5
+
+      - name: Already Ready Notification
+        if: steps.check-ready.outputs.already_ready == 'true'
+        run: |
+          gh issue comment ${{ github.event.issue.number }} --body "## ℹ️ Issue Already Ready
+
+          This issue already has the `ready:yes` label. You can assign it to @martyy-code to start implementation."
+        env:
+          GH_TOKEN: ${{ steps.marty-token.outputs.token }}
