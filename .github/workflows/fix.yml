@@ -6,10 +6,10 @@ on:
   pull_request_review_comment:
     types: [created, edited]
 
-# Prevent conflicts
+# Prevent conflicts - cancel previous runs
 concurrency:
   group: marty-fix-${{ github.event.issue.number || github.event.pull_request.number || 'unknown' }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 permissions:
   contents: write
@@ -38,53 +38,72 @@ jobs:
         run: |
           REPO="${{ github.repository }}"
 
-          # Determine if triggered from issue_comment or pull_request_review_comment
-          if [ "${{ github.event_name }}" == "issue_comment" ]; then
-            # Triggered from issue comment
-            ISSUE_NUM="${{ github.event.issue.number }}"
-            echo "Triggered from issue comment: #$ISSUE_NUM"
-            echo "issue_number=$ISSUE_NUM" >> $GITHUB_OUTPUT
+          # Check what type of event this is
+          echo "Event name: ${{ github.event_name }}"
 
-            # Get issue details
-            ISSUE=$(gh issue view $ISSUE_NUM --json number,title,body,labels,assignees,comments)
-            echo "issue=$ISSUE" >> $GITHUB_OUTPUT
-
-            # Get the linked PR from issue
-            PR_DATA=$(gh api repos/$REPO/issues/$ISSUE_NUM --jq '.pullRequest // null')
-            if [ "$PR_DATA" != "null" ] && [ -n "$PR_DATA" ]; then
-              PR_NUM=$(echo $PR_DATA | jq -r '.number')
-              echo "pr_number=$PR_NUM" >> $GITHUB_OUTPUT
-
-              PR_STATE=$(gh pr view $PR_NUM --json state --jq '.state')
-              echo "pr_state=$PR_STATE" >> $GITHUB_OUTPUT
-
-              PR_BRANCH=$(gh pr view $PR_NUM --json headRefName --jq '.headRefName')
-              echo "pr_branch=$PR_BRANCH" >> $GITHUB_OUTPUT
-            else
-              echo "No linked PR found"
-              echo "pr_number=" >> $GITHUB_OUTPUT
-              echo "pr_state=" >> $GITHUB_OUTPUT
-              echo "pr_branch=" >> $GITHUB_OUTPUT
-            fi
-
-          elif [ "${{ github.event_name }}" == "pull_request_review_comment" ]; then
-            # Triggered from PR comment
+          # For pull_request_review_comment, use pull_request.number
+          if [ "${{ github.event_name }}" == "pull_request_review_comment" ]; then
             PR_NUM="${{ github.event.pull_request.number }}"
-            ISSUE_NUM="${{ github.event.pull_request.number }}"
-            echo "Triggered from PR comment: #$PR_NUM"
-            echo "issue_number=$ISSUE_NUM" >> $GITHUB_OUTPUT
+            ISSUE_NUM=$(gh pr view $PR_NUM --json issueUrl --jq '.issueUrl' | grep -o '[0-9]*')
+            echo "From PR comment: PR#$PR_NUM, Issue#$ISSUE_NUM"
             echo "pr_number=$PR_NUM" >> $GITHUB_OUTPUT
+            echo "issue_number=$ISSUE_NUM" >> $GITHUB_OUTPUT
 
-            # Get PR details
             PR_STATE=$(gh pr view $PR_NUM --json state --jq '.state')
             echo "pr_state=$PR_STATE" >> $GITHUB_OUTPUT
 
             PR_BRANCH=$(gh pr view $PR_NUM --json headRefName --jq '.headRefName')
             echo "pr_branch=$PR_BRANCH" >> $GITHUB_OUTPUT
 
-            # Get issue details
             ISSUE=$(gh issue view $ISSUE_NUM --json number,title,body,labels,assignees,comments)
             echo "issue=$ISSUE" >> $GITHUB_OUTPUT
+
+          # For issue_comment, check if it's actually a PR comment
+          elif [ "${{ github.event_name }}" == "issue_comment" ]; then
+            # Check if this is a PR comment (has pull_request)
+            if [ "${{ github.event.issue.pull_request }}" != "" ]; then
+              # It's a PR comment - get PR number from the URL in the issue
+              PR_URL="${{ github.event.issue.pull_request.url }}"
+              PR_NUM=$(echo $PR_URL | grep -o '[0-9]*')
+              ISSUE_NUM="${{ github.event.issue.number }}"
+              echo "From issue that is PR: PR#$PR_NUM, Issue#$ISSUE_NUM"
+              echo "pr_number=$PR_NUM" >> $GITHUB_OUTPUT
+              echo "issue_number=$ISSUE_NUM" >> $GITHUB_OUTPUT
+
+              PR_STATE=$(gh pr view $PR_NUM --json state --jq '.state')
+              echo "pr_state=$PR_STATE" >> $GITHUB_OUTPUT
+
+              PR_BRANCH=$(gh pr view $PR_NUM --json headRefName --jq '.headRefName')
+              echo "pr_branch=$PR_BRANCH" >> $GITHUB_OUTPUT
+
+              ISSUE=$(gh issue view $ISSUE_NUM --json number,title,body,labels,assignees,comments)
+              echo "issue=$ISSUE" >> $GITHUB_OUTPUT
+            else
+              # It's a regular issue comment
+              ISSUE_NUM="${{ github.event.issue.number }}"
+              echo "From regular issue: #$ISSUE_NUM"
+              echo "issue_number=$ISSUE_NUM" >> $GITHUB_OUTPUT
+
+              ISSUE=$(gh issue view $ISSUE_NUM --json number,title,body,labels,assignees,comments)
+              echo "issue=$ISSUE" >> $GITHUB_OUTPUT
+
+              # Get linked PR
+              PR_DATA=$(gh api repos/$REPO/issues/$ISSUE_NUM --jq '.pullRequest // null')
+              if [ "$PR_DATA" != "null" ] && [ -n "$PR_DATA" ]; then
+                PR_NUM=$(echo $PR_DATA | jq -r '.number')
+                echo "pr_number=$PR_NUM" >> $GITHUB_OUTPUT
+
+                PR_STATE=$(gh pr view $PR_NUM --json state --jq '.state')
+                echo "pr_state=$PR_STATE" >> $GITHUB_OUTPUT
+
+                PR_BRANCH=$(gh pr view $PR_NUM --json headRefName --jq '.headRefName')
+                echo "pr_branch=$PR_BRANCH" >> $GITHUB_OUTPUT
+              else
+                echo "pr_number=" >> $GITHUB_OUTPUT
+                echo "pr_state=" >> $GITHUB_OUTPUT
+                echo "pr_branch=" >> $GITHUB_OUTPUT
+              fi
+            fi
           fi
         env:
           GH_TOKEN: ${{ steps.marty-token.outputs.token }}
@@ -92,12 +111,19 @@ jobs:
       - name: Check preconditions
         id: check
         run: |
+          echo "Checking preconditions..."
+          echo "PR number: ${{ steps.context.outputs.pr_number }}"
+          echo "Issue number: ${{ steps.context.outputs.issue_number }}"
+          echo "PR state: ${{ steps.context.outputs.pr_state }}"
+
           if [ -z "${{ steps.context.outputs.pr_number }}" ]; then
             echo "No PR found"
             echo "can_proceed=false" >> $GITHUB_OUTPUT
+            echo "error_reason=no_pr" >> $GITHUB_OUTPUT
           elif [ "${{ steps.context.outputs.pr_state }}" != "OPEN" ]; then
             echo "PR is not open"
             echo "can_proceed=false" >> $GITHUB_OUTPUT
+            echo "error_reason=pr_not_open" >> $GITHUB_OUTPUT
           else
             echo "Can proceed with fixes"
             echo "can_proceed=true" >> $GITHUB_OUTPUT
@@ -192,14 +218,9 @@ jobs:
                e) Wait for push to complete
                f) Move to next fix
 
-            7. **Update the PR description:**
-               Replace the description with implementation details.
+            7. **Update the PR description**
 
-            8. **Post summary comment on PR:**
-               Use a temp file to write your response, then post with gh.
-
-            9. **Post update on issue:**
-               Post updates on the issue too.
+            8. **Post summary comment on PR and issue**
 
             ---
 
@@ -210,7 +231,6 @@ jobs:
             3. **TEST EVERY CHANGE** - Run tests after each fix
             4. **MANY SMALL COMMITS** - One commit per fix
             5. **PUSH AFTER EACH COMMIT** - Never batch
-            6. **UPDATE BOTH PR AND ISSUE** - Keep everyone informed
 
           claude_args: |
             --allowedTools "Bash(gh pr view:*),Bash(gh pr edit:*),Bash(gh pr comment:*),Bash(gh pr review:*),Bash(gh issue view:*),Bash(gh issue comment:*),Bash(gh api:*),Bash(git *:*),Bash(ls:*),Bash(cat:*),Bash(echo:*),Bash(find:*),Bash(grep:*))"
@@ -224,13 +244,27 @@ jobs:
       - name: Error - No PR
         if: steps.check.outputs.can_proceed != 'true'
         run: |
-          ISSUE_NUM="${{ steps.context.outputs.issue_number }}"
-          if [ -n "$ISSUE_NUM" ]; then
-            gh issue comment $ISSUE_NUM --body "## Cannot Apply Fixes
+          echo "Error: Cannot apply fixes"
+          echo "Reason: ${{ steps.check.outputs.error_reason }}"
+          echo "Issue: ${{ steps.context.outputs.issue_number }}"
+          echo "PR: ${{ steps.context.outputs.pr_number }}"
 
-            There is no open PR linked to this issue.
+          # Try to post on the issue if we have one
+          if [ -n "${{ steps.context.outputs.issue_number }}" ]; then
+            gh issue comment ${{ steps.context.outputs.issue_number }} --body "## Cannot Apply Fixes
 
-            /fix can only be used when there is an existing PR that needs modifications."
+            I couldn't find an open PR to fix. This command requires an existing open PR.
+
+            Please make sure:
+            1. There is an open PR linked to this issue
+            2. The PR is not merged or closed"
+            echo "Posted error comment on issue"
+          elif [ -n "${{ steps.context.outputs.pr_number }}" ]; then
+            # Comment on the PR directly
+            gh pr comment ${{ steps.context.outputs.pr_number }} --body "## Cannot Apply Fixes
+
+            I couldn't find an open PR to fix."
+            echo "Posted error comment on PR"
           fi
         env:
           GH_TOKEN: ${{ steps.marty-token.outputs.token }}
