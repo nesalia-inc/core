@@ -8,7 +8,7 @@ on:
 
 # Prevent conflicts
 concurrency:
-  group: marty-fix-${{ github.event.issue.number || github.event.pull_request.number }}
+  group: marty-fix-${{ github.event.issue.number || github.event.pull_request.number || 'unknown' }}
   cancel-in-progress: false
 
 permissions:
@@ -36,31 +36,55 @@ jobs:
       - name: Get issue and PR context
         id: context
         run: |
-          ISSUE_NUM="${{ github.event.issue.number || github.event.pull_request.number }}"
           REPO="${{ github.repository }}"
 
-          # Get issue details
-          ISSUE=$(gh issue view $ISSUE_NUM --json number,title,body,labels,assignees,comments)
-          echo "issue=$ISSUE" >> $GITHUB_OUTPUT
+          # Determine if triggered from issue_comment or pull_request_review_comment
+          if [ "${{ github.event_name }}" == "issue_comment" ]; then
+            # Triggered from issue comment
+            ISSUE_NUM="${{ github.event.issue.number }}"
+            echo "Triggered from issue comment: #$ISSUE_NUM"
+            echo "issue_number=$ISSUE_NUM" >> $GITHUB_OUTPUT
 
-          # Get the linked PR using the API
-          PR_DATA=$(gh api repos/$REPO/issues/$ISSUE_NUM --jq '.pullRequest // null')
-          if [ "$PR_DATA" != "null" ] && [ -n "$PR_DATA" ]; then
-            PR_NUM=$(echo $PR_DATA | jq -r '.number')
+            # Get issue details
+            ISSUE=$(gh issue view $ISSUE_NUM --json number,title,body,labels,assignees,comments)
+            echo "issue=$ISSUE" >> $GITHUB_OUTPUT
+
+            # Get the linked PR from issue
+            PR_DATA=$(gh api repos/$REPO/issues/$ISSUE_NUM --jq '.pullRequest // null')
+            if [ "$PR_DATA" != "null" ] && [ -n "$PR_DATA" ]; then
+              PR_NUM=$(echo $PR_DATA | jq -r '.number')
+              echo "pr_number=$PR_NUM" >> $GITHUB_OUTPUT
+
+              PR_STATE=$(gh pr view $PR_NUM --json state --jq '.state')
+              echo "pr_state=$PR_STATE" >> $GITHUB_OUTPUT
+
+              PR_BRANCH=$(gh pr view $PR_NUM --json headRefName --jq '.headRefName')
+              echo "pr_branch=$PR_BRANCH" >> $GITHUB_OUTPUT
+            else
+              echo "No linked PR found"
+              echo "pr_number=" >> $GITHUB_OUTPUT
+              echo "pr_state=" >> $GITHUB_OUTPUT
+              echo "pr_branch=" >> $GITHUB_OUTPUT
+            fi
+
+          elif [ "${{ github.event_name }}" == "pull_request_review_comment" ]; then
+            # Triggered from PR comment
+            PR_NUM="${{ github.event.pull_request.number }}"
+            ISSUE_NUM="${{ github.event.pull_request.number }}"
+            echo "Triggered from PR comment: #$PR_NUM"
+            echo "issue_number=$ISSUE_NUM" >> $GITHUB_OUTPUT
             echo "pr_number=$PR_NUM" >> $GITHUB_OUTPUT
 
-            # Get PR state
+            # Get PR details
             PR_STATE=$(gh pr view $PR_NUM --json state --jq '.state')
             echo "pr_state=$PR_STATE" >> $GITHUB_OUTPUT
 
-            # Get PR head branch
             PR_BRANCH=$(gh pr view $PR_NUM --json headRefName --jq '.headRefName')
             echo "pr_branch=$PR_BRANCH" >> $GITHUB_OUTPUT
-          else
-            echo "No linked PR found"
-            echo "pr_number=" >> $GITHUB_OUTPUT
-            echo "pr_state=" >> $GITHUB_OUTPUT
-            echo "pr_branch=" >> $GITHUB_OUTPUT
+
+            # Get issue details
+            ISSUE=$(gh issue view $ISSUE_NUM --json number,title,body,labels,assignees,comments)
+            echo "issue=$ISSUE" >> $GITHUB_OUTPUT
           fi
         env:
           GH_TOKEN: ${{ steps.marty-token.outputs.token }}
@@ -86,7 +110,7 @@ jobs:
           github_token: ${{ steps.marty-token.outputs.token }}
           prompt: |
             REPO: ${{ github.repository }}
-            ISSUE NUMBER: ${{ github.event.issue.number }}
+            ISSUE NUMBER: ${{ steps.context.outputs.issue_number }}
             PR NUMBER: ${{ steps.context.outputs.pr_number }}
             PR BRANCH: ${{ steps.context.outputs.pr_branch }}
             COMMENT BODY: ${{ github.event.comment.body }}
@@ -122,12 +146,12 @@ jobs:
 
                d) Read the issue:
                ```
-               gh issue view ${{ github.event.issue.number }} --json number,title,body
+               gh issue view ${{ steps.context.outputs.issue_number }} --json number,title,body
                ```
 
                e) Read ALL issue comments:
                ```
-               gh issue view ${{ github.event.issue.number }} --comments
+               gh issue view ${{ steps.context.outputs.issue_number }} --comments
                ```
 
             3. **Checkout the PR branch:**
@@ -162,18 +186,11 @@ jobs:
                d) Commit only after tests pass:
                   ```
                   git add {filename}
-                  git commit -m "fix: {specific fix description} - refs #${{ github.event.issue.number }}"
+                  git commit -m "fix: {specific fix description} - refs #${{ steps.context.outputs.issue_number }}"
                   git push origin HEAD
                   ```
                e) Wait for push to complete
                f) Move to next fix
-
-               ### Example commits:
-               ```
-               fix: change button color to blue
-               fix: add loading state to form
-               fix: update error message text
-               ```
 
             7. **Update the PR description:**
                Replace the description with implementation details.
@@ -207,11 +224,13 @@ jobs:
       - name: Error - No PR
         if: steps.check.outputs.can_proceed != 'true'
         run: |
-          ISSUE_NUM="${{ github.event.issue.number || github.event.pull_request.number }}"
-          gh issue comment $ISSUE_NUM --body "## Cannot Apply Fixes
+          ISSUE_NUM="${{ steps.context.outputs.issue_number }}"
+          if [ -n "$ISSUE_NUM" ]; then
+            gh issue comment $ISSUE_NUM --body "## Cannot Apply Fixes
 
-          There is no open PR linked to this issue.
+            There is no open PR linked to this issue.
 
-          /fix can only be used when there is an existing PR that needs modifications."
+            /fix can only be used when there is an existing PR that needs modifications."
+          fi
         env:
           GH_TOKEN: ${{ steps.marty-token.outputs.token }}
