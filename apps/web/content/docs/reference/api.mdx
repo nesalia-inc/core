@@ -12,10 +12,13 @@ This is a minimal API reference. For detailed explanations, see the Guides and C
 | `ok(value)` | Create successful Result |
 | `err(error)` | Create failed Result |
 | `some(value)` | Create present Maybe |
+| `someUnit()` | Create Some with undefined value |
 | `none()` | Create absent Maybe |
 | `fromNullable(value)` | Convert null/undefined to Maybe |
+| `fromUndefinedable(value)` | Convert undefined to None |
 | `okAsync(value)` | Create successful AsyncResult |
 | `errAsync(error)` | Create failed AsyncResult |
+| `fromPromise(promise)` | Wrap Promise to AsyncResult |
 | `attempt(fn)` | Wrap sync function that might throw |
 | `attemptAsync(fn)` | Wrap async function |
 | `error(options)` | Create Error type builder (Python-like) |
@@ -73,8 +76,8 @@ This is a minimal API reference. For detailed explanations, see the Guides and C
 | Function | Description |
 |----------|-------------|
 | `toResult(maybe, onNone)` | Maybe → Result |
-| `toMaybe(result)` | Result → Maybe |
-| `toTry(result)` | Result → Try |
+| `toMaybeFromResult(result)` | Result → Maybe |
+| `fromUndefinedable(value)` | undefined → None, otherwise Some |
 
 ## Async Utilities
 
@@ -84,7 +87,13 @@ This is a minimal API reference. For detailed explanations, see the Guides and C
 | `race(...results)` | First AsyncResult to resolve |
 | `traverse(items, fn)` | Map array to AsyncResults |
 | `retryAsync(fn, options)` | Retry failed async operations |
+| `retry(fn, options)` | Retry sync operations |
 | `sleep(ms)` | Async delay |
+| `withTimeout(ms, fn)` | Add timeout to async operation |
+| `sleepWithSignal(signal)` | Sleep that responds to AbortSignal |
+| `exponentialBackoff(attempt, delay)` | Exponential backoff strategy |
+| `linearBackoff(attempt, delay)` | Linear backoff strategy |
+| `constantBackoff(attempt, delay)` | Constant backoff strategy |
 
 ## Options & Config
 

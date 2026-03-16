@@ -68,13 +68,13 @@ async function fetchUser(id: string): AsyncResult<User, Error> {
 ## Converting Between Types
 
 ```typescript
-import { toResult, toMaybe } from "@deessejs/core";
+import { toResult, toMaybeFromResult } from "@deessejs/core";
 
 // Maybe → Result
 const result = toResult(maybe, () => "error");
 
 // Result → Maybe
-const maybe = toMaybe(result);
+const maybe = toMaybeFromResult(result);
 ```
 
 <Callout>
