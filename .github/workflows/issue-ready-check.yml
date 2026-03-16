@@ -33,12 +33,14 @@ jobs:
         run: |
           ISSUE=$(gh issue view ${{ github.event.issue.number }} --json number,title,body,author,labels,assignees,comments)
           echo "issue=$ISSUE" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ steps.marty-token.outputs.token }}
 
       - name: Check if already ready
         id: check-ready
         run: |
-          ISSUE_LABELS="${{ fromJson(steps.issue.outputs.issue).labels.*.name }}"
-          if echo "$ISSUE_LABELS" | grep -qw "ready:yes"; then
+          ISSUE_JSON='${{ steps.issue.outputs.issue }}'
+          if echo "$ISSUE_JSON" | grep -qw "ready:yes"; then
             echo "already_ready=true" >> $GITHUB_OUTPUT
           else
             echo "already_ready=false" >> $GITHUB_OUTPUT
