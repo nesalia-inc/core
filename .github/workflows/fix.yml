@@ -1,0 +1,217 @@
+name: Marty - Fix
+
+on:
+  issue_comment:
+    types: [created, edited]
+  pull_request_review_comment:
+    types: [created, edited]
+
+# Prevent conflicts
+concurrency:
+  group: marty-fix-${{ github.event.issue.number || github.event.pull_request.number }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  issues: read
+  pull-requests: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    if: >
+      contains(github.event.comment.body, '/fix')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate Marty token
+        id: marty-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.MARTY_APP_ID }}
+          private-key: ${{ secrets.MARTY_APP_PRIVATE_KEY }}
+
+      - name: Get issue and PR context
+        id: context
+        run: |
+          ISSUE_NUM="${{ github.event.issue.number || github.event.pull_request.number }}"
+          REPO="${{ github.repository }}"
+
+          # Get issue details
+          ISSUE=$(gh issue view $ISSUE_NUM --json number,title,body,labels,assignees,comments)
+          echo "issue=$ISSUE" >> $GITHUB_OUTPUT
+
+          # Get the linked PR using the API
+          PR_DATA=$(gh api repos/$REPO/issues/$ISSUE_NUM --jq '.pullRequest // null')
+          if [ "$PR_DATA" != "null" ] && [ -n "$PR_DATA" ]; then
+            PR_NUM=$(echo $PR_DATA | jq -r '.number')
+            echo "pr_number=$PR_NUM" >> $GITHUB_OUTPUT
+
+            # Get PR state
+            PR_STATE=$(gh pr view $PR_NUM --json state --jq '.state')
+            echo "pr_state=$PR_STATE" >> $GITHUB_OUTPUT
+
+            # Get PR head branch
+            PR_BRANCH=$(gh pr view $PR_NUM --json headRefName --jq '.headRefName')
+            echo "pr_branch=$PR_BRANCH" >> $GITHUB_OUTPUT
+          else
+            echo "No linked PR found"
+            echo "pr_number=" >> $GITHUB_OUTPUT
+            echo "pr_state=" >> $GITHUB_OUTPUT
+            echo "pr_branch=" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GH_TOKEN: ${{ steps.marty-token.outputs.token }}
+
+      - name: Check preconditions
+        id: check
+        run: |
+          if [ -z "${{ steps.context.outputs.pr_number }}" ]; then
+            echo "No PR found"
+            echo "can_proceed=false" >> $GITHUB_OUTPUT
+          elif [ "${{ steps.context.outputs.pr_state }}" != "OPEN" ]; then
+            echo "PR is not open"
+            echo "can_proceed=false" >> $GITHUB_OUTPUT
+          else
+            echo "Can proceed with fixes"
+            echo "can_proceed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run Fix
+        if: steps.check.outputs.can_proceed == 'true'
+        uses: nesalia-inc/marty-action@1.0.0
+        with:
+          github_token: ${{ steps.marty-token.outputs.token }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            ISSUE NUMBER: ${{ github.event.issue.number }}
+            PR NUMBER: ${{ steps.context.outputs.pr_number }}
+            PR BRANCH: ${{ steps.context.outputs.pr_branch }}
+            COMMENT BODY: ${{ github.event.comment.body }}
+
+            ## Context
+
+            You are Marty, an AI developer assistant. Your role is to implement fixes on an existing PR based on review feedback or user requests.
+
+            ---
+
+            ## Your Task
+
+            1. **Extract the fix request:**
+
+               The comment requesting the fix is provided above.
+
+            2. **READ ALL CONTEXT (important!):**
+
+               a) Read the PR:
+               ```
+               gh pr view ${{ steps.context.outputs.pr_number }} --json body,title,headRefName,commits
+               ```
+
+               b) Read ALL PR comments (reviews, feedback):
+               ```
+               gh pr view ${{ steps.context.outputs.pr_number }} --comments
+               ```
+
+               c) Read ALL PR reviews:
+               ```
+               gh pr view ${{ steps.context.outputs.pr_number }} --reviews
+               ```
+
+               d) Read the issue:
+               ```
+               gh issue view ${{ github.event.issue.number }} --json number,title,body
+               ```
+
+               e) Read ALL issue comments:
+               ```
+               gh issue view ${{ github.event.issue.number }} --comments
+               ```
+
+            3. **Checkout the PR branch:**
+               ```
+               git config user.name "martyy-code"
+               git config user.email "marty@github.com"
+               git fetch origin
+               git checkout ${{ steps.context.outputs.pr_branch }}
+               git pull origin ${{ steps.context.outputs.pr_branch }}
+               ```
+
+            4. **Understand what needs to be fixed:**
+
+               Based on the comments and reviews, list each fix that needs to be made.
+
+            5. **EXPLORE CODEBASE to find relevant files:**
+               ```
+               ls -la src/
+               find src -name "*.ts" | head -30
+               grep -r "relevant-pattern" src/ --include="*.ts"
+               ```
+
+            6. **IMPLEMENT FIXES with many small commits + tests:**
+
+               For EACH fix:
+               a) Make the change to ONE file
+               b) RUN TESTS to verify:
+                  ```
+                  pnpm test
+                  ```
+               c) If tests fail, FIX the issue before committing
+               d) Commit only after tests pass:
+                  ```
+                  git add {filename}
+                  git commit -m "fix: {specific fix description} - refs #${{ github.event.issue.number }}"
+                  git push origin HEAD
+                  ```
+               e) Wait for push to complete
+               f) Move to next fix
+
+               ### Example commits:
+               ```
+               fix: change button color to blue
+               fix: add loading state to form
+               fix: update error message text
+               ```
+
+            7. **Update the PR description:**
+               Replace the description with implementation details.
+
+            8. **Post summary comment on PR:**
+               Use a temp file to write your response, then post with gh.
+
+            9. **Post update on issue:**
+               Post updates on the issue too.
+
+            ---
+
+            ## CRITICAL RULES
+
+            1. **READ ALL COMMENTS** - Don't miss any feedback
+            2. **EXPLORE FIRST** - Find the right files to modify
+            3. **TEST EVERY CHANGE** - Run tests after each fix
+            4. **MANY SMALL COMMITS** - One commit per fix
+            5. **PUSH AFTER EACH COMMIT** - Never batch
+            6. **UPDATE BOTH PR AND ISSUE** - Keep everyone informed
+
+          claude_args: |
+            --allowedTools "Bash(gh pr view:*),Bash(gh pr edit:*),Bash(gh pr comment:*),Bash(gh pr review:*),Bash(gh issue view:*),Bash(gh issue comment:*),Bash(gh api:*),Bash(git *:*),Bash(ls:*),Bash(cat:*),Bash(echo:*),Bash(find:*),Bash(grep:*))"
+            --max-turns 200
+
+        env:
+          ANTHROPIC_BASE_URL: https://api.minimax.io/anthropic
+          ANTHROPIC_AUTH_TOKEN: ${{ secrets.MINIMAX_API_KEY }}
+          ANTHROPIC_DEFAULT_SONNET_MODEL: MiniMax-M2.5
+
+      - name: Error - No PR
+        if: steps.check.outputs.can_proceed != 'true'
+        run: |
+          ISSUE_NUM="${{ github.event.issue.number || github.event.pull_request.number }}"
+          gh issue comment $ISSUE_NUM --body "## Cannot Apply Fixes
+
+          There is no open PR linked to this issue.
+
+          /fix can only be used when there is an existing PR that needs modifications."
+        env:
+          GH_TOKEN: ${{ steps.marty-token.outputs.token }}
