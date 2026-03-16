@@ -1,0 +1,351 @@
+name: Marty - Implement
+
+on:
+  issue_comment:
+    types: [created, edited]
+  pull_request_review_comment:
+    types: [created, edited]
+
+# Prevent conflicts - only one implementation at a time
+concurrency:
+  group: marty-implement-${{ github.event.issue.number || github.event.pull_request.number }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  implement:
+    runs-on: ubuntu-latest
+    if: >
+      contains(github.event.comment.body, '/implement')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate Marty token
+        id: marty-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.MARTY_APP_ID }}
+          private-key: ${{ secrets.MARTY_APP_PRIVATE_KEY }}
+
+      - name: Get issue and PR context
+        id: context
+        run: |
+          ISSUE_NUM="${{ github.event.issue.number || github.event.pull_request.number }}"
+          REPO="${{ github.repository }}"
+
+          # Get issue details
+          ISSUE=$(gh issue view $ISSUE_NUM --json number,title,body,labels,assignees)
+          echo "issue=$ISSUE" >> $GITHUB_OUTPUT
+
+          # Get the linked PR
+          PR_DATA=$(gh api repos/$REPO/issues/$ISSUE_NUM --jq '.pullRequest')
+          if [ "$PR_DATA" != "null" ]; then
+            PR_NUM=$(echo $PR_DATA | jq -r '.number')
+            echo "pr_number=$PR_NUM" >> $GITHUB_OUTPUT
+
+            # Check if it's a draft PR
+            IS_DRAFT=$(gh pr view $PR_NUM --json isDraft --jq '.isDraft')
+            echo "is_draft=$IS_DRAFT" >> $GITHUB_OUTPUT
+
+            # Get PR state
+            PR_STATE=$(gh pr view $PR_NUM --json state --jq '.state')
+            echo "pr_state=$PR_STATE" >> $GITHUB_OUTPUT
+          else
+            echo "No linked PR found"
+            echo "pr_number=" >> $GITHUB_OUTPUT
+            echo "is_draft=false" >> $GITHUB_OUTPUT
+            echo "pr_state=" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GH_TOKEN: ${{ steps.marty-token.outputs.token }}
+
+      - name: Check preconditions - Mode detection
+        id: check
+        run: |
+          ISSUE_LABELS=$(gh issue view ${{ github.event.issue.number || github.event.pull_request.number }} --json labels --jq '.labels[].name')
+          ISSUE_ASSIGNEES=$(gh issue view ${{ github.event.issue.number || github.event.pull_request.number }} --json assignees --jq '.assignees[].login')
+
+          # Check if has draft PR
+          if [ "${{ steps.context.outputs.pr_number }}" != "" ] && [ "${{ steps.context.outputs.is_draft }}" == "true" ]; then
+            echo "mode=draft_pr" >> $GITHUB_OUTPUT
+            echo "can_proceed=true" >> $GITHUB_OUTPUT
+          # Check if no PR (direct implementation - will self-assign)
+          elif [ "${{ steps.context.outputs.pr_number }}" == "" ]; then
+            echo "mode=direct" >> $GITHUB_OUTPUT
+            echo "can_proceed=true" >> $GITHUB_OUTPUT
+          else
+            echo "mode=none" >> $GITHUB_OUTPUT
+            echo "can_proceed=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GH_TOKEN: ${{ steps.marty-token.outputs.token }}
+
+      - name: Run Implementation (from Draft PR)
+        if: steps.check.outputs.mode == 'draft_pr'
+        uses: nesalia-inc/marty-action@1.0.0
+        with:
+          github_token: ${{ steps.marty-token.outputs.token }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            ISSUE NUMBER: ${{ github.event.issue.number }}
+            EXISTING PR NUMBER: ${{ steps.context.outputs.pr_number }}
+            MODE: From Draft PR (plan already exists)
+
+            ## CRITICAL: YOU MUST USE THE EXISTING PR
+
+            The Draft PR ALREADY EXISTS: PR #${{ steps.context.outputs.pr_number }}
+            - DO NOT create a new PR
+            - DO NOT use `gh pr create`
+            - Work on the EXISTING branch linked to this PR
+
+            ---
+
+            ## Your Task
+
+            1. **Checkout the existing branch:**
+               ```
+               git fetch origin
+               git checkout {branch-name-from-pr}
+               git pull origin {branch-name-from-pr}
+               ```
+
+            2. **Mark the PR as ready for review:**
+               ```
+               gh pr ready ${{ steps.context.outputs.pr_number }}
+               ```
+
+            3. **Update labels:**
+               ```
+               gh pr edit ${{ steps.context.outputs.pr_number }} --remove-label "status:plan-review"
+               gh issue edit ${{ github.event.issue.number }} --add-label "status:plan-approved,in-progress"
+               ```
+
+            4. **Read the approved plan from the PR:**
+               ```
+               gh pr view ${{ steps.context.outputs.pr_number }} --json body,title,headRefName
+               ```
+
+            5. **READ ALL COMMENTS from the PR (important!):**
+               ```
+               gh pr view ${{ steps.context.outputs.pr_number }} --comments
+               ```
+
+            6. **READ ALL COMMENTS from the ISSUE (important!):**
+               ```
+               gh issue view ${{ github.event.issue.number }} --comments
+               ```
+
+            7. **EXPLORE CODEBASE THOROUGHLY (IMPORTANT):**
+
+               Before implementing, you MUST search for reusable code:
+
+               ### Search for existing patterns:
+               ```
+               # Find similar implementations
+               ls -la src/
+               find src -name "*.ts" | head -30
+               cat src/{similar-file}.ts
+               grep -r " pattern" src/ --include="*.ts"
+               ```
+
+               ### Look for:
+               - Similar types or interfaces
+               - Factory functions you can reuse
+               - Utility functions
+               - Existing tests patterns
+               - Similar features to learn from
+
+               **DO NOT DUPLICATE CODE** - If something exists, reuse it or extend it!
+
+            8. **IMPLEMENT WITH MANY SMALL COMMITS + TEST EACH CHANGE:**
+
+               You must commit after EVERY SINGLE CHANGE. This is critical for rollback capability.
+
+               ### For EACH file you modify:
+               1. Make the change to ONE file
+               2. RUN TESTS to verify your change works:
+                  ```
+                  pnpm test
+                  ```
+               3. If tests fail, FIX the issue before committing
+               4. Commit only after tests pass:
+                  ```
+                  git add {filename}
+                  git commit -m "feat: add {specific change} - closes #${{ github.event.issue.number }}"
+                  git push origin HEAD
+                  ```
+               5. Wait for push to complete
+               6. Move to next file
+
+               ### Example commits:
+               ```
+               feat: add User type to models/user.ts
+               feat: add createUser factory function
+               feat: add UserMapper class
+               test: add tests for User type
+               ```
+
+               NEVER do: "feat: implement user feature" (one big commit)
+               ALWAYS do: Many small, atomic commits
+               NEVER commit without running tests first!
+
+            9. **Post progress comment after each milestone:**
+               Use a temp file to write your response, then post with gh.
+
+            10. **Update the PR description (IMPORTANT):**
+               Replace the plan with implementation details.
+
+            11. **Comment on the ISSUE (not just PR):**
+               Post updates on the issue too.
+
+            12. **When implementation is complete:**
+               - Update PR description with final details
+               - Post completion comment on PR and ISSUE
+               - Close the issue
+
+            ---
+
+            ## CRITICAL RULES
+
+            1. **NEVER CREATE A NEW PR** - Use PR #${{ steps.context.outputs.pr_number }}
+            2. **EXPLORE FIRST** - Search for reusable code before implementing
+            3. **TEST EVERY CHANGE** - Run tests after each modification
+            4. **MANY SMALL COMMITS** - One commit per file change minimum
+            5. **PUSH AFTER EACH COMMIT** - Never batch commits
+            6. **UPDATE PR DESCRIPTION** - Don't keep the plan, replace with implementation details
+            7. **COMMENT ON THE ISSUE** - Not just the PR
+            8. **LINK THE ISSUE** - Use "closes #issue_number" in commits
+            9. **DO NOT DUPLICATE CODE** - Reuse existing patterns
+
+          claude_args: |
+            --allowedTools "Bash(gh pr view:*),Bash(gh pr edit:*),Bash(gh pr ready:*),Bash(gh pr comment:*),Bash(gh issue view:*),Bash(gh issue edit:*),Bash(gh issue comment:*),Bash(gh issue close:*),Bash(gh api:*),Bash(git *:*),Bash(ls:*),Bash(cat:*),Bash(echo:*))"
+            --max-turns 200
+
+        env:
+          ANTHROPIC_BASE_URL: https://api.minimax.io/anthropic
+          ANTHROPIC_AUTH_TOKEN: ${{ secrets.MINIMAX_API_KEY }}
+          ANTHROPIC_DEFAULT_SONNET_MODEL: MiniMax-M2.5
+
+      - name: Run Implementation (Direct from Issue)
+        if: steps.check.outputs.mode == 'direct'
+        uses: nesalia-inc/marty-action@1.0.0
+        with:
+          github_token: ${{ steps.marty-token.outputs.token }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            ISSUE NUMBER: ${{ github.event.issue.number }}
+            ISSUE TITLE: ${{ github.event.issue.title }}
+            ISSUE BODY: ${{ github.event.issue.body }}
+            MODE: Direct implementation (no plan needed)
+
+            ---
+
+            ## Your Task
+
+            1. **Self-assign the issue:**
+               ```
+               gh issue edit ${{ github.event.issue.number }} --add-assignee martyy-code
+               ```
+
+            2. **READ THE ISSUE BODY (full context):**
+               ```
+               gh issue view ${{ github.event.issue.number }} --json number,title,body,labels
+               ```
+
+            3. **READ ALL COMMENTS on the ISSUE:**
+               ```
+               gh issue view ${{ github.event.issue.number }} --comments
+               ```
+
+            4. **Create a branch:**
+               ```
+               git config user.name "martyy-code"
+               git config user.email "marty@github.com"
+               git checkout -b feature/${{ github.event.issue.number }}-$(echo "${{ github.event.issue.title }}" | slugify)
+               ```
+
+            5. **Explore the codebase THOROUGHLY:**
+
+               Before implementing, search for reusable code:
+               ```
+               ls -la src/
+               find src -name "*.ts" | head -30
+               grep -r " pattern" src/ --include="*.ts"
+               ```
+
+               **DO NOT DUPLICATE CODE** - If something exists, reuse it!
+
+            6. **Implement the solution + TEST EACH CHANGE:**
+
+               For each change:
+               - Make the change
+               - RUN TESTS: `pnpm test`
+               - If tests fail, FIX before continuing
+               - **COMMIT only after tests pass:**
+                 ```
+                 git add -A
+                 git commit -m "fix: [description] - closes #${{ github.event.issue.number }}"
+                 git push origin HEAD
+                 ```
+               - Comment on the issue after significant milestones
+
+            7. **Create the PR:**
+               ```
+               gh pr create --title "fix: ..." --body "..." --base main
+               ```
+
+            8. **Add labels:**
+               ```
+               gh issue edit ${{ github.event.issue.number }} --add-label "has:pr"
+               ```
+
+            9. **Post implementation complete comment:**
+               Use a temp file, then post with gh.
+
+            ---
+
+            ## CRITICAL RULES
+
+            1. **Direct implementation** - No planning phase
+            2. **EXPLORE FIRST** - Search for reusable code
+            3. **TEST EVERY CHANGE** - Run tests after each modification
+            4. **Commit after EVERY change** - Don't accumulate changes
+            5. **Push immediately** - After each commit
+            6. **Link to issue** - Use "closes #issue_number" in commits
+            7. **DO NOT DUPLICATE CODE** - Reuse existing patterns
+
+          claude_args: |
+            --allowedTools "Bash(gh pr view:*),Bash(gh pr create:*),Bash(gh pr edit:*),Bash(gh pr comment:*),Bash(gh issue view:*),Bash(gh issue edit:*),Bash(gh issue comment:*),Bash(gh issue close:*),Bash(gh api:*),Bash(git *:*),Bash(ls:*),Bash(cat:*),Bash(echo:*))"
+            --max-turns 200
+
+        env:
+          ANTHROPIC_BASE_URL: https://api.minimax.io/anthropic
+          ANTHROPIC_AUTH_TOKEN: ${{ secrets.MINIMAX_API_KEY }}
+          ANTHROPIC_DEFAULT_SONNET_MODEL: MiniMax-M2.5
+
+      - name: Error - Not ready
+        if: steps.check.outputs.can_proceed != 'true'
+        run: |
+          ISSUE_NUM="${{ github.event.issue.number || github.event.pull_request.number }}"
+          gh issue comment $ISSUE_NUM --body "## Cannot Start Implementation
+
+          To implement from the issue:
+
+          **Option 1: Direct implementation (trivial issues)**
+          - Comment \`/implement\`
+          - I'll self-assign and implement directly without a planning phase
+          - Note: Only works if no PR exists yet
+
+          **Option 2: With planning phase**
+          - Use \`/plan\` first to create a plan
+          - Then use \`/implement\` after reviewing the plan
+
+          Current status: A PR already exists for this issue."
+        env:
+          GH_TOKEN: ${{ steps.marty-token.outputs.token }}
