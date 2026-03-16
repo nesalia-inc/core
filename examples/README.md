@@ -29,7 +29,7 @@ Type-safe environment configuration using `Maybe` for optional values and `Resul
 ### 3. [Form Validation](./form-validation/)
 Comprehensive form validation with error accumulation and business vs system error distinction.
 
-**Topics**: Result, Outcome, sequential validation, error accumulation
+**Topics**: Result, sequential validation, error accumulation
 
 ### 4. [Database Operations](./database/)
 Safe database queries with constraint handling and transaction-like behavior.
@@ -62,7 +62,7 @@ Resilience patterns including retry strategies, timeouts, and rate limiting.
 **Topics**: retry, sleep, withTimeout, backoff strategies
 
 ### 10. [Type Conversions Guide](./conversions/)
-Converting between Result, Maybe, and Outcome types.
+Converting between Result, Maybe, and Try types.
 
 **Topics**: Type conversions, when to use each type
 
@@ -72,9 +72,9 @@ Adding observability to pipelines with `tap` and `tapErr`.
 **Topics**: tap, tapErr, logging, metrics, timing
 
 ### 12. [Authentication Flow](./auth/)
-Authentication using `Outcome` to distinguish business vs system errors.
+Authentication using `Result` to distinguish business vs system errors.
 
-**Topics**: Outcome, multi-stage auth, token validation
+**Topics**: Result, multi-stage auth, token validation
 
 ## Type Selection Guide
 
@@ -82,7 +82,6 @@ Authentication using `Outcome` to distinguish business vs system errors.
 |------|----------|---------------|
 | **Result** | Success/failure with error details | Simple error messages |
 | **Maybe** | Optional values | No error needed |
-| **Outcome** | Rich error context | Business vs system errors |
 | **Try** | Exception safety | Any thrown error |
 | **AsyncResult** | Async operations | Promise-based errors |
 

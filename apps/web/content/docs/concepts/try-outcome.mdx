@@ -1,5 +1,5 @@
 ---
-title: Try, Outcome & AsyncResult
+title: Try & AsyncResult
 description: Advanced error handling patterns
 ---
 
@@ -30,49 +30,6 @@ if (isErr(result)) {
 - Wrapping `JSON.parse`
 - File system operations
 - Any function that uses exceptions
-
-## Outcome: Rich Error Tracking
-
-Use `Outcome` when you need to distinguish between business errors and system errors:
-
-```typescript
-type Outcome<T, C = unknown, E = unknown> = Success<T> | Cause<C> | Exception<E>;
-```
-
-- **`Success<T>`** - Happy path
-- **`Cause<C>`** - Expected business error
-- **`Exception<E>`** - Unexpected system error
-
-```typescript
-import { success, cause, exception, isSuccess, isCause, isException } from "@deessejs/core";
-
-// Business error
-const validationError = cause({
-  name: "VALIDATION_ERROR",
-  message: "Invalid email"
-});
-
-// System error
-const systemError = exception({
-  name: "NETWORK_ERROR",
-  message: "Connection refused"
-});
-
-if (isCause(validationError)) {
-  // Track for business metrics
-  analytics.track("validation_failed");
-}
-
-if (isException(systemError)) {
-  // Log as system error
-  logger.error("System error:", systemError.exception);
-}
-```
-
-**When to use Outcome:**
-- Need to track business errors vs system errors
-- Want rich error context (name, message, data)
-- Different handling strategies for expected vs unexpected errors
 
 ## AsyncResult: Async Error Handling
 
@@ -106,26 +63,22 @@ async function fetchUser(id: string): AsyncResult<User, Error> {
 | `Result` | Explicit success/failure with typed errors |
 | `Maybe` | Value might exist or not (no error context) |
 | `Try` | Wrapping sync functions that throw |
-| `Outcome` | Need cause vs exception distinction |
 | `AsyncResult` | Async operations with error handling |
 
 ## Converting Between Types
 
 ```typescript
-import { toResult, toMaybe, toOutcome } from "@deessejs/core";
+import { toResult, toMaybe } from "@deessejs/core";
 
 // Maybe → Result
 const result = toResult(maybe, () => "error");
 
 // Result → Maybe
 const maybe = toMaybe(result);
-
-// Result → Outcome
-const outcome = toOutcome(result);
 ```
 
 <Callout>
-  Start with Result or Maybe. Use Try, Outcome, and AsyncResult when your use case specifically requires them.
+  Start with Result or Maybe. Use Try and AsyncResult when your use case specifically requires them.
 </Callout>
 
 ## See Also

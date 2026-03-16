@@ -1,12 +1,12 @@
 # Type Conversions Guide
 
-This example demonstrates conversions between Result, Maybe, and Outcome.
+This example demonstrates conversions between Result, Maybe, and Try.
 
 ## What You'll Learn
 
 - **Result ↔ Maybe**: Converting error handling to optional values
-- **Result → Outcome**: Simple errors to rich error context
-- **Maybe ↔ Outcome**: Optional to typed errors
+- **Result → Try**: Simple errors to exception handling
+- **Maybe ↔ Result**: Optional to typed errors
 - **When to use each**: Choosing the right type
 
 ## Running the Example
@@ -47,16 +47,16 @@ const error = toResult(none, {
 }); // Err({ field, message })
 ```
 
-### Result to Outcome
+### Result to Try
 
 ```typescript
-import { toOutcome } from "@deessejs/core";
+import { toTry } from "@deessejs/core";
 
 const okResult = ok("data");
-const outcome = toOutcome(okResult); // Success("data")
+const tryOk = toTry(okResult); // Try("data")
 
 const errResult = err({ code: "INVALID" });
-const causeOutcome = toOutcome(errResult); // Cause({ ... })
+const tryErr = toTry(errResult); // Failure({ ... })
 ```
 
 ## Choosing the Right Type
@@ -65,10 +65,10 @@ const causeOutcome = toOutcome(errResult); // Cause({ ... })
 |------|----------|
 | **Result** | Success/failure with error details |
 | **Maybe** | Value may or may not exist |
-| **Outcome** | Need to distinguish business vs system errors |
+| **Try** | Need exception safety |
 
 ## Related Examples
 
 - [Environment Configuration](../config/) - Maybe for optional config
 - [Form Validation](../form-validation/) - Result for validation
-- [Authentication Flow](../auth/) - Outcome for error types
+- [JSON Parsing](../json-parsing/) - Try for exception handling

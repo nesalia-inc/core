@@ -10,7 +10,7 @@ import { Accordions, Accordion } from 'fumadocs-ui/components/accordion';
 <Accordions>
 <Accordion title="What is @deessejs/core?">
 
-`@deessejs/core` is a TypeScript library that provides functional programming patterns for type-safe error handling. It offers monads like `Result`, `Maybe`, `Try`, `Outcome`, and `AsyncResult`.
+`@deessejs/core` is a TypeScript library that provides functional programming patterns for type-safe error handling. It offers monads like `Result`, `Maybe`, `Try`, and `AsyncResult`.
 
 </Accordion>
 <Accordion title="Why should I use this instead of try-catch?">
@@ -35,7 +35,6 @@ With `@deessejs/core`:
 | **Result** | You need explicit error handling with typed errors |
 | **Maybe** | A value might or might not exist (optional) |
 | **Try** | Wrapping synchronous functions that might throw |
-| **Outcome** | You need rich error context (cause vs exception) |
 | **AsyncResult** | Async operations with error handling |
 
 </Accordion>
@@ -100,16 +99,13 @@ const result = ok("10")
 Use the conversion utilities:
 
 ```typescript
-import { toResult, toMaybe, toOutcome } from "@deessejs/core";
+import { toResult, toMaybe } from "@deessejs/core";
 
 // Maybe → Result
 const result = toResult(maybe, () => "error");
 
 // Result → Maybe
 const maybe = toMaybe(result);
-
-// Result → Outcome
-const outcome = toOutcome(result);
 ```
 
 </Accordion>
@@ -133,7 +129,6 @@ The entire library is very lightweight. Each type adds minimal overhead:
 - `Result`: ~1KB
 - `Maybe`: ~1KB
 - `Try`: ~1KB
-- `Outcome`: ~1KB
 - `AsyncResult`: ~1KB
 
 </Accordion>

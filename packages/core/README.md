@@ -48,62 +48,48 @@ yarn add @deessejs/core
 ## Usage
 
 ```typescript
-import { success, cause, exception, isSuccess, isCause, isException, Outcome } from '@deessejs/core'
+import { ok, err, isOk, isErr, Result } from '@deessejs/core'
 
-// Success - Normal Operation Result
-const ok = success({ id: 1, name: 'John' })
-if (isSuccess(ok)) {
+// Ok - Normal Operation Result
+const ok = ok({ id: 1, name: 'John' })
+if (isOk(ok)) {
   console.log(ok.value.name) // TypeScript knows this is User
 }
 
-// Cause - Domain Errors (Business Logic)
-const notFound = cause({
+// Err - Domain Errors (Business Logic)
+const notFound = err({
   name: 'NOT_FOUND',
   message: 'User not found',
   data: { id: 123 }
 })
-if (isCause(notFound)) {
+if (isErr(notFound)) {
   console.log(notFound.name) // "NOT_FOUND"
   console.log(notFound.data.id) // 123
 }
 
-// Exception - System Errors
-const crash = exception({
-  name: 'DATABASE_ERROR',
-  message: 'Connection failed'
-})
-if (isException(crash)) {
-  console.log(crash.name) // "DATABASE_ERROR"
-  console.log(crash.stack) // Error stack trace
-}
-
-// Outcome - Union Type
-function getUser(id: number): Outcome<User> {
+// Result - Union Type
+function getUser(id: number): Result<User> {
   const user = findUser(id)
   if (!user) {
-    return cause({ name: 'NOT_FOUND', message: 'User not found', data: { id } })
+    return err({ name: 'NOT_FOUND', message: 'User not found', data: { id } })
   }
-  return success(user)
+  return ok(user)
 }
 
 const result = getUser(123)
-if (isSuccess(result)) {
+if (isOk(result)) {
   console.log(result.value.name)
-} else if (isCause(result)) {
+} else if (isErr(result)) {
   console.log(result.name) // "NOT_FOUND"
-} else if (isException(result)) {
-  console.log(result.stack)
 }
 ```
 
 ## Features
 
-- **Unit Type** - Singleton representing "no meaningful value"
-- **Success Type** - Successful operation result with value
-- **Cause Type** - Domain errors (business logic failures)
-- **Exception Type** - System errors (unexpected failures)
-- **Outcome Type** - Union of Success, Cause, and Exception
-- **Type Guards** - isSuccess, isCause, isException for narrowing
+- **Result Type** - Successful operation result with value or error
+- **Maybe Type** - Optional values (Some/None)
+- **Try Type** - Exception handling wrapper
+- **Type Guards** - isOk, isErr, isSome, isNone for narrowing
 - **Fully Typed** - Comprehensive TypeScript support
 - **Zero Dependencies** - Pure TypeScript, no external deps
 - **100% Test Coverage** - Thoroughly tested
@@ -114,48 +100,40 @@ if (isSuccess(result)) {
 
 | Type | Description |
 |------|-------------|
-| `Unit` | Singleton type representing "no meaningful value" |
-| `Success<T>` | Successful operation result with value |
-| `Cause<T>` | Domain error with name, message, and data |
-| `Exception<T>` | System error with name, message, data, and stack |
-| `Outcome<T, C, E>` | Union of Success, Cause, and Exception |
+| `Result<T, E>` | Successful operation result with value or error |
+| `Maybe<T>` | Optional value (Some or None) |
+| `Try<T>` | Exception handling wrapper |
 
 ### Functions
 
 | Function | Description |
 |----------|-------------|
-| `unit` | The singleton Unit value |
-| `success<T>(value)` | Create a Success |
-| `cause<T>(options)` | Create a Cause (domain error) |
-| `exception<T>(options)` | Create an Exception (system error) |
-| `successUnit()` | Create Success with Unit value |
-| `causeUnit(options)` | Create Cause with Unit data |
-| `exceptionUnit(options)` | Create Exception with Unit data |
-| `exceptionWithStack(options)` | Create Exception with auto-generated stack |
+| `ok<T>(value)` | Create an Ok result |
+| `err<E>(options)` | Create an Err result |
+| `some<T>(value)` | Create a Some |
+| `none()` | Create a None |
+| `try<T>(fn)` | Wrap a function in Try |
 
 ### Type Guards
 
 | Guard | Description |
 |-------|-------------|
-| `isUnit(value)` | Check if value is Unit |
-| `isSuccess(result)` | Check if result is Success (narrows type) |
-| `isCause(value)` | Check if value is Cause (narrows type) |
-| `isException(value)` | Check if value is Exception (narrows type) |
+| `isOk(result)` | Check if result is Ok (narrows type) |
+| `isErr(result)` | Check if result is Err (narrows type) |
+| `isSome(maybe)` | Check if maybe is Some (narrows type) |
+| `isNone(maybe)` | Check if maybe is None (narrows type) |
 
 ## TypeScript Signature Examples
 
 ```typescript
-// Success
-success<T>(value: T): Success<T>
+// Ok result
+ok<T>(value: T): Ok<T>
 
-// Cause with typed data
-cause<T>(options: { name: string; message: string; data: T }): Cause<T>
+// Err with typed data
+err<E>(options: { name: string; message: string; data: E }): Err<E>
 
-// Exception with typed data
-exception<T>(options: { name: string; message: string; data?: T; stack?: string }): Exception<T>
-
-// Outcome with generics
-type Outcome<T, C = Cause<unknown>, E = Exception<Unit>> = Success<T> | Cause<C> | Exception<E>
+// Result type
+type Result<T, E = Err<unknown>> = Ok<T> | Err<E>
 ```
 
 ## Why This Package?

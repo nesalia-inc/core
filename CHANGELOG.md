@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Comprehensive usage examples for `@deessejs/core`
 - 12 complete examples demonstrating real-world scenarios
-- Documentation for Result, Maybe, Try, Outcome, and AsyncResult types
+- Documentation for Result, Maybe, Try, and AsyncResult types
 
 ### Changed
 
@@ -30,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `Result` type for error handling
   - `Maybe` type for optional values
   - `Try` type for exception handling
-  - `Outcome` type for success/failure with causes
+  - `Result` type for success/failure with causes
   - `AsyncResult` for asynchronous operations
   - Utility functions: Sleep, Retry, conversions
 - Full TypeScript support
