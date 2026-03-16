@@ -4,11 +4,10 @@
  * This example demonstrates how to use @deessejs/core for:
  * - Chaining multiple validation rules
  * - Accumulating validation errors
- * - Distinguishing business errors from system errors
  * - Type-safe form data handling
  */
 
-import { ok, err, success, cause, exception } from "@deessejs/core";
+import { ok, err } from "@deessejs/core";
 
 // ============================================================================
 // Types
@@ -171,7 +170,7 @@ const validatePasswordConfirmation = (
 
 const validateFormSequential = (
   form: RegistrationForm
-): Result<RegistrationForm, ValidationError> {
+): Result<RegistrationForm, ValidationError> => {
   console.log("\n=== Example 1: Sequential Validation (Fail Fast) ===");
 
   return ok(form)
@@ -234,64 +233,56 @@ const validateFormAll = (form: RegistrationForm): Result<RegistrationForm, FormE
 }
 
 // ============================================================================
-// Example 3: Using Outcome for rich error context
+// Example 3: Validate with business vs system errors using Result
 // ============================================================================
 
-const validateFormWithOutcome = (
+const validateFormWithErrorTypes = (
   form: RegistrationForm
-): Outcome<RegistrationForm, ValidationError, SystemError> {
-  console.log("\n=== Example 3: Using Outcome (Business vs System Errors) ===");
+): Result<RegistrationForm, ValidationError | SystemError> => {
+  console.log("\n=== Example 3: Business vs System Errors ===");
 
   // Business validation errors (expected, user-correctable)
   const nameValid = validateName(form.name);
   if (nameValid.isErr()) {
-    return cause(nameValid.error);
+    return nameValid;
   }
 
   // Simulate a system error (unexpected, e.g., database check fails)
   try {
     // This would be a real database check
     if (form.email === "taken@example.com") {
-      return exception({
+      return err({
         type: "DATABASE_ERROR",
         message: "Failed to check email availability",
-      });
+      } as SystemError);
     }
   } catch (e) {
-    return exception({
+    return err({
       type: "SYSTEM_ERROR",
       message: e instanceof Error ? e.message : "Unknown system error",
-    });
+    } as SystemError);
   }
 
   // Continue with other validations
   return ok(form)
     .flatMap((data) => {
       const result = validateEmail(data.email);
-      return result.isErr()
-        ? cause(result.error)
-        : success(data);
+      return result.isErr() ? err(result.error) : ok(data);
     })
     .flatMap((data) => {
       const result = validateAge(data.age);
-      return result.isErr()
-        ? cause(result.error)
-        : success(data);
+      return result.isErr() ? err(result.error) : ok(data);
     })
     .flatMap((data) => {
       const result = validatePassword(data.password);
-      return result.isErr()
-        ? cause(result.error)
-        : success(data);
+      return result.isErr() ? err(result.error) : ok(data);
     })
     .flatMap((data) => {
       const result = validatePasswordConfirmation(
         data.password,
         data.confirmPassword
       );
-      return result.isErr()
-        ? cause(result.error)
-        : success(data);
+      return result.isErr() ? err(result.error) : ok(data);
     });
 }
 
@@ -362,7 +353,7 @@ const emailExists = async (email: string): Promise<boolean> => {
 
 const validateFormWithAsyncCheck = async (
   form: RegistrationForm
-): Promise<Result<RegistrationForm, ValidationError>> {
+): Promise<Result<RegistrationForm, ValidationError>> => {
   console.log("\n=== Example 5: Async Validation ===");
 
   // First do sync validation
@@ -435,15 +426,15 @@ const main = async () => {
       });
     }
 
-    // Example 3: Using Outcome
-    console.log("\n--- Testing with Outcome ---");
-    const result4 = validateFormWithOutcome(validForm);
-    if (result4.isSuccess()) {
+    // Example 3: Using Result with error types
+    console.log("\n--- Testing with Result (business vs system errors) ---");
+    const result4 = validateFormWithErrorTypes(validForm);
+    if (result4.isOk()) {
       console.log("✓ Form validated successfully!");
-    } else if (result4.isCause()) {
-      console.log(`✗ Business error: ${result4.value.message}`);
-    } else if (result4.isException()) {
-      console.log(`✗ System error: ${result4.value.message}`);
+    } else if ("field" in result4.error) {
+      console.log(`✗ Business error: ${result4.error.message}`);
+    } else {
+      console.log(`✗ System error: ${result4.error.message}`);
     }
 
     // Example 4: Conditional validation

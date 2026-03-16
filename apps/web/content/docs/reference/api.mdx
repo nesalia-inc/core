@@ -14,9 +14,6 @@ This is a minimal API reference. For detailed explanations, see the Guides and C
 | `some(value)` | Create present Maybe |
 | `none()` | Create absent Maybe |
 | `fromNullable(value)` | Convert null/undefined to Maybe |
-| `success(value)` | Create successful Outcome |
-| `cause(options)` | Create business error Outcome |
-| `exception(options)` | Create system error Outcome |
 | `okAsync(value)` | Create successful AsyncResult |
 | `errAsync(error)` | Create failed AsyncResult |
 | `attempt(fn)` | Wrap sync function that might throw |
@@ -66,9 +63,6 @@ This is a minimal API reference. For detailed explanations, see the Guides and C
 | `isErr(result)` | Check if Err |
 | `isSome(maybe)` | Check if Some |
 | `isNone(maybe)` | Check if None |
-| `isSuccess(outcome)` | Check if Success |
-| `isCause(outcome)` | Check if Cause |
-| `isException(outcome)` | Check if Exception |
 | `isError(value)` | Check if Error |
 | `isErrorGroup(value)` | Check if ErrorGroup |
 | `isErrWithError(result)` | Check if Result contains Error |
@@ -80,7 +74,7 @@ This is a minimal API reference. For detailed explanations, see the Guides and C
 |----------|-------------|
 | `toResult(maybe, onNone)` | Maybe → Result |
 | `toMaybe(result)` | Result → Maybe |
-| `toOutcome(result)` | Result → Outcome |
+| `toTry(result)` | Result → Try |
 
 ## Async Utilities
 
@@ -147,7 +141,7 @@ Looking for something specific?
 - **Optional values** → Use `some()` + `none()` + `Maybe`
 - **Parsing JSON** → Use `attempt()` + `Try`
 - **Network calls** → Use `AsyncResult`
-- **Rich errors** → Use `Outcome`
+- **Rich errors** → Use `Result` with Error types
 - **Advanced error handling** → Use `error()` + `exceptionGroup()` (Python-inspired)
 
 See [Choosing a Type](/docs/concepts/choosing-type) for detailed guidance.

@@ -28,7 +28,7 @@ Does the operation can fail with specific error types?
 | Parse JSON | `Try` | Can throw on invalid JSON |
 | Read config | `Maybe` | Config might not exist |
 | Fetch from API | `AsyncResult` | Network can fail |
-| Distinguish business vs system errors | `Outcome` | Different handling needed |
+| Distinguish business vs system errors | `Result` | Different handling needed |
 
 ## Examples
 
@@ -71,8 +71,8 @@ const fetchUser = (id: string): AsyncResult<User, ApiError> =>
 ### Rich Error Tracking
 
 ```typescript
-// Use Outcome - need cause vs exception distinction
-const processOrder = (order: Order): Outcome<Order, BusinessError, SystemError> =>
+// Use Result - need rich error distinction
+const processOrder = (order: Order): Result<Order, BusinessError | SystemError> =>
   // ...
 ```
 
@@ -121,7 +121,6 @@ const name = user.name; // No wrapper needed
 | `Result` | Yes | No | Validation, explicit failures |
 | `Maybe` | No | No | Optional values |
 | `Try` | Yes (caught) | No | Wrapping throwable code |
-| `Outcome` | Yes (rich) | No | Business vs system errors |
 | `AsyncResult` | Yes | Yes | Network, database |
 
 ## See Also
@@ -133,7 +132,7 @@ const name = user.name; // No wrapper needed
   <Card title="Maybe" href="/docs/concepts/maybe">
     Optional values
   </Card>
-  <Card title="Try, Outcome & AsyncResult" href="/docs/concepts/try-outcome">
+  <Card title="Try & AsyncResult" href="/docs/concepts/try-outcome">
     Advanced patterns
   </Card>
 </Cards>

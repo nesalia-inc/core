@@ -59,26 +59,20 @@ For full documentation, visit [core.deessejs.com](https://core.deessejs.com).
 ## Quick Start
 
 ```typescript
-import { success, cause, exception, isSuccess, isCause, isException, Outcome } from '@deessejs/core'
+import { ok, err, isOk, isErr, Result } from '@deessejs/core'
 
-// Success - Normal Operation Result
-const ok = success({ id: 1, name: 'John' })
+// Ok - Normal Operation Result
+const ok = ok({ id: 1, name: 'John' })
 
-if (isSuccess(ok)) {
+if (isOk(ok)) {
   console.log(ok.value.name)
 }
 
-// Cause - Domain Errors
-const notFound = cause({
+// Err - Domain Errors
+const notFound = err({
   name: 'NOT_FOUND',
   message: 'User not found',
   data: { id: 123 }
-})
-
-// Exception - System Errors
-const crash = exception({
-  name: 'DATABASE_ERROR',
-  message: 'Connection failed'
 })
 ```
 

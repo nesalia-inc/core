@@ -1,12 +1,12 @@
 # Form Validation
 
-This example demonstrates comprehensive form validation using `Result` and `Outcome`.
+This example demonstrates comprehensive form validation using `Result`.
 
 ## What You'll Learn
 
 - **Sequential validation**: Fail-fast approach
 - **Accumulate errors**: Show all validation errors at once
-- **Outcome type**: Distinguish business vs system errors
+- **Result type**: Error handling with typed errors
 - **Conditional validation**: Validate optional fields
 - **Async validation**: Check against database/API
 
@@ -44,12 +44,12 @@ if (errors.length > 0) {
 ```typescript
 // Business error (user-correctable)
 if (!email.includes('@')) {
-  return cause({ field: 'email', code: 'INVALID' });
+  return err({ field: 'email', code: 'INVALID' });
 }
 
 // System error (unexpected)
 if (database.isDown()) {
-  return exception({ type: 'DATABASE_ERROR' });
+  return err({ type: 'DATABASE_ERROR', internal: true });
 }
 ```
 
@@ -71,7 +71,6 @@ if (exists) {
 |---------|----------|
 | Sequential | You want to stop at first error |
 | Accumulate | Better UX to show all errors |
-| Outcome | Need to distinguish error types |
 | Async | Validation requires external check |
 
 ## Related Examples

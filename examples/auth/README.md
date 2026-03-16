@@ -1,10 +1,10 @@
 # Authentication Flow
 
-This example demonstrates authentication using `Outcome` to distinguish business vs system errors.
+This example demonstrates authentication using `Result` to distinguish business vs system errors.
 
 ## What You'll Learn
 
-- **Outcome**: Business vs system error handling
+- **Result**: Business vs system error handling
 - **Multi-stage auth**: Email/password → MFA → Token
 - **Token validation**: Verify and refresh tokens
 - **Error types**: User-correctable vs system errors
@@ -20,11 +20,11 @@ tsx examples/auth/index.ts
 ### 1. Business vs System Errors
 
 ```typescript
-import { success, cause, exception } from "@deessejs/core";
+import { ok, err, isOk, isErr } from "@deessejs/core";
 
 // Business error (user-correctable)
 if (!user) {
-  return cause({
+  return err({
     code: "INVALID_CREDENTIALS",
     message: "User not found",
     userMessage: "Invalid email or password"
@@ -33,7 +33,7 @@ if (!user) {
 
 // System error (unexpected)
 if (database.isDown()) {
-  return exception({
+  return err({
     type: "DATABASE_ERROR",
     message: "Failed to connect to database",
     internal: true
@@ -46,9 +46,9 @@ if (database.isDown()) {
 ```typescript
 // First stage: credentials
 const loginResult = await verifyCredentials(email, password);
-if (loginResult.isCause() && loginResult.value.code === "MFA_REQUIRED") {
+if (loginResult.isErr() && loginResult.error.code === "MFA_REQUIRED") {
   // Prompt for MFA code
-  return cause({
+  return err({
     code: "MFA_REQUIRED",
     userMessage: "Enter your MFA code"
   });
@@ -62,24 +62,23 @@ const mfaResult = await verifyMfa(userId, mfaCode);
 
 ```typescript
 const validation = await validateToken(accessToken);
-if (validation.isCause()) {
+if (validation.isErr()) {
   // Try refresh
   const refresh = await refreshAccessToken(refreshToken);
-  if (refresh.isCause()) {
+  if (refresh.isErr()) {
     // Both expired, need re-login
-    return cause({ code: "REAUTH_REQUIRED" });
+    return err({ code: "REAUTH_REQUIRED" });
   }
-  return success(refresh.value);
+  return ok(refresh.value);
 }
 ```
 
-## When to Use Outcome
+## When to Use Result
 
 | Type | Use Case |
 |------|----------|
-| **Success** | Operation completed successfully |
-| **Cause** | Expected business errors (invalid input, user not found) |
-| **Exception** | Unexpected system errors (database down, network failure) |
+| **Ok** | Operation completed successfully |
+| **Err** | Expected business errors (invalid input, user not found) |
 
 ## Related Examples
 
