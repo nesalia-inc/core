@@ -14,9 +14,6 @@ This is a minimal API reference. For detailed explanations, see the Guides and C
 | `some(value)` | Create present Maybe |
 | `none()` | Create absent Maybe |
 | `fromNullable(value)` | Convert null/undefined to Maybe |
-| `success(value)` | Create successful Result |
-| `cause(options)` | Create business error Result |
-| `exception(options)` | Create system error Result |
 | `okAsync(value)` | Create successful AsyncResult |
 | `errAsync(error)` | Create failed AsyncResult |
 | `attempt(fn)` | Wrap sync function that might throw |
@@ -66,9 +63,6 @@ This is a minimal API reference. For detailed explanations, see the Guides and C
 | `isErr(result)` | Check if Err |
 | `isSome(maybe)` | Check if Some |
 | `isNone(maybe)` | Check if None |
-| `isSuccess(result)` | Check if Success |
-| `isCause(result)` | Check if Cause |
-| `isException(result)` | Check if Exception |
 | `isError(value)` | Check if Error |
 | `isErrorGroup(value)` | Check if ErrorGroup |
 | `isErrWithError(result)` | Check if Result contains Error |
