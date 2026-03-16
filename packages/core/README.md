@@ -59,19 +59,18 @@ if (isOk(ok)) {
 // Err - Domain Errors (Business Logic)
 const notFound = err({
   name: 'NOT_FOUND',
-  message: 'User not found',
-  data: { id: 123 }
+  args: { id: 123 }
 })
 if (isErr(notFound)) {
-  console.log(notFound.name) // "NOT_FOUND"
-  console.log(notFound.data.id) // 123
+  console.log(notFound.error.name) // "NOT_FOUND"
+  console.log(notFound.error.args.id) // 123
 }
 
 // Result - Union Type
 function getUser(id: number): Result<User> {
   const user = findUser(id)
   if (!user) {
-    return err({ name: 'NOT_FOUND', message: 'User not found', data: { id } })
+    return err({ name: 'NOT_FOUND', args: { id } })
   }
   return ok(user)
 }
@@ -129,8 +128,8 @@ if (isOk(result)) {
 // Ok result
 ok<T>(value: T): Ok<T>
 
-// Err with typed data
-err<E>(options: { name: string; message: string; data: E }): Err<E>
+// Err with typed args
+err<E>(options: { name: string; args: E }): Err<Error<E>>
 
 // Result type
 type Result<T, E = Err<unknown>> = Ok<T> | Err<E>
