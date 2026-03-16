@@ -51,7 +51,7 @@ jobs:
 
       - name: Run Ready Analysis
         if: steps.check-ready.outputs.already_ready != 'true'
-        uses: anthropics/claude-code-action@v1
+        uses: nesalia-inc/marty-action@1.0.0
         with:
           github_token: ${{ steps.marty-token.outputs.token }}
           prompt: |
