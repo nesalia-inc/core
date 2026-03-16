@@ -31,23 +31,17 @@ jobs:
           app-id: ${{ secrets.MARTY_APP_ID }}
           private-key: ${{ secrets.MARTY_APP_PRIVATE_KEY }}
 
-      - name: Get issue details
-        id: issue
-        run: |
-          ISSUE=$(gh issue view ${{ github.event.issue.number }} --json number,title,body,author,labels,assignees,comments)
-          echo "issue=$ISSUE" >> $GITHUB_OUTPUT
-        env:
-          GH_TOKEN: ${{ steps.marty-token.outputs.token }}
-
       - name: Check if already ready
         id: check-ready
         run: |
-          echo '${{ steps.issue.outputs.issue }}' > issue.json
-          if grep -qw "ready:yes" issue.json; then
+          LABELS=$(gh issue view ${{ github.event.issue.number }} --json labels --jq '.labels[].name')
+          if echo "$LABELS" | grep -qw "ready:yes"; then
             echo "already_ready=true" >> $GITHUB_OUTPUT
           else
             echo "already_ready=false" >> $GITHUB_OUTPUT
           fi
+        env:
+          GH_TOKEN: ${{ steps.marty-token.outputs.token }}
 
       - name: Run Ready Analysis
         if: steps.check-ready.outputs.already_ready != 'true'
@@ -55,14 +49,15 @@ jobs:
         with:
           github_token: ${{ steps.marty-token.outputs.token }}
           prompt: |
-            # Issue Ready Analysis
+            REPO: ${{ github.repository }}
+            ISSUE NUMBER: ${{ github.event.issue.number }}
+            ISSUE TITLE: ${{ github.event.issue.title }}
+            ISSUE BODY: ${{ github.event.issue.body }}
+            ISSUE AUTHOR: ${{ github.event.issue.user.login }}
+            COMMENT BODY: ${{ github.event.comment.body }}
+            COMMENT AUTHOR: ${{ github.event.comment.user.login }}
 
-            Analyze issue #${{ github.event.issue.number }} to determine if it's ready for implementation.
-
-            ## Issue Details
-            ```
-            ${{ steps.issue.outputs.issue }}
-            ```
+            You are Marty, an AI assistant. Analyze this issue to determine if it's ready for implementation.
 
             ## What to Check
 
@@ -83,20 +78,20 @@ jobs:
 
             ## Your Task
 
-            1. Read the issue carefully
+            1. Read the issue carefully (use `gh issue view {issue_number}`)
             2. Check each item above
             3. Decide: **READY** or **NOT READY**
 
-            If NOT READY, you MUST list SPECIFIC items that are missing. Be constructive - explain HOW to fix, don't just say "it's unclear".
+            If NOT READY, you MUST list SPECIFIC items that are missing. Be constructive - explain HOW to fix.
 
-            ## Output FORMAT (MUST follow exactly)
+            ## Output FORMAT
 
             Comment on the issue with this format:
 
             ```
             ## Issue Readiness Assessment
 
-            ### Status: ✅ READY / ❌ NOT READY
+            ### Status: READY / NOT READY
 
             ### Checks:
             - [x] Clear problem statement  OR  - [ ] Clear problem statement - REASON
@@ -110,7 +105,6 @@ jobs:
             ### If NOT READY - What needs to be added:
             1. [Specific item 1]
             2. [Specific item 2]
-            3. [Specific item 3]
             ```
 
             Then add labels:
@@ -118,7 +112,7 @@ jobs:
             - If NOT READY: `ready:no`, `needs:clarification`
 
           claude_args: |
-            --allowedTools "Bash(gh issue view:*),Bash(gh issue comment:*),Bash(gh issue edit:*),Bash(gh issue label add:*),Bash(gh issue label remove:*),Bash(gh api:*)"
+            --allowedTools "Bash(gh issue view:*),Bash(gh issue comment:*),Bash(gh issue edit:*),Bash(gh issue label add:*),Bash(gh issue label remove:*)"
             --max-turns 50
 
         env:
@@ -129,8 +123,8 @@ jobs:
       - name: Already Ready Notification
         if: steps.check-ready.outputs.already_ready == 'true'
         run: |
-          gh issue comment ${{ github.event.issue.number }} --body "## ℹ️ Issue Already Ready
+          gh issue comment ${{ github.event.issue.number }} --body "## Issue Already Ready
 
-          This issue already has the `ready:yes` label. You can assign it to @martyy-code to start implementation."
+          This issue already has the \`ready:yes\` label. You can assign it to @martyy-code to start implementation."
         env:
           GH_TOKEN: ${{ steps.marty-token.outputs.token }}
