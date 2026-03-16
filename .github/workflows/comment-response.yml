@@ -15,6 +15,7 @@ permissions:
   contents: read
   issues: write
   pull-requests: write
+  members: read
 
 jobs:
   respond:
@@ -47,8 +48,8 @@ jobs:
           AUTHOR="${{ github.event.comment.user.login }}"
           REPO="${{ github.repository }}"
 
-          # Count runs in last 1 minute
-          RUN_COUNT=$(gh api repos/$REPO/actions/runs?per_page=100 --jq '[.workflow_runs[] | select(.created_at > now - 60)] | length' 2>/dev/null || echo "0")
+          # Count runs in last 1 minute for this author
+          RUN_COUNT=$(gh api repos/$REPO/actions/runs --jq '.workflow_runs[] | select(.head_branch == "main") | select(.created_at > now - 60)' 2>/dev/null | grep -c "id" || echo "0")
 
           # Allow max 20 runs per minute per user
           if [ "$RUN_COUNT" -ge 20 ]; then
@@ -191,17 +192,55 @@ jobs:
 
             ## CRITICAL: POST YOUR RESPONSE
 
-            After generating your response, you MUST post it as a comment:
+            For ANY response (even short ones), you MUST use a temporary file. Never put markdown directly in the --body parameter!
+
+            Steps:
+            1. Write your response to a file named `response.md`:
+               ```
+               cat > response.md << 'EOF'
+               ## Your Response Title
+
+               Your markdown content here...
+               - List item 1
+               - List item 2
+
+               More content...
+               EOF
+               ```
+
+            2. Read the content and post the comment:
+               ```
+               CONTENT=$(cat response.md)
+               gh issue comment {issue_number} --body "$CONTENT"
+               ```
+
+            Example for a proper response:
             ```
-            gh issue comment {issue_number} --body "Your response here"
+            cat > response.md << 'EOF'
+            Hey @AliiiB! Looking at the issue, here's what I found:
+
+            ### Already covered:
+            - Outcome type and factory functions
+            - Success, Cause, Exception, Unit types
+            - Type guards
+
+            ### Additional considerations:
+            1. **Test files** - These will need removal:
+               - `tests/outcome.test.ts`
+               - `tests/success.test.ts`
+
+            2. **Examples** - These files reference the types:
+               - `examples/http-api/index.ts`
+               - `examples/resilience/index.ts`
+
+            Otherwise the issue looks comprehensive!
+            EOF
+
+            CONTENT=$(cat response.md)
+            gh issue comment 123 --body "$CONTENT"
             ```
 
-            Example:
-            ```
-            gh issue comment 58 --body "Hey! Good question - here's my thoughts..."
-            ```
-
-            Your response will NOT be visible unless you post it!
+            This ensures proper markdown formatting without escape issues.
 
             ## Issue Modifications
 
