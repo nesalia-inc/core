@@ -42,8 +42,8 @@ jobs:
       - name: Check if already ready
         id: check-ready
         run: |
-          ISSUE_JSON='${{ steps.issue.outputs.issue }}'
-          if echo "$ISSUE_JSON" | grep -qw "ready:yes"; then
+          echo '${{ steps.issue.outputs.issue }}' > issue.json
+          if grep -qw "ready:yes" issue.json; then
             echo "already_ready=true" >> $GITHUB_OUTPUT
           else
             echo "already_ready=false" >> $GITHUB_OUTPUT
@@ -57,11 +57,11 @@ jobs:
           prompt: |
             # Issue Ready Analysis
 
-            Analyze issue #{{ github.event.issue.number }} to determine if it's ready for implementation.
+            Analyze issue #${{ github.event.issue.number }} to determine if it's ready for implementation.
 
             ## Issue Details
             ```
-            {{ steps.issue.outputs.issue }}
+            ${{ steps.issue.outputs.issue }}
             ```
 
             ## What to Check
