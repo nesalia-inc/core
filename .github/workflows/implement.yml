@@ -43,9 +43,9 @@ jobs:
           ISSUE=$(gh issue view $ISSUE_NUM --json number,title,body,labels,assignees)
           echo "issue=$ISSUE" >> $GITHUB_OUTPUT
 
-          # Get the linked PR
-          PR_DATA=$(gh api repos/$REPO/issues/$ISSUE_NUM --jq '.pullRequest')
-          if [ "$PR_DATA" != "null" ]; then
+          # Get the linked PR using the API
+          PR_DATA=$(gh api repos/$REPO/issues/$ISSUE_NUM --jq '.pullRequest // null')
+          if [ "$PR_DATA" != "null" ] && [ -n "$PR_DATA" ]; then
             PR_NUM=$(echo $PR_DATA | jq -r '.number')
             echo "pr_number=$PR_NUM" >> $GITHUB_OUTPUT
 
