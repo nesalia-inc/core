@@ -1,5 +1,5 @@
 ---
-name: deessejs-fp
+name: deessejs-core
 description: Functional programming patterns for TypeScript - Result, Maybe, Try, AsyncResult. Use when working with error handling, optional values, or async operations in TypeScript.
 ---
 
