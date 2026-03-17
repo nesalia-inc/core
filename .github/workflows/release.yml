@@ -20,21 +20,18 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
         run: pnpm install
-
-      - name: Version bump
-        run: pnpm changeset version
 
       - name: Build
         run: pnpm build
 
       - name: Publish to npm
-        run: pnpm changeset publish
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          cd packages/core
+          echo '//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}' > .npmrc
+          npm publish --access public
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
