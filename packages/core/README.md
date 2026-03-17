@@ -90,7 +90,7 @@ if (isOk(result)) {
 - **Try Type** - Exception handling wrapper
 - **Type Guards** - isOk, isErr, isSome, isNone for narrowing
 - **Fully Typed** - Comprehensive TypeScript support
-- **Zero Dependencies** - Pure TypeScript, no external deps
+- **Minimal Dependencies** - Only Zod for runtime validation, no other external deps
 - **100% Test Coverage** - Thoroughly tested
 
 ## API Reference
