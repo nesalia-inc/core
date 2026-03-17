@@ -35,15 +35,6 @@ jobs:
           cd packages/core
           npx vitest run --coverage
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          files: ./packages/core/coverage/coverage-final.json
-          fail_ci_if_error: false
-          verbose: true
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
       - name: Comment coverage on PR
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
