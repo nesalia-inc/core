@@ -26,13 +26,13 @@ jobs:
         run: pnpm install
 
       - name: Version bump
-        run: pnpm release
+        run: pnpm changeset version
 
       - name: Build
         run: pnpm build
 
       - name: Publish to npm
-        run: pnpm npm publish --access public
+        run: pnpm changeset publish
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
