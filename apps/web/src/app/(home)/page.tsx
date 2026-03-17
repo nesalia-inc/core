@@ -1,4 +1,5 @@
 'use client';
+// Homepage with hero section, badge, npm install, and links
 
 import { useState } from 'react';
 import Link from 'next/link';
