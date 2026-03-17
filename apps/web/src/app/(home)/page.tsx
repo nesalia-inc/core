@@ -1,7 +1,7 @@
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { NpmInstall } from '@/components/home/npm-install';
 
 export default function HomePage() {
   return (
@@ -32,12 +32,12 @@ export default function HomePage() {
         <div className="w-full max-w-5xl border border-b-0 border-border mx-auto flex flex-col justify-start text-center flex-1">
           <div className="max-w-3xl mx-auto my-24">
             <Link href="https://github.com/nesalia-inc/core" target="_blank" rel="noreferrer">
-              <Badge variant="outline" className="gap-2 rounded-md">
+              <span className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-1 text-sm font-medium">
                 <span className="w-2 h-2 rounded-full bg-green-500"></span>
                 v0.1.7 released
-              </Badge>
+              </span>
             </Link>
-            <h1 className="text-4xl font-bold mb-4">Type-safe error handling for TypeScript</h1>
+            <h1 className="text-4xl font-bold mb-4 mt-4">Type-safe error handling for TypeScript</h1>
             <p className="text-muted-foreground mb-6">
               Functional programming patterns - Result, Maybe, Try, and AsyncResult monads with zero
               runtime dependencies
@@ -46,17 +46,22 @@ export default function HomePage() {
               <NpmInstall />
             </div>
             <div className="flex gap-2 justify-center">
-              <Button asChild>
-                <Link href="/docs">Get Started</Link>
-              </Button>
-              <Button variant="outline" asChild>
-                <Link href="https://github.com/nesalia-inc/core" target="_blank" rel="noreferrer">
-                  GitHub
-                </Link>
-              </Button>
+              <Link
+                href="/docs"
+                className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-medium"
+              >
+                Get Started
+              </Link>
+              <Link
+                href="https://github.com/nesalia-inc/core"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center rounded-lg border border-border px-4 py-2 text-sm font-medium"
+              >
+                GitHub
+              </Link>
             </div>
           </div>
-          
         </div>
       </div>
       <div className="border-b border-border">
@@ -64,7 +69,7 @@ export default function HomePage() {
           <div className="h-8 flex items-center">
             <svg className="flex-1 h-full" preserveAspectRatio="none" viewBox="0 0 100 32">
               <defs>
-                <pattern id="grid" width="1.25" height="32" patternUnits="userSpaceOnUse">
+                <pattern id="grid2" width="1.25" height="32" patternUnits="userSpaceOnUse">
                   <line
                     x1="1.25"
                     y1="0"
@@ -76,7 +81,7 @@ export default function HomePage() {
                   />
                 </pattern>
               </defs>
-              <rect width="100" height="32" fill="url(#grid)" />
+              <rect width="100" height="32" fill="url(#grid2)" />
             </svg>
           </div>
         </div>
@@ -90,6 +95,37 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function NpmInstall() {
+  const [copied, setCopied] = useState(false);
+
+  const copyToClipboard = async () => {
+    await navigator.clipboard.writeText('npm install @deessejs/core');
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2 text-sm font-mono">
+      <span>npm install @deessejs/core</span>
+      <button
+        onClick={copyToClipboard}
+        className="hover:bg-muted-foreground/10 p-1 rounded"
+        title={copied ? 'Copied!' : 'Copy to clipboard'}
+      >
+        {copied ? (
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        ) : (
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+        )}
+      </button>
     </div>
   );
 }
