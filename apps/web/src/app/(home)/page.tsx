@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
 
 export default function HomePage() {
   return (
@@ -32,10 +33,10 @@ export default function HomePage() {
         <div className="w-full max-w-5xl border border-b-0 border-border mx-auto flex flex-col justify-start text-center flex-1">
           <div className="max-w-3xl mx-auto my-24">
             <Link href="https://github.com/nesalia-inc/core" target="_blank" rel="noreferrer">
-              <span className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-1 text-sm font-medium">
+              <Badge variant="outline" className="gap-2 rounded-md">
                 <span className="w-2 h-2 rounded-full bg-green-500"></span>
                 v0.1.7 released
-              </span>
+              </Badge>
             </Link>
             <h1 className="text-4xl font-bold mb-4 mt-4">Type-safe error handling for TypeScript</h1>
             <p className="text-muted-foreground mb-6">
