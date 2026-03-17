@@ -181,3 +181,18 @@ gh issue create --title "..." --body "..." --labels "feature,priority:medium,eff
 - TypeScript extends root `tsconfig.json`
 - Turbo caches builds in `.turbo/`
 - Changesets are stored in `.changeset/`
+
+## Commit Conventions
+
+When committing changes made by AI, always use this co-author format:
+
+```
+Co-Authored-By: martyy-code <nesalia.inc@gmail.com>
+```
+
+Example commit message:
+```bash
+git commit -m "feat: add new feature
+
+Co-Authored-By: martyy-code <nesalia.inc@gmail.com>
+```
