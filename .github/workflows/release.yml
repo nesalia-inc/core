@@ -25,6 +25,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Version bump
+        run: pnpm release
+
+      - name: Build
+        run: pnpm build
+
       - name: Publish to npm
         run: pnpm npm publish --access public
         env:
