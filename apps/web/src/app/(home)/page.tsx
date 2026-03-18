@@ -203,12 +203,12 @@ export default function HomePage() {
             <div className="flex items-center gap-4">
               <Button variant="link" asChild>
                 <Link href="https://nesalia.com" target="_blank" rel="noreferrer">
-                  nesalia
+                  <span className="text-muted-foreground lowercase">nesalia</span>
                 </Link>
               </Button>
               <Button variant="link" asChild>
                 <Link href="https://deessejs.com" target="_blank" rel="noreferrer">
-                  deessejs
+                  <span className="text-muted-foreground lowercase">deessejs</span>
                 </Link>
               </Button>
               <Button variant="ghost" size="icon" asChild>
