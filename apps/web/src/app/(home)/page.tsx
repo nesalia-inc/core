@@ -90,13 +90,13 @@ export default function HomePage() {
       <div className="border-b border-border">
         <div className="w-full max-w-5xl border border-b-0 border-border mx-auto flex flex-col justify-start text-center flex-1">
           <div className="grid grid-cols-3 divide-x">
-            <Card className="border-0 rounded-none bg-transparent">
-              <CardHeader>
+            <Card className="border-0 py-0 rounded-none bg-transparent">
+              <CardHeader className="pl-0">
                 <div className="flex items-center justify-between">
-                  <div className="border border-border rounded-md p-2">
+                  <div className="border-b border-r border-border p-3">
                     <Shield className="h-6 w-6 text-muted-foreground" />
                   </div>
-                  <Badge variant="outline" className="rounded-md bg-blue-500/10 border-blue-500/20 text-blue-500">v0.1.7</Badge>
+                  <Badge variant="outline" className="rounded-sm bg-blue-500/10 border-blue-500/20 text-blue-500">v0.1.7</Badge>
                 </div>
                 <CardTitle className="mt-4">Type-safe</CardTitle>
               </CardHeader>
@@ -106,13 +106,13 @@ export default function HomePage() {
                 </p>
               </CardContent>
             </Card>
-            <Card className="border-0 rounded-none bg-transparent">
-              <CardHeader>
+            <Card className="border-0 py-0 rounded-none bg-transparent">
+              <CardHeader className="pl-0">
                 <div className="flex items-center justify-between">
-                  <div className="border border-border rounded-md p-2">
-                    <Layers className="h-6 w-6 text-muted-foreground" />
+                  <div className="border-b border-r border-border p-3">
+                    <Layers className="size-6 text-muted-foreground" />
                   </div>
-                  <Badge variant="outline" className="rounded-md bg-green-500/10 border-green-500/20 text-green-500">0 deps</Badge>
+                  <Badge variant="outline" className="rounded-sm bg-green-500/10 border-green-500/20 text-green-500">0 deps</Badge>
                 </div>
                 <CardTitle className="mt-4">Zero Dependencies</CardTitle>
               </CardHeader>
@@ -122,13 +122,13 @@ export default function HomePage() {
                 </p>
               </CardContent>
             </Card>
-            <Card className="border-0 rounded-none bg-transparent">
-              <CardHeader>
+            <Card className="border-0 py-0 rounded-none bg-transparent">
+              <CardHeader className="pl-0">
                 <div className="flex items-center justify-between">
-                  <div className="border border-border rounded-md p-2">
-                    <Zap className="h-6 w-6 text-muted-foreground" />
+                  <div className="border-b border-r border-border p-3">
+                    <Zap className="size-6 text-muted-foreground" />
                   </div>
-                  <Badge variant="outline" className="rounded-md bg-purple-500/10 border-purple-500/20 text-purple-500">FP</Badge>
+                  <Badge variant="outline" className="rounded-sm bg-purple-500/10 border-purple-500/20 text-purple-500">FP</Badge>
                 </div>
                 <CardTitle className="mt-4">Functional</CardTitle>
               </CardHeader>
