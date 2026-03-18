@@ -496,6 +496,150 @@ const [user, posts] = await all(
 
 ---
 
+## Known Limitations & Future Improvements
+
+### 1. Await Nesting Problem
+
+**Current behavior:** Functions accept `AsyncResult` as input, requiring nested `await`:
+
+```typescript
+await flatMap(await map(await fromPromise(p), fn1), fn2)
+```
+
+**Note:** Future versions may implement a "Thenable" pattern (like neverthrow) that allows chaining without intermediate `await`:
+
+```typescript
+// Desired future API
+fromPromise(p)
+  .map(fn1)
+  .flatMap(fn2)
+  .match(ok => ..., err => ...);
+```
+
+### 2. `all` and `traverse` can throw
+
+**Current behavior:** `all` and `traverse` throw if any operation fails.
+
+**Issue:** This breaks the Result contract - the purpose is to handle errors without exceptions.
+
+**Workaround:** Use sequential processing with `flatMapAsync`:
+
+```typescript
+import { okAsync, errAsync, flatMapAsync, AsyncResult } from '@deessejs/core';
+
+const safeAll = async <T, E>(...results: AsyncResult<T, E>[]): AsyncResult<T[], E> => {
+  const values: T[] = [];
+  for (const result of results) {
+    const r = await result;
+    if (!r.ok) return errAsync(r.error);
+    values.push(r.value);
+  }
+  return okAsync(values);
+};
+```
+
+> **Note:** Future versions may return `Result<T[], E[]>` instead of throwing.
+
+### 3. `fromPromise` wraps non-Error rejections
+
+**Current behavior:** Non-Error rejections are converted to `Error`.
+
+**Issue:** This destroys structured error metadata from GraphQL or SDK errors.
+
+**Workaround:** Wrap manually:
+
+```typescript
+import { okAsync, errAsync } from '@deessejs/core';
+
+const fromPromiseCustom = <T, E>(
+  promise: Promise<T>,
+  onError: (error: unknown) => E
+): AsyncResult<T, E> =>
+  promise
+    .then(value => ({ ok: true as const, value }))
+    .catch(error => ({ ok: false as const, error: onError(error) }));
+```
+
+> **Note:** Future versions may accept an `onError` parameter.
+
+### 4. Dual `map` / `mapAsync` API
+
+**Current behavior:** Separate functions for sync and async transformations.
+
+**Note:** Future versions may unify these into a single `map` that detects if the function returns a Promise.
+
+### 5. No `AbortSignal` Support
+
+**Current behavior:** Cannot cancel a long-running AsyncResult chain.
+
+**Workaround:** Use AbortController at the operation level:
+
+```typescript
+import { fromPromise, flatMapAsync } from '@deessejs/core';
+
+const controller = new AbortController();
+
+const result = await flatMapAsync(
+  fromPromise(fetch(url, { signal: controller.signal })),
+  data => ...
+);
+
+// To cancel
+controller.abort();
+```
+
+> **Note:** Built-in AbortSignal support may be added in future versions.
+
+### 6. `race` vs `any` Ambiguity
+
+**Current behavior:** `race` returns the first to complete, whether success or error.
+
+**Issue:** Often you want the first **success** (like `Promise.any`).
+
+**Note:** `Promise.any` is not yet widely supported. For now, implement manually:
+
+```typescript
+import { okAsync, errAsync, isOk, AsyncResult } from '@deessejs/core';
+
+const firstSuccess = async <T, E>(...results: AsyncResult<T, E>[]): Promise<T> => {
+  for (const result of results) {
+    const r = await result;
+    if (isOk(r)) return r.value;
+  }
+  throw new Error('All promises were rejected');
+};
+```
+
+### 7. Error Type Inference
+
+**Current behavior:** Error types are properly unioned when combining AsyncResults.
+
+```typescript
+const r1: AsyncResult<string, 'ERR_A'> = okAsync('a');
+const r2: AsyncResult<number, 'ERR_B'> = okAsync(1);
+
+// Combined: AsyncResult<number, 'ERR_A' | 'ERR_B'>
+const combined = await all(r1, r2);
+```
+
+This is handled correctly by the current implementation.
+
+### 8. Instance Methods for Better DX
+
+**Current behavior:** Must use static functions with `await`.
+
+**Note:** As mentioned in point 1, instance methods would improve developer experience:
+
+```typescript
+// Future desired API
+const value = await fromPromise(promise)
+  .map(transform)
+  .flatMap(chain)
+  .match(ok, err);
+```
+
+---
+
 ## Comparison with Alternatives
 
 | Feature | @deessejs/core | fp-ts |
