@@ -47,22 +47,6 @@ export const some = <T>(value: T): Some<T> =>
   });
 
 /**
- * Creates a Some with a Unit value
- * @returns Some<Unit>
- */
-export const someUnit = (): Some<void> =>
-  Object.freeze({
-    ok: true,
-    value: undefined,
-    isSome() {
-      return true;
-    },
-    isNone() {
-      return false;
-    },
-  });
-
-/**
  * Creates a None (absent value)
  * @returns None
  */
