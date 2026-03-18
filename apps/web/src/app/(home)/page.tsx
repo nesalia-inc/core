@@ -98,9 +98,9 @@ export default function HomePage() {
                   </div>
                   <Badge variant="outline" className="rounded-sm bg-blue-500/10 border-blue-500/20 text-blue-500">v0.1.7</Badge>
                 </div>
-                <CardTitle className="mt-4">Type-safe</CardTitle>
+                <CardTitle className="mt-4 pl-4">Type-safe</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pl-4">
                 <p className="text-muted-foreground">
                   Full TypeScript support with comprehensive type inference and strict typing
                 </p>
@@ -114,9 +114,9 @@ export default function HomePage() {
                   </div>
                   <Badge variant="outline" className="rounded-sm bg-green-500/10 border-green-500/20 text-green-500">0 deps</Badge>
                 </div>
-                <CardTitle className="mt-4">Zero Dependencies</CardTitle>
+                <CardTitle className="mt-4 pl-4">Zero Dependencies</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pl-4">
                 <p className="text-muted-foreground">
                   Lightweight with no runtime dependencies, perfect for any project size
                 </p>
@@ -130,9 +130,9 @@ export default function HomePage() {
                   </div>
                   <Badge variant="outline" className="rounded-sm bg-purple-500/10 border-purple-500/20 text-purple-500">FP</Badge>
                 </div>
-                <CardTitle className="mt-4">Functional</CardTitle>
+                <CardTitle className="mt-4 pl-4">Functional</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pl-4">
                 <p className="text-muted-foreground">
                   Pure functional patterns with Result, Maybe, Try, and AsyncResult monads
                 </p>
