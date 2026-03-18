@@ -5,7 +5,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, Layers, Zap } from 'lucide-react';
 
 export default function HomePage() {
@@ -91,40 +91,52 @@ export default function HomePage() {
         <div className="w-full max-w-5xl border border-b-0 border-border mx-auto flex flex-col justify-start text-center flex-1">
           <div className="grid grid-cols-3 divide-x">
             <Card className="border-0 rounded-none bg-transparent">
-              <div className="h-full p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <Shield className="h-8 w-8 text-muted-foreground" />
-                  <Badge variant="secondary" className="rounded-md">v0.1.7</Badge>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="border border-border rounded-md p-2">
+                    <Shield className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <Badge variant="outline" className="rounded-md">v0.1.7</Badge>
                 </div>
-                <CardTitle className="mb-2">Type-safe</CardTitle>
+                <CardTitle className="mt-4">Type-safe</CardTitle>
+              </CardHeader>
+              <CardContent>
                 <p className="text-muted-foreground">
                   Full TypeScript support with comprehensive type inference and strict typing
                 </p>
-              </div>
+              </CardContent>
             </Card>
             <Card className="border-0 rounded-none bg-transparent">
-              <div className="h-full p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <Layers className="h-8 w-8 text-muted-foreground" />
-                  <Badge variant="secondary" className="rounded-md">0 dep</Badge>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="border border-border rounded-md p-2">
+                    <Layers className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <Badge variant="outline" className="rounded-md">0 deps</Badge>
                 </div>
-                <CardTitle className="mb-2">Zero Dependencies</CardTitle>
+                <CardTitle className="mt-4">Zero Dependencies</CardTitle>
+              </CardHeader>
+              <CardContent>
                 <p className="text-muted-foreground">
                   Lightweight with no runtime dependencies, perfect for any project size
                 </p>
-              </div>
+              </CardContent>
             </Card>
             <Card className="border-0 rounded-none bg-transparent">
-              <div className="h-full p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <Zap className="h-8 w-8 text-muted-foreground" />
-                  <Badge variant="secondary" className="rounded-md">Monads</Badge>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="border border-border rounded-md p-2">
+                    <Zap className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <Badge variant="outline" className="rounded-md">FP</Badge>
                 </div>
-                <CardTitle className="mb-2">Functional</CardTitle>
+                <CardTitle className="mt-4">Functional</CardTitle>
+              </CardHeader>
+              <CardContent>
                 <p className="text-muted-foreground">
                   Pure functional patterns with Result, Maybe, Try, and AsyncResult monads
                 </p>
-              </div>
+              </CardContent>
             </Card>
           </div>
         </div>
