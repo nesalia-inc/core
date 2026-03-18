@@ -88,7 +88,7 @@ export default function HomePage() {
         </div>
       </div>
       <div className="border-b border-border">
-        <div className="w-full max-w-5xl border border-b-0 border-border mx-auto flex flex-col justify-start text-center flex-1">
+        <div className="w-full max-w-5xl border border-b-0 border-border mx-auto flex flex-col justify-start text-left flex-1">
           <div className="grid grid-cols-3 divide-x">
             <Card className="border-0 py-0 rounded-none bg-transparent">
               <CardHeader className="pl-0">
