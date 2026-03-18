@@ -307,6 +307,74 @@ await sleepWithSignal(5000, token.signal);
 
 ---
 
+## Known Limitations & Future Improvements
+
+### 1. `withTimeout` and AbortController
+
+**Current behavior:** When a timeout occurs, `withTimeout` rejects but the original promise continues running in the background (potential resource leak).
+
+**Recommended pattern for proper cleanup:**
+
+```typescript
+import { withTimeout, sleepWithSignal } from '@deessejs/core';
+
+const fetchWithCleanup = async (url: string) => {
+  const controller = new AbortController();
+
+  // Race the fetch against a sleep with the same controller
+  const result = await Promise.race([
+    fetch(url, { signal: controller.signal }),
+    sleepWithSignal(5000, controller.signal)
+  ]);
+
+  // If timeout occurred, abort the fetch
+  if (result instanceof Error) {
+    controller.abort();
+    throw result;
+  }
+
+  return result;
+};
+```
+
+> **Note:** Future versions may include built-in AbortController support in `withTimeout`.
+
+### 2. `sleep` takes milliseconds only
+
+Currently, `sleep` only accepts milliseconds as a number:
+
+```typescript
+// Current API
+await sleep(1000); // 1 second
+```
+
+Human-readable strings like `'1s'` or `'500ms'` are not supported. This keeps the API simple and avoids parsing overhead.
+
+### 3. No jitter support in sleep
+
+Unlike Retry, `sleep` does not include jitter support. For retry scenarios, use the `jitter` option in `retryAsync` instead:
+
+```typescript
+import { retryAsync } from '@deessejs/core';
+
+// Jitter is built into retry
+await retryAsync(fn, {
+  attempts: 3,
+  delay: 1000,
+  jitter: true // Adds randomness: 500ms-1500ms
+});
+```
+
+### 4. No `yield()` / `immediate()` helper
+
+A `yield()` function (equivalent to `sleep(0)`) would be useful for yielding to the event loop during heavy computations. This is not currently implemented but may be added in future versions.
+
+### 5. Node.js process exit
+
+On Node.js, a long-running `sleep` can prevent the process from exiting cleanly. Use `withTimeout` or ensure your main operation completes to allow proper shutdown.
+
+---
+
 ## Comparison with Alternatives
 
 | Feature | @deessejs/core | Native |
