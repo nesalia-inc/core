@@ -91,42 +91,39 @@ export default function HomePage() {
         <div className="w-full max-w-5xl border border-b-0 border-border mx-auto flex flex-col justify-start text-center flex-1">
           <div className="grid grid-cols-3 divide-x">
             <Card className="border-0 rounded-none bg-transparent">
-              <div className="flex flex-col h-full">
-                <div className="border-b border-r border-border p-4 inline-flex">
+              <div className="h-full p-4">
+                <div className="flex items-center justify-between mb-4">
                   <Shield className="h-8 w-8 text-muted-foreground" />
+                  <Badge variant="secondary" className="rounded-md">v0.1.7</Badge>
                 </div>
-                <div className="p-4 text-left">
-                  <CardTitle className="mb-2">Type-safe</CardTitle>
-                  <p className="text-muted-foreground">
-                    Full TypeScript support with comprehensive type inference and strict typing
-                  </p>
-                </div>
+                <CardTitle className="mb-2">Type-safe</CardTitle>
+                <p className="text-muted-foreground">
+                  Full TypeScript support with comprehensive type inference and strict typing
+                </p>
               </div>
             </Card>
             <Card className="border-0 rounded-none bg-transparent">
-              <div className="flex flex-col h-full">
-                <div className="border-b border-r border-border p-4 inline-flex">
+              <div className="h-full p-4">
+                <div className="flex items-center justify-between mb-4">
                   <Layers className="h-8 w-8 text-muted-foreground" />
+                  <Badge variant="secondary" className="rounded-md">0 dep</Badge>
                 </div>
-                <div className="p-4 text-left">
-                  <CardTitle className="mb-2">Zero Dependencies</CardTitle>
-                  <p className="text-muted-foreground">
-                    Lightweight with no runtime dependencies, perfect for any project size
-                  </p>
-                </div>
+                <CardTitle className="mb-2">Zero Dependencies</CardTitle>
+                <p className="text-muted-foreground">
+                  Lightweight with no runtime dependencies, perfect for any project size
+                </p>
               </div>
             </Card>
             <Card className="border-0 rounded-none bg-transparent">
-              <div className="flex flex-col h-full">
-                <div className="border-b border-r border-border p-4 inline-flex">
+              <div className="h-full p-4">
+                <div className="flex items-center justify-between mb-4">
                   <Zap className="h-8 w-8 text-muted-foreground" />
+                  <Badge variant="secondary" className="rounded-md">Monads</Badge>
                 </div>
-                <div className="p-4 text-left">
-                  <CardTitle className="mb-2">Functional</CardTitle>
-                  <p className="text-muted-foreground">
-                    Pure functional patterns with Result, Maybe, Try, and AsyncResult monads
-                  </p>
-                </div>
+                <CardTitle className="mb-2">Functional</CardTitle>
+                <p className="text-muted-foreground">
+                  Pure functional patterns with Result, Maybe, Try, and AsyncResult monads
+                </p>
               </div>
             </Card>
           </div>
