@@ -5,7 +5,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { Shield, Layers, Zap } from 'lucide-react';
 
 export default function HomePage() {
@@ -91,37 +91,43 @@ export default function HomePage() {
         <div className="w-full max-w-5xl border border-b-0 border-border mx-auto flex flex-col justify-start text-center flex-1">
           <div className="grid grid-cols-3 divide-x">
             <Card className="border-0 rounded-none bg-transparent">
-              <CardHeader>
-                <Shield className="h-8 w-8 mb-2" />
-                <CardTitle>Type-safe</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Full TypeScript support with comprehensive type inference and strict typing
-                </p>
-              </CardContent>
+              <div className="flex flex-col h-full">
+                <div className="border-b border-r border-border p-4 inline-flex">
+                  <Shield className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <div className="p-4 text-left">
+                  <CardTitle className="mb-2">Type-safe</CardTitle>
+                  <p className="text-muted-foreground">
+                    Full TypeScript support with comprehensive type inference and strict typing
+                  </p>
+                </div>
+              </div>
             </Card>
             <Card className="border-0 rounded-none bg-transparent">
-              <CardHeader>
-                <Layers className="h-8 w-8 mb-2" />
-                <CardTitle>Zero Dependencies</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Lightweight with no runtime dependencies, perfect for any project size
-                </p>
-              </CardContent>
+              <div className="flex flex-col h-full">
+                <div className="border-b border-r border-border p-4 inline-flex">
+                  <Layers className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <div className="p-4 text-left">
+                  <CardTitle className="mb-2">Zero Dependencies</CardTitle>
+                  <p className="text-muted-foreground">
+                    Lightweight with no runtime dependencies, perfect for any project size
+                  </p>
+                </div>
+              </div>
             </Card>
             <Card className="border-0 rounded-none bg-transparent">
-              <CardHeader>
-                <Zap className="h-8 w-8 mb-2" />
-                <CardTitle>Functional</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Pure functional patterns with Result, Maybe, Try, and AsyncResult monads
-                </p>
-              </CardContent>
+              <div className="flex flex-col h-full">
+                <div className="border-b border-r border-border p-4 inline-flex">
+                  <Zap className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <div className="p-4 text-left">
+                  <CardTitle className="mb-2">Functional</CardTitle>
+                  <p className="text-muted-foreground">
+                    Pure functional patterns with Result, Maybe, Try, and AsyncResult monads
+                  </p>
+                </div>
+              </div>
             </Card>
           </div>
         </div>
