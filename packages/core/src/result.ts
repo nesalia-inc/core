@@ -254,3 +254,20 @@ export const toNullable = <T, E>(result: Result<T, E>): T | null =>
  */
 export const toUndefined = <T, E>(result: Result<T, E>): T | undefined =>
   isOk(result) ? result.value : undefined;
+
+/**
+ * Combines multiple Results into a single Result
+ * Returns Ok with array of values if all are Ok
+ * Returns first Err if any is Err (fail-fast)
+ * @typeParam T - The type of the values
+ * @typeParam E - The type of the error
+ * @param results - The Results to combine
+ * @returns Result<T[], E>
+ */
+export const all = <T, E>(...results: Array<Result<T, E>>): Result<T[], E> => {
+  const firstErr = results.find(isErr);
+  if (firstErr) {
+    return createErr(firstErr.error);
+  }
+  return createOk(results.map((r) => (r as Ok<T>).value));
+};
