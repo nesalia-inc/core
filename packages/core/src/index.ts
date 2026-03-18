@@ -43,6 +43,7 @@ export {
   match as matchResult,
   toNullable as toNullableResult,
   toUndefined as toUndefinedResult,
+  unwrap as unwrapResult,
 } from "./result.js";
 
 // Try

@@ -22,6 +22,7 @@ export type Ok<T> = {
   tap(fn: (value: T) => void): Ok<T>;
   tapErr(fn: (error: never) => void): Ok<T>;
   match<U>(ok: (value: T) => U, _err: (error: never) => U): U;
+  unwrap(): T;
 };
 
 /**
@@ -43,6 +44,7 @@ export type Err<E> = {
   tap(_fn: (value: never) => void): Err<E>;
   tapErr(fn: (error: E) => void): Err<E>;
   match<U>(_ok: (value: never) => U, err: (error: E) => U): U;
+  unwrap(): never;
 };
 
 /**
@@ -72,6 +74,7 @@ const createOk = <T>(value: T): Ok<T> =>
     tap(fn) { fn(value); return this; },
     tapErr() { return this; },
     match(ok) { return ok(value); },
+    unwrap() { return value; },
   });
 
 /**
@@ -94,6 +97,7 @@ const createErr = <E>(error: E): Err<E> =>
     tap() { return this as Err<E>; },
     tapErr(fn) { fn(error); return this; },
     match(_, err) { return err(error); },
+    unwrap() { throw error; },
   });
 
 /**
@@ -254,3 +258,18 @@ export const toNullable = <T, E>(result: Result<T, E>): T | null =>
  */
 export const toUndefined = <T, E>(result: Result<T, E>): T | undefined =>
   isOk(result) ? result.value : undefined;
+
+/**
+ * Unwraps a Result, returning the value if Ok, throwing the error if Err
+ * @typeParam T - The type of the value
+ * @typeParam E - The type of the error
+ * @param result - The Result to unwrap
+ * @returns The value if Ok, throws the error if Err
+ * @throws The error if Result is Err
+ */
+export const unwrap = <T, E>(result: Result<T, E>): T => {
+  if (isOk(result)) {
+    return result.value;
+  }
+  throw result.error;
+};
