@@ -18,6 +18,12 @@ Comprehensive documentation for all @deessejs/core features.
 | [Retry](./retry.md) | Resilience patterns - retry with exponential backoff |
 | [Sleep](./sleep.md) | Delays and timeouts for async operations |
 
+## Error System
+
+| Feature | Description |
+|---------|-------------|
+| [Error](./error.md) | Structured errors with validation, chaining, and grouping |
+
 ## Quick Decision Guide
 
 **What type should I use?**
@@ -30,6 +36,7 @@ Comprehensive documentation for all @deessejs/core features.
 | Async operation that can fail | **AsyncResult** |
 | Need to retry on failure | **Retry** |
 | Need to wait or timeout | **Sleep** |
+| Need structured errors with context | **Error** |
 
 ## Installation
 
@@ -40,5 +47,5 @@ npm install @deessejs/core
 ## Usage
 
 ```typescript
-import { ok, err, some, none, attempt, fromPromise } from '@deessejs/core';
+import { ok, err, some, none, attempt, fromPromise, error, exceptionGroup } from '@deessejs/core';
 ```
