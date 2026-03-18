@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield, Layers, Zap, Github } from 'lucide-react';
+import { Shield, Layers, Zap } from 'lucide-react';
 import { CodeShowcase } from '@/components/code-showcase';
 
 export default function HomePage() {
@@ -195,6 +195,7 @@ export default function HomePage() {
       </div>
       <footer className="">
         <div className="w-full max-w-5xl border-x mx-auto py-8 px-6">
+          <div className=></div>
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-4">
               <span className="text-sm text-muted-foreground">© 2026 @deessejs/core</span>
@@ -211,9 +212,9 @@ export default function HomePage() {
                   <span className="text-muted-foreground lowercase">deessejs</span>
                 </Link>
               </Button>
-              <Button variant="ghost" size="icon" asChild>
+              <Button variant="link" asChild>
                 <Link href="https://github.com/nesalia-inc" target="_blank" rel="noreferrer">
-                  <Github className="h-5 w-5" />
+                  <span className="text-muted-foreground lowercase">github</span>
                 </Link>
               </Button>
               <Button variant="link" asChild>
@@ -225,6 +226,9 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
+      <div className="border-y border-border">
+        <div className="w-full max-w-5xl border-x h-4  border-border mx-auto flex flex-col justify-start text-center flex-1"></div>
+      </div>
     </div>
   );
 }
