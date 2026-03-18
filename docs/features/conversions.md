@@ -223,6 +223,119 @@ const maybe = toMaybeFromResult(fetchUser(id));
 
 ---
 
+## Known Limitations & Future Improvements
+
+### 1. Naming Inconsistency
+
+**Current behavior:** Functions use mixed naming: `toResult`, `toMaybeFromResult`, `fromUndefinedable`.
+
+**Issue:** No clear convention between `fromX` (source) and `toX` (destination).
+
+**Note:** Future versions may adopt a consistent naming scheme:
+
+```typescript
+// Potential future API (all using 'from')
+Result.fromMaybe(maybe, onNone)
+Maybe.fromResult(result)
+Maybe.fromNullable(value)
+Maybe.fromPredicate(value, predicate, onFalse)
+```
+
+### 2. No Try Conversions
+
+**Current behavior:** No conversion functions for Try type.
+
+**Note:** Try is equivalent to `Result<T, Error>`. Use `Try` directly or convert:
+
+```typescript
+// Try already has the same shape as Result<T, Error>
+import { attempt, ok, err } from '@deessejs/core';
+
+const tryResult = attempt(() => JSON.parse(data));
+
+// Convert to Result if needed
+const result = tryResult.ok ? ok(tryResult.value) : err(tryResult.error);
+```
+
+### 3. `fromUndefinedable` vs `fromNullable`
+
+**Current behavior:** Two similar functions exist.
+
+**Note:** Consider using `fromNullable` as the standard (handles both null and undefined). `fromUndefinedable` may be deprecated or hidden in future versions.
+
+### 4. No Async Variants
+
+**Current behavior:** Conversions are synchronous only.
+
+**Note:** Async variants may be added:
+
+```typescript
+// Potential future API
+const asyncResult = await fromPromise(promise);
+const asyncMaybe = await AsyncResult.fromPromise(promise).toMaybe();
+```
+
+### 5. No `fromPredicate`
+
+**Current behavior:** No function to convert a boolean test to Result.
+
+**Workaround:**
+
+```typescript
+import { ok, err, Result } from '@deessejs/core';
+
+const fromPredicate = <T, E>(
+  value: T,
+  predicate: (value: T) => boolean,
+  onFalse: () => E
+): Result<T, E> =>
+  predicate(value) ? ok(value) : err(onFalse());
+
+// Usage
+const result = fromPredicate(
+  user,
+  u => u.age >= 18,
+  () => 'TOO_YOUNG'
+);
+```
+
+### 6. No Direct Shortcuts
+
+**Current behavior:** Converting null to Result requires: `toResult(fromNullable(val), err)`.
+
+**Note:** Direct shortcuts may be added:
+
+```typescript
+// Potential future API
+resultFromNullable(value, onNull)
+resultFromThrowable(fn)
+```
+
+### 7. Lossy Conversion Warning
+
+**Current behavior:** `toMaybeFromResult` destroys error information.
+
+**Note:** Always handle errors before converting:
+
+```typescript
+// Good: Handle error first
+const result = fetchUser(id);
+if (!result.ok) {
+  logError(result.error);
+  return defaultUser;
+}
+return result.value;
+
+// Alternative: Use tapErr before converting
+import { tapErr } from '@deessejs/core';
+const maybe = tapErr(fetchUser(id), e => log(e)).match(
+  value => ({ ok: true, value }),
+  () => ({ ok: false })
+);
+```
+
+---
+
 ## Related
 
 - [Result](./result.md) - Explicit error handling
