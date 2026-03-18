@@ -142,57 +142,35 @@ export default function HomePage() {
           </div>
         </div>
         <div className="border-b border-border">
-          <div className="w-full max-w-5xl border border-b-0 h-4 border-border mx-auto flex flex-col justify-start text-center flex-1">
+          <div className="w-full max-w-5xl mx-auto flex flex-col justify-start flex-1">
+            <div className="p-6 pt-12 pb-12">
+              <h2 className="text-2xl font-bold mb-4">Examples</h2>
+              <p className="text-muted-foreground mb-6">
+                Discover how @deessejs/core makes error handling simple and type-safe.
+              </p>
+              <CodeShowcase />
+            </div>
           </div>
         </div>
         <div className="border-b border-border">
-          <div className="w-full max-w-5xl border border-b-0 border-border mx-auto flex flex-col justify-start flex-1">
-            <div className="grid grid-cols-1 lg:grid-cols-2 divide-x divide-border">
-              <div className="p-6">
-                <h2 className="text-2xl font-bold mb-4">Examples</h2>
-                <p className="text-muted-foreground mb-6">
-                  Discover how @deessejs/core makes error handling simple and type-safe.
-                </p>
-                <CodeShowcase />
-              </div>
-              <div className="p-6">
-                <h2 className="text-2xl font-bold mb-4">Features</h2>
-                <p className="text-muted-foreground mb-6">
-                  Powerful functional programming patterns for TypeScript.
-                </p>
-                <div className="space-y-4">
-                  <Card className="border-0 bg-muted/50">
-                    <CardHeader>
-                      <CardTitle className="text-lg">Zero Dependencies</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground">
-                        Lightweight library with no runtime dependencies. Perfect for any project size.
-                      </p>
-                    </CardContent>
-                  </Card>
-                  <Card className="border-0 bg-muted/50">
-                    <CardHeader>
-                      <CardTitle className="text-lg">Type-Safe</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground">
-                        Full TypeScript support with comprehensive type inference and strict typing.
-                      </p>
-                    </CardContent>
-                  </Card>
-                  <Card className="border-0 bg-muted/50">
-                    <CardHeader>
-                      <CardTitle className="text-lg">Functional</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground">
-                        Pure functional patterns with Result, Maybe, Try, and AsyncResult monads.
-                      </p>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
+          <div className="w-full max-w-5xl border border-b-0 border-border mx-auto flex flex-col justify-start text-center flex-1">
+            <div className="h-8 flex items-center">
+              <svg className="flex-1 h-full" preserveAspectRatio="none" viewBox="0 0 100 32">
+                <defs>
+                  <pattern id="grid2" width="1.25" height="32" patternUnits="userSpaceOnUse">
+                    <line
+                      x1="1.25"
+                      y1="0"
+                      x2="0"
+                      y2="32"
+                      stroke="var(--muted)"
+                      strokeWidth="0.15"
+                      fill="none"
+                    />
+                  </pattern>
+                </defs>
+                <rect width="100" height="32" fill="url(#grid2)" />
+              </svg>
             </div>
           </div>
         </div>
