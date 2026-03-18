@@ -371,6 +371,107 @@ retry(() => mightThrow()); // Blocks the thread
 
 ---
 
+## Known Limitations & Future Improvements
+
+### 1. Sync `retry` with delay blocks the Event Loop
+
+**Current behavior:** The sync `retry` uses a busy-wait loop for delays, which blocks the JavaScript event loop.
+
+**Recommendation:** Always use `retryAsync` for production code:
+
+```typescript
+// Good: Non-blocking
+await retryAsync(async () => fetch('/api/data'));
+
+// Avoid: retry with delay blocks everything
+retry(() => mightThrow(), { delay: 1000 }); // Blocks event loop
+```
+
+> **Note:** Future versions may deprecate or remove the `delay` option from sync `retry`.
+
+### 2. No `maxDelay` option
+
+**Current behavior:** Exponential backoff can grow unbounded. With `attempts: 10` and `delay: 1000`, delays can reach several minutes.
+
+**Workaround:** Use a custom backoff function:
+
+```typescript
+retryAsync(fn, {
+  attempts: 10,
+  delay: 1000,
+  backoff: (attempt, delay) => Math.min(delay * Math.pow(2, attempt - 1), 30000)
+});
+```
+
+> **Note:** A built-in `maxDelay` option may be added in future versions.
+
+### 3. `attempts` vs `retries` ambiguity
+
+**Current behavior:** `attempts: 3` means 3 total attempts (initial call + 2 retries).
+
+This is consistent with the implementation, but some users may expect `retries` (number of retry attempts after the initial call). Future versions may add `maxAttempts` alias for clarity.
+
+### 4. No `AbortSignal` support
+
+**Current behavior:** `retryAsync` cannot be cancelled mid-operation.
+
+**Recommendation:** Use a wrapper with AbortController:
+
+```typescript
+const controller = new AbortController();
+
+try {
+  await retryAsync(async () => {
+    const response = await fetch(url, { signal: controller.signal });
+    return response.json();
+  }, { attempts: 5 });
+} catch (error) {
+  // On cancellation, abort the fetch
+  controller.abort();
+}
+```
+
+> **Note:** Built-in `AbortSignal` support may be added in future versions.
+
+### 5. `predicate` only receives Error
+
+**Current behavior:** The `predicate` function only receives the caught exception.
+
+**Limitation:** For `fetch`, HTTP errors (4xx, 5xx) don't throw - they return a response with `ok: false`.
+
+**Workaround:** Throw explicitly:
+
+```typescript
+const fetchWithRetry = (url: string) =>
+  retryAsync(async () => {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    return response.json();
+  }, { predicate: (error) => error.message.includes('5') });
+```
+
+> **Note:** Future versions may support `shouldRetry` that receives both result and error.
+
+### 6. Jitter is binary
+
+**Current behavior:** `jitter: true` uses "Full Jitter" (random value between 0.5x and 1.5x delay).
+
+This is the recommended strategy for preventing thundering herd. A numeric factor may be added in future versions for more control.
+
+### 7. Custom backoff receives initial delay
+
+**Current behavior:** Custom backoff receives `(attempt, initialDelay)`.
+
+```typescript
+backoff: (attempt, delay) => delay * attempt // linear
+```
+
+This allows calculating from the initial delay. If you need the last used delay, track it externally.
+
+---
+
 ## Comparison with Alternatives
 
 | Feature | @deessejs/core | op-retry | retry-async |
