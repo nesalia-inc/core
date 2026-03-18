@@ -96,7 +96,7 @@ export default function HomePage() {
                   <div className="border border-border rounded-md p-2">
                     <Shield className="h-6 w-6 text-muted-foreground" />
                   </div>
-                  <Badge variant="outline" className="rounded-md">v0.1.7</Badge>
+                  <Badge variant="outline" className="rounded-md bg-blue-500/10 border-blue-500/20 text-blue-600">v0.1.7</Badge>
                 </div>
                 <CardTitle className="mt-4">Type-safe</CardTitle>
               </CardHeader>
@@ -112,7 +112,7 @@ export default function HomePage() {
                   <div className="border border-border rounded-md p-2">
                     <Layers className="h-6 w-6 text-muted-foreground" />
                   </div>
-                  <Badge variant="outline" className="rounded-md">0 deps</Badge>
+                  <Badge variant="outline" className="rounded-md bg-green-500/10 border-green-500/20 text-green-600">0 deps</Badge>
                 </div>
                 <CardTitle className="mt-4">Zero Dependencies</CardTitle>
               </CardHeader>
@@ -128,7 +128,7 @@ export default function HomePage() {
                   <div className="border border-border rounded-md p-2">
                     <Zap className="h-6 w-6 text-muted-foreground" />
                   </div>
-                  <Badge variant="outline" className="rounded-md">FP</Badge>
+                  <Badge variant="outline" className="rounded-md bg-purple-500/10 border-purple-500/20 text-purple-600">FP</Badge>
                 </div>
                 <CardTitle className="mt-4">Functional</CardTitle>
               </CardHeader>
