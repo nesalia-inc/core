@@ -485,6 +485,136 @@ const user = getOrElse(fetchUser(id), { id: 0, name: 'Guest' }); // Explicit fal
 
 ---
 
+## Known Limitations & Future Improvements
+
+### 1. No `Result.all()` for composition
+
+**Current behavior:** Chaining multiple operations requires nested `flatMap`, which leads to "callback hell".
+
+**Workaround:** Use sequential chaining:
+
+```typescript
+import { ok, err, flatMap, Result } from '@deessejs/core';
+
+const result = flatMap(validateName(input), name =>
+  flatMap(validateEmail(input), email =>
+    flatMap(validateAge(input), age =>
+      ok({ name, email, age })
+    )
+  )
+);
+```
+
+> **Note:** `Result.all()` method may be added in future versions to support parallel composition.
+
+### 2. No `toMaybe()` conversion
+
+**Current behavior:** No built-in way to convert a `Result` to a `Maybe`.
+
+**Workaround:**
+
+```typescript
+import { isOk, Maybe, some, none } from '@deessejs/core';
+
+const toMaybe = <T, E>(result: Result<T, E>): Maybe<T> =>
+  isOk(result) ? some(result.value) : none();
+```
+
+> **Note:** A `toMaybe()` method may be added in future versions.
+
+### 3. No `unwrap()` / `getOrThrow()`
+
+**Current behavior:** No way to get the value or throw if error.
+
+**Workaround:**
+
+```typescript
+const unwrap = <T, E>(result: Result<T, E>): T => {
+  if (result.ok) return result.value;
+  throw result.error;
+};
+
+// Usage in tests
+expect(unwrap(ok(42))).toBe(42);
+expect(() => unwrap(err('oops'))).toThrow();
+```
+
+> **Note:** An `unwrap()` method may be added for DX improvement.
+
+### 4. No `swap()` method
+
+**Current behavior:** No way to swap success and error types.
+
+**Workaround:**
+
+```typescript
+import { ok, err, Result } from '@deessejs/core';
+
+const swap = <T, E>(result: Result<T, E>): Result<E, T> =>
+  result.ok ? err(result.value) : ok(result.error);
+
+// Result<string, number> -> Result<number, string>
+```
+
+> **Note:** A `swap()` method may be added in future versions.
+
+### 5. Static vs Instance API
+
+**Current behavior:** Both static functions (`map(result, fn)`) and instance methods (`result.map(fn)`) are available.
+
+**Trade-off:** As noted for Maybe, having both increases bundle size. Consider using only static functions with pipe pattern for smaller bundles.
+
+### 6. Error type unions in `flatMap`
+
+**Current behavior:** When chaining `flatMap`, error types are properly unioned.
+
+```typescript
+const step1 = (): Result<string, 'ERR_A'> => ok('a');
+const step2 = (): Result<number, 'ERR_B'> => ok(1);
+
+// Type: Result<number, 'ERR_A' | 'ERR_B'>
+const result = flatMap(step1(), () => step2());
+```
+
+This is handled correctly by the current implementation.
+
+### 7. `attempt` is in Try, not Result
+
+**Note:** For wrapping synchronous functions that might throw, see [Try](./try.md). The `attempt()` function returns a `Try` type, which can be converted to `Result` if needed:
+
+```typescript
+import { attempt, ok, err } from '@deessejs/core';
+
+const toResult = <T>(result: Try<T, Error>): Result<T, Error> =>
+  result.ok ? ok(result.value) : err(result.error);
+```
+
+### 8. Error discrimination
+
+**Current behavior:** Error type `E` can be anything - strings, objects, or custom types.
+
+**Recommendation:** Use discriminated unions for better error handling:
+
+```typescript
+type AppError =
+  | { type: 'validation'; field: string; message: string }
+  | { type: 'network'; code: number }
+  | { type: 'unauthorized' };
+
+const handleError = (error: AppError) => {
+  switch (error.type) {
+    case 'validation':
+      return `Invalid ${error.field}: ${error.message}`;
+    case 'network':
+      return `Network error: ${error.code}`;
+    case 'unauthorized':
+      return 'Please log in';
+  }
+};
+```
+
+---
+
 ## Comparison with Alternatives
 
 | Feature | @deessejs/core | fp-ts | neverthrow |
