@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, Layers, Zap } from 'lucide-react';
+import { CodeShowcase } from '@/components/code-showcase';
 
 export default function HomePage() {
   return (
@@ -138,6 +139,61 @@ export default function HomePage() {
                 </p>
               </CardContent>
             </Card>
+          </div>
+        </div>
+        <div className="border-b border-border">
+          <div className="w-full max-w-5xl border border-b-0 h-4 border-border mx-auto flex flex-col justify-start text-center flex-1">
+          </div>
+        </div>
+        <div className="border-b border-border">
+          <div className="w-full max-w-5xl border border-b-0 border-border mx-auto flex flex-col justify-start flex-1">
+            <div className="grid grid-cols-1 lg:grid-cols-2 divide-x divide-border">
+              <div className="p-6">
+                <h2 className="text-2xl font-bold mb-4">Examples</h2>
+                <p className="text-muted-foreground mb-6">
+                  Discover how @deessejs/core makes error handling simple and type-safe.
+                </p>
+                <CodeShowcase />
+              </div>
+              <div className="p-6">
+                <h2 className="text-2xl font-bold mb-4">Features</h2>
+                <p className="text-muted-foreground mb-6">
+                  Powerful functional programming patterns for TypeScript.
+                </p>
+                <div className="space-y-4">
+                  <Card className="border-0 bg-muted/50">
+                    <CardHeader>
+                      <CardTitle className="text-lg">Zero Dependencies</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground">
+                        Lightweight library with no runtime dependencies. Perfect for any project size.
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card className="border-0 bg-muted/50">
+                    <CardHeader>
+                      <CardTitle className="text-lg">Type-Safe</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground">
+                        Full TypeScript support with comprehensive type inference and strict typing.
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card className="border-0 bg-muted/50">
+                    <CardHeader>
+                      <CardTitle className="text-lg">Functional</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground">
+                        Pure functional patterns with Result, Maybe, Try, and AsyncResult monads.
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
