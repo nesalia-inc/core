@@ -459,6 +459,152 @@ const display = match(
 
 ---
 
+## Known Limitations & Future Improvements
+
+### 1. Static vs Instance API
+
+**Current behavior:** Both static functions (`map(maybe, fn)`) and instance methods (`maybe.map(fn)`) are available.
+
+**Trade-off:** Having both increases bundle size and maintenance surface. For a modern "utility-first" library, consider using only static functions with pipe pattern:
+
+```typescript
+import { pipe } from 'fp-ts/pipeable'; // or custom
+import { map, flatMap } from '@deessejs/core';
+
+const result = pipe(
+  maybeValue,
+  map(x => x * 2),
+  flatMap(x => x > 10 ? some(x) : none())
+);
+```
+
+> **Note:** Instance methods may be removed in future versions to reduce bundle size.
+
+### 2. No `some(null)` or `some(undefined)` protection
+
+**Current behavior:** `some(null)` and `some(undefined)` create a `Some` with a null/undefined value.
+
+**Recommendation:** Use `fromNullable` instead, which properly handles null/undefined:
+
+```typescript
+import { some, fromNullable } from '@deessejs/core';
+
+// Creates Some with null value (not recommended)
+const bad = some(null);
+
+// Properly returns None (recommended)
+const good = fromNullable(null);
+```
+
+> **Note:** Future versions may add `NonNullable<T>` constraint to `some()`.
+
+### 3. `someUnit()` is confusing
+
+**Current behavior:** `someUnit()` creates a `Some<undefined>`.
+
+**Recommendation:** If you need to signal success without a value, use `Result<void, E>` instead:
+
+```typescript
+import { ok, err } from '@deessejs/core';
+
+// Better: explicit success/failure
+const result = ok<void, string>(undefined);
+const error = err('something went wrong');
+```
+
+> **Note:** `someUnit()` may be deprecated in future versions.
+
+### 4. Missing `filter()`
+
+**Current behavior:** There's no `filter` method to transform a `Some` to `None` based on a predicate.
+
+**Workaround:** Use `flatMap`:
+
+```typescript
+import { some, none, flatMap } from '@deessejs/core';
+
+const maybeAge: Maybe<number> = some(25);
+
+// Filter: keep only if >= 18
+const adult = flatMap(maybeAge, age => age >= 18 ? some(age) : none());
+```
+
+> **Note:** A built-in `filter` method may be added in future versions.
+
+### 5. Missing `all()` / `combine()`
+
+**Current behavior:** No way to combine multiple Maybes into one.
+
+**Workaround:** Use nested `flatMap`:
+
+```typescript
+import { some, none, flatMap } from '@deessejs/core';
+
+const firstName: Maybe<string> = some('John');
+const lastName: Maybe<string> = some('Doe');
+
+// Combine both
+const fullName = flatMap(firstName, f =>
+  flatMap(lastName, l =>
+    some(`${f} ${l}`)
+  )
+);
+```
+
+> **Note:** `all()` method may be added in future versions.
+
+### 6. No `toResult()` conversion
+
+**Current behavior:** No built-in way to convert a `Maybe` to a `Result`.
+
+**Workaround:**
+
+```typescript
+import { ok, err, Result } from '@deessejs/core';
+
+const maybeUser = findUser(id);
+
+const result: Result<User, 'NOT_FOUND'> =
+  maybeUser.ok
+    ? ok(maybeUser.value)
+    : err('NOT_FOUND');
+```
+
+> **Note:** A `toResult(errorIfNone)` method may be added in future versions.
+
+### 7. No `equals()` function
+
+**Current behavior:** No built-in way to compare two Maybes.
+
+**Workaround:**
+
+```typescript
+import { isSome, isNone } from '@deessejs/core';
+
+const equals = <T>(a: Maybe<T>, b: Maybe<T>): boolean => {
+  if (isSome(a) && isSome(b)) return a.value === b.value;
+  if (isNone(a) && isNone(b)) return true;
+  return false;
+};
+```
+
+### 8. No `flatten()`
+
+**Current behavior:** No built-in way to flatten `Maybe<Maybe<T>>`.
+
+**Workaround:** Use `flatMap`:
+
+```typescript
+import { some, flatMap } from '@deessejs/core';
+
+const nested: Maybe<Maybe<number>> = some(some(42));
+const flattened = flatMap(nested, x => x);
+```
+
+> **Note:** A `flatten()` method may be added in future versions.
+
+---
+
 ## Comparison with Alternatives
 
 | Feature | @deessejs/core | fp-ts Option |
