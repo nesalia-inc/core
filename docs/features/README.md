@@ -17,6 +17,9 @@ Comprehensive documentation for all @deessejs/core features.
 |---------|-------------|
 | [Retry](./retry.md) | Resilience patterns - retry with exponential backoff |
 | [Sleep](./sleep.md) | Delays and timeouts for async operations |
+| [Pipe](./pipe.md) | Composition patterns - linear top-to-bottom flow (future) |
+
+## Error System
 
 ## Error System
 
@@ -37,6 +40,7 @@ Comprehensive documentation for all @deessejs/core features.
 | Need to retry on failure | **Retry** |
 | Need to wait or timeout | **Sleep** |
 | Need structured errors with context | **Error** |
+| Need linear composition | **Pipe** (future) |
 
 ## Installation
 
