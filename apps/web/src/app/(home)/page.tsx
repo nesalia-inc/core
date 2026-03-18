@@ -194,15 +194,25 @@ export default function HomePage() {
         </div>
       </div>
       <footer className="">
-        <div className="w-full max-w-5xl mx-auto py-8 px-6">
+        <div className="w-full max-w-5xl border-x mx-auto py-8 px-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-4">
-              <span className="text-sm text-muted-foreground">© 2024 @deessejs/core</span>
+              <span className="text-sm text-muted-foreground">© 2026 @deessejs/core</span>
               <span className="text-sm text-muted-foreground">MIT License</span>
             </div>
             <div className="flex items-center gap-4">
+              <Button variant="ghost" asChild>
+                <Link href="https://nesalia.com" target="_blank" rel="noreferrer">
+                  Nesalia
+                </Link>
+              </Button>
+              <Button variant="ghost" asChild>
+                <Link href="https://deessejs.com" target="_blank" rel="noreferrer">
+                  deessejs.com
+                </Link>
+              </Button>
               <Button variant="ghost" size="icon" asChild>
-                <Link href="https://github.com/nesalia-inc/core" target="_blank" rel="noreferrer">
+                <Link href="https://github.com/nesalia-inc" target="_blank" rel="noreferrer">
                   <Github className="h-5 w-5" />
                 </Link>
               </Button>
