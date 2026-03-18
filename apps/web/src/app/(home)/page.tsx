@@ -90,7 +90,7 @@ export default function HomePage() {
       <div className="border-b border-border">
         <div className="w-full max-w-5xl border border-b-0 border-border mx-auto flex flex-col justify-start text-left flex-1">
           <div className="grid grid-cols-3 divide-x">
-            <Card className="border-0 py-0 rounded-none bg-transparent">
+            <Card className="border-0 py-0 pb-6 rounded-none bg-transparent">
               <CardHeader className="pl-0">
                 <div className="flex items-center justify-between">
                   <div className="border-b border-r border-border p-3">
@@ -106,7 +106,7 @@ export default function HomePage() {
                 </p>
               </CardContent>
             </Card>
-            <Card className="border-0 py-0 rounded-none bg-transparent">
+            <Card className="border-0 py-0 pb-6 rounded-none bg-transparent">
               <CardHeader className="pl-0">
                 <div className="flex items-center justify-between">
                   <div className="border-b border-r border-border p-3">
@@ -122,7 +122,7 @@ export default function HomePage() {
                 </p>
               </CardContent>
             </Card>
-            <Card className="border-0 py-0 rounded-none bg-transparent">
+            <Card className="border-0 py-0 pb-6 rounded-none bg-transparent">
               <CardHeader className="pl-0">
                 <div className="flex items-center justify-between">
                   <div className="border-b border-r border-border p-3">
