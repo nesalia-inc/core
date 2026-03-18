@@ -15,6 +15,7 @@ import {
   match,
   race,
   all,
+  allSettled,
   traverse,
   toNullable,
   toUndefined,
@@ -210,27 +211,49 @@ describe("AsyncResult", () => {
 
   describe("all", () => {
     it("should resolve all values", async () => {
-      const results = await all(okAsync(1), okAsync(2), okAsync(3));
-      expect(results).toEqual([1, 2, 3]);
+      const result = await all(okAsync(1), okAsync(2), okAsync(3));
+      expect(isOk(result)).toBe(true);
+      expect(result.value).toEqual([1, 2, 3]);
     });
 
-    it("should reject on any error", async () => {
-      await expect(
-        all(okAsync(1), errAsync("error"), okAsync(3))
-      ).rejects.toBe("error");
+    it("should return Err on any error", async () => {
+      const result = await all(okAsync(1), errAsync("error"), okAsync(3));
+      expect(isErr(result)).toBe(true);
+      expect(result.error).toBe("error");
     });
   });
 
   describe("traverse", () => {
     it("should run function for each item", async () => {
       const result = await traverse([1, 2, 3], async (x) => okAsync(x * 2));
-      expect(result).toEqual([2, 4, 6]);
+      expect(isOk(result)).toBe(true);
+      expect(result.value).toEqual([2, 4, 6]);
     });
 
-    it("should reject on any error", async () => {
-      await expect(
-        traverse([1, 2, 3], async (x) => (x === 2 ? errAsync("error") : okAsync(x)))
-      ).rejects.toBe("error");
+    it("should return Err on any error", async () => {
+      const result = await traverse([1, 2, 3], async (x) => (x === 2 ? errAsync("error") : okAsync(x)));
+      expect(isErr(result)).toBe(true);
+      expect(result.error).toBe("error");
+    });
+  });
+
+  describe("allSettled", () => {
+    it("should resolve all values with empty errors", async () => {
+      const result = await allSettled(okAsync(1), okAsync(2), okAsync(3));
+      expect(isOk(result)).toBe(true);
+      expect(result.value).toEqual([[1, 2, 3], []]);
+    });
+
+    it("should collect errors with successful values", async () => {
+      const result = await allSettled(okAsync(1), errAsync("error1"), okAsync(3), errAsync("error2"));
+      expect(isOk(result)).toBe(true);
+      expect(result.value).toEqual([[1, 3], ["error1", "error2"]]);
+    });
+
+    it("should return all errors when all fail", async () => {
+      const result = await allSettled(errAsync("error1"), errAsync("error2"), errAsync("error3"));
+      expect(isOk(result)).toBe(true);
+      expect(result.value).toEqual([[], ["error1", "error2", "error3"]]);
     });
   });
 

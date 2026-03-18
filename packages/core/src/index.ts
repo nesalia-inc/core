@@ -80,6 +80,7 @@ export {
   match as matchAsyncResult,
   race,
   all,
+  allSettled,
   traverse,
   toNullable as toNullableAsyncResult,
   toUndefined as toUndefinedAsyncResult,
