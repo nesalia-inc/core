@@ -442,6 +442,107 @@ const handleError = (error: Error) => {
 
 ---
 
+## Known Limitations & Future Improvements
+
+### 1. Error vs Result Ambiguity
+
+**Current behavior:** Calling the error factory (e.g., `SizeError({ ... })`) returns a `Result.Err`.
+
+**Note:** This is intentional for convenience, but can be confusing. Future versions may separate:
+
+```typescript
+// Potential future API
+const e = SizeError.create({ current: 3, wanted: 5 });  // Returns Error object
+const result = SizeError.fail({ current: 3, wanted: 5 });  // Returns Result.Err
+```
+
+### 2. Zod Validation Errors
+
+**Current behavior:** If Zod validation fails, a different error type is returned.
+
+**Issue:** This can mask the original intent if args are malformed.
+
+**Note:** Consider using `z.infer` for type-safe definitions without runtime validation:
+
+```typescript
+import { z } from 'zod';
+
+const schema = z.object({ current: z.number(), wanted: z.number() });
+type SizeErrorArgs = z.infer<typeof schema>;
+
+const SizeError = error({
+  name: 'SizeError',
+  args: {} as SizeErrorArgs
+});
+```
+
+### 3. `raise()` Semantics
+
+**Current behavior:** `raise()` is an alias for returning an Err.
+
+**Note:** Future versions may rename to `toErr()` for clarity, or be removed in favor of explicit `return err(...)`.
+
+### 4. No Stack Trace
+
+**Current behavior:** Errors don't capture stack traces.
+
+**Issue:** Debugging in complex applications is difficult without stack traces.
+
+**Workaround:** Wrap with `Try` to capture original exceptions:
+
+```typescript
+import { attempt, getErrorMessage } from '@deessejs/core';
+
+const result = attempt(() => mightThrow());
+if (!result.ok) {
+  // Original stack is preserved in the caught error
+  console.log(result.error);
+}
+```
+
+> **Note:** Stack trace support may be added in future versions.
+
+### 5. Compatibility with AggregateError
+
+**Current behavior:** `exceptionGroup` creates a custom `ErrorGroup` type.
+
+**Note:** This is not directly compatible with native `AggregateError`. Future versions may add compatibility or conversion methods.
+
+### 6. No Custom Message Template
+
+**Current behavior:** `getErrorMessage` serializes `args` to JSON.
+
+**Note:** Custom message templates may be added in future versions:
+
+```typescript
+// Potential future API
+const SizeError = error({
+  name: 'SizeError',
+  message: (args) => `Expected ${args.wanted}, got ${args.current}`
+});
+```
+
+### 7. Serialization
+
+**Current behavior:** Errors are plain objects but don't have a `toJSON()` method.
+
+**Note:** For network transmission, serialize manually:
+
+```typescript
+const serialize = (error: Error): object => ({
+  name: error.name,
+  args: error.args,
+  notes: [...error.notes],
+  cause: error.cause ? serialize(error.cause) : null
+});
+```
+
+### 8. Zod as Peer Dependency
+
+**Note:** Currently, Zod is a required dependency. In future versions, it may become a peer dependency for users who don't need schema validation.
+
+---
+
 ## Related
 
 - [Result](./result.md) - Works with structured errors
