@@ -216,9 +216,9 @@ export default function HomePage() {
                   <Github className="h-5 w-5" />
                 </Link>
               </Button>
-              <Button variant="ghost" asChild>
+              <Button variant="link" asChild>
                 <Link href="/docs">
-                  Documentation
+                  <span className="text-muted-foreground lowercase">documentation</span>
                 </Link>
               </Button>
             </div>
