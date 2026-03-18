@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield, Layers, Zap } from 'lucide-react';
+import { Shield, Layers, Zap, Github } from 'lucide-react';
 import { CodeShowcase } from '@/components/code-showcase';
 
 export default function HomePage() {
@@ -43,7 +43,9 @@ export default function HomePage() {
                 v0.1.7 released
               </Badge>
             </Link>
-            <h1 className="text-4xl font-bold mb-4 mt-4">Type-safe error handling for TypeScript</h1>
+            <h1 className="text-4xl font-bold mb-4 mt-4">
+              Type-safe error handling for TypeScript
+            </h1>
             <p className="text-muted-foreground mb-6">
               Functional programming patterns - Result, Maybe, Try, and AsyncResult monads with zero
               runtime dependencies
@@ -53,9 +55,7 @@ export default function HomePage() {
             </div>
             <div className="flex gap-2 justify-center">
               <Button asChild>
-                <Link href="/docs">
-                  Get Started
-                </Link>
+                <Link href="/docs">Get Started</Link>
               </Button>
               <Button variant="outline" asChild>
                 <Link href="https://github.com/nesalia-inc/core" target="_blank" rel="noreferrer">
@@ -97,7 +97,12 @@ export default function HomePage() {
                   <div className="border-b border-r border-border p-3">
                     <Shield className="h-6 w-6 text-muted-foreground" />
                   </div>
-                  <Badge variant="outline" className="rounded-sm bg-blue-500/10 border-blue-500/20 text-blue-500">v0.1.7</Badge>
+                  <Badge
+                    variant="outline"
+                    className="rounded-sm bg-blue-500/10 border-blue-500/20 text-blue-500"
+                  >
+                    v0.1.7
+                  </Badge>
                 </div>
                 <CardTitle className="mt-4 pl-4">Type-safe</CardTitle>
               </CardHeader>
@@ -113,7 +118,12 @@ export default function HomePage() {
                   <div className="border-b border-r border-border p-3">
                     <Layers className="size-6 text-muted-foreground" />
                   </div>
-                  <Badge variant="outline" className="rounded-sm bg-green-500/10 border-green-500/20 text-green-500">0 deps</Badge>
+                  <Badge
+                    variant="outline"
+                    className="rounded-sm bg-green-500/10 border-green-500/20 text-green-500"
+                  >
+                    0 deps
+                  </Badge>
                 </div>
                 <CardTitle className="mt-4 pl-4">Zero Dependencies</CardTitle>
               </CardHeader>
@@ -129,7 +139,12 @@ export default function HomePage() {
                   <div className="border-b border-r border-border p-3">
                     <Zap className="size-6 text-muted-foreground" />
                   </div>
-                  <Badge variant="outline" className="rounded-sm bg-purple-500/10 border-purple-500/20 text-purple-500">FP</Badge>
+                  <Badge
+                    variant="outline"
+                    className="rounded-sm bg-purple-500/10 border-purple-500/20 text-purple-500"
+                  >
+                    FP
+                  </Badge>
                 </div>
                 <CardTitle className="mt-4 pl-4">Functional</CardTitle>
               </CardHeader>
@@ -141,9 +156,12 @@ export default function HomePage() {
             </Card>
           </div>
         </div>
+        <div className="border-y border-border">
+          <div className="w-full max-w-5xl border-x h-4  border-border mx-auto flex flex-col justify-start text-center flex-1"></div>
+        </div>
         <div className="border-b border-border">
-          <div className="w-full max-w-5xl mx-auto flex flex-col justify-start flex-1">
-            <div className="p-6 pt-12 pb-12">
+          <div className="w-full max-w-5xl border border-b-0 border-border mx-auto flex flex-col justify-start flex-1">
+            <div className="p-6">
               <h2 className="text-2xl font-bold mb-4">Examples</h2>
               <p className="text-muted-foreground mb-6">
                 Discover how @deessejs/core makes error handling simple and type-safe.
@@ -175,6 +193,28 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+      <footer className="">
+        <div className="w-full max-w-5xl mx-auto py-8 px-6">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-muted-foreground">© 2024 @deessejs/core</span>
+              <span className="text-sm text-muted-foreground">MIT License</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="icon" asChild>
+                <Link href="https://github.com/nesalia-inc/core" target="_blank" rel="noreferrer">
+                  <Github className="h-5 w-5" />
+                </Link>
+              </Button>
+              <Button variant="ghost" asChild>
+                <Link href="/docs">
+                  Documentation
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
@@ -197,7 +237,12 @@ function NpmInstall() {
         </svg>
       ) : (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+          />
         </svg>
       )}
     </Button>
