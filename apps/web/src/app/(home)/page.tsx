@@ -201,12 +201,12 @@ export default function HomePage() {
               <span className="text-sm text-muted-foreground">MIT License</span>
             </div>
             <div className="flex items-center gap-4">
-              <Button variant="ghost" asChild>
+              <Button variant="link" asChild>
                 <Link href="https://nesalia.com" target="_blank" rel="noreferrer">
                   <span className="text-muted-foreground lowercase">nesalia.com</span>
                 </Link>
               </Button>
-              <Button variant="ghost" asChild>
+              <Button variant="link" asChild>
                 <Link href="https://deessejs.com" target="_blank" rel="noreferrer">
                   <span className="text-muted-foreground lowercase">deessejs.com</span>
                 </Link>
