@@ -243,9 +243,9 @@ export const all = <T, E>(...results: Array<AsyncResult<T, E>>): AsyncResult<T[]
     // Check for errors
     const firstErr = rs.find((r) => isErr(r)) as AsyncErr<E> | undefined;
     if (firstErr) {
-      return { ok: false, error: firstErr.error } as AsyncResultInner<T[], E>;
+      return { ok: false, error: firstErr.error };
     }
-    return { ok: true, value: rs.map((r) => (r as AsyncOk<T>).value) } as AsyncResultInner<T[], E>;
+    return { ok: true, value: rs.map((r) => (r as AsyncOk<T>).value) };
   });
 
 /**
