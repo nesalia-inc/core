@@ -329,6 +329,40 @@ describe("Result", () => {
     });
   });
 
+  describe("swap", () => {
+    it("should swap Ok to Err", () => {
+      const result = ok(42).swap();
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error).toBe(42);
+      }
+    });
+
+    it("should swap Err to Ok", () => {
+      const result = err("error").swap();
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value).toBe("error");
+      }
+    });
+
+    it("should preserve type when swapping", () => {
+      const success: Result<string, Error> = ok("hello");
+      const inverted: Result<Error, string> = success.swap();
+      expect(inverted.ok).toBe(false);
+      if (!inverted.ok) {
+        expect(inverted.error).toBe("hello");
+      }
+
+      const failure: Result<string, Error> = err(new Error("oops"));
+      const inverted2: Result<Error, string> = failure.swap();
+      expect(inverted2.ok).toBe(true);
+      if (inverted2.ok) {
+        expect(inverted2.value).toBeInstanceOf(Error);
+      }
+    });
+  });
+
   describe("type narrowing", () => {
     it("should correctly narrow Result types in array", () => {
       const values: Result<number, string>[] = [ok(1), err("error"), ok(2)];

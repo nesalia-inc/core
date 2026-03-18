@@ -22,6 +22,8 @@ export type Ok<T> = {
   tap(fn: (value: T) => void): Ok<T>;
   tapErr(fn: (error: never) => void): Ok<T>;
   match<U>(ok: (value: T) => U, _err: (error: never) => U): U;
+  // Swap Ok to Err
+  swap<_E>(): Err<T>;
 };
 
 /**
@@ -43,6 +45,8 @@ export type Err<E> = {
   tap(_fn: (value: never) => void): Err<E>;
   tapErr(fn: (error: E) => void): Err<E>;
   match<U>(_ok: (value: never) => U, err: (error: E) => U): U;
+  // Swap Err to Ok
+  swap<_T>(): Ok<E>;
 };
 
 /**
@@ -72,6 +76,7 @@ const createOk = <T>(value: T): Ok<T> =>
     tap(fn) { fn(value); return this; },
     tapErr() { return this; },
     match(ok) { return ok(value); },
+    swap() { return createErr(value); },
   });
 
 /**
@@ -94,6 +99,7 @@ const createErr = <E>(error: E): Err<E> =>
     tap() { return this as Err<E>; },
     tapErr(fn) { fn(error); return this; },
     match(_, err) { return err(error); },
+    swap() { return createOk(error); },
   });
 
 /**
