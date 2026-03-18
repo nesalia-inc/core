@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { retry, retryAsync, exponentialBackoff, linearBackoff, constantBackoff, calculateDelay, handleUnknownBackoff, throwIfUnreachable } from "../src/retry";
+import type { RetryAbortedError } from "../src/retry";
 
 describe("Retry", () => {
   describe("retry (sync)", () => {
@@ -259,6 +260,78 @@ describe("Retry", () => {
 
     it("throwIfUnreachable should return result when succeeded is true", () => {
       expect(throwIfUnreachable<number>(true, 42)).toBe(42);
+    });
+  });
+
+  describe("retryAsync with AbortSignal", () => {
+    it("should throw RetryAbortedError if signal is already aborted", async () => {
+      const controller = new AbortController();
+      controller.abort();
+
+      await expect(
+        retryAsync(async () => { throw new Error("fail"); }, { attempts: 3, signal: controller.signal })
+      ).rejects.toThrow("Retry aborted");
+    });
+
+    it("should throw RetryAbortedError with correct name", async () => {
+      const controller = new AbortController();
+      controller.abort();
+
+      try {
+        await retryAsync(async () => { throw new Error("fail"); }, { attempts: 3, signal: controller.signal });
+        fail("Should have thrown");
+      } catch (error) {
+        // Type guard - check that it's a RetryAbortedError
+        const isRetryAbortedError = (e: unknown): e is RetryAbortedError =>
+          error instanceof Error && "name" in error && error.name === "RETRY_ABORTED";
+
+        expect(isRetryAbortedError(error)).toBe(true);
+      }
+    });
+
+    it("should abort during delay when signal is aborted", async () => {
+      const controller = new AbortController();
+
+      const retryPromise = retryAsync(async () => {
+        throw new Error("fail");
+      }, { attempts: 3, delay: 100, signal: controller.signal });
+
+      // Abort after a short delay
+      setTimeout(() => controller.abort(), 50);
+
+      await expect(retryPromise).rejects.toThrow("Sleep aborted");
+    });
+
+    it("should complete successfully when signal is not aborted", async () => {
+      const controller = new AbortController();
+
+      const result = await retryAsync(async () => {
+        return 42;
+      }, { attempts: 3, delay: 10, signal: controller.signal });
+
+      expect(result).toBe(42);
+    });
+
+    it("should work with AbortSignal.timeout", async () => {
+      const result = await retryAsync(async () => {
+        return 42;
+      }, { attempts: 3, signal: AbortSignal.timeout(5000) });
+
+      expect(result).toBe(42);
+    });
+
+    it("should timeout and abort using AbortSignal.timeout", async () => {
+      const retryPromise = retryAsync(async () => {
+        throw new Error("fail");
+      }, { attempts: 10, delay: 100, signal: AbortSignal.timeout(150) });
+
+      // Should timeout after 150ms, not wait for all retries
+      const start = Date.now();
+      await expect(retryPromise).rejects.toThrow();
+      const elapsed = Date.now() - start;
+
+      // Should abort during one of the delays, not after all 10 attempts (which would be ~10*100ms = 1000ms)
+      expect(elapsed).toBeLessThan(500);
     });
   });
 });
