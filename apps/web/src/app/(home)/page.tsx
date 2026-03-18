@@ -5,6 +5,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Shield, Layers, Zap } from 'lucide-react';
 
 export default function HomePage() {
   return (
@@ -88,9 +90,39 @@ export default function HomePage() {
       <div className="border-b border-border">
         <div className="w-full max-w-5xl border border-b-0 border-border mx-auto flex flex-col justify-start text-center flex-1">
           <div className="grid grid-cols-3 divide-x">
-            <div className="aspect-square"></div>
-            <div className="aspect-square"></div>
-            <div className="aspect-square"></div>
+            <Card className="border-0 rounded-none bg-transparent">
+              <CardHeader>
+                <Shield className="h-8 w-8 mb-2" />
+                <CardTitle>Type-safe</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Full TypeScript support with comprehensive type inference and strict typing
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="border-0 rounded-none bg-transparent">
+              <CardHeader>
+                <Layers className="h-8 w-8 mb-2" />
+                <CardTitle>Zero Dependencies</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Lightweight with no runtime dependencies, perfect for any project size
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="border-0 rounded-none bg-transparent">
+              <CardHeader>
+                <Zap className="h-8 w-8 mb-2" />
+                <CardTitle>Functional</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Pure functional patterns with Result, Maybe, Try, and AsyncResult monads
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
