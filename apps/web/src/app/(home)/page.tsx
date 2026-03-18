@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 export default function HomePage() {
   return (
@@ -48,20 +49,16 @@ export default function HomePage() {
               <NpmInstall />
             </div>
             <div className="flex gap-2 justify-center">
-              <Link
-                href="/docs"
-                className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-medium"
-              >
-                Get Started
-              </Link>
-              <Link
-                href="https://github.com/nesalia-inc/core"
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center justify-center rounded-lg border border-border px-4 py-2 text-sm font-medium"
-              >
-                GitHub
-              </Link>
+              <Button asChild>
+                <Link href="/docs">
+                  Get Started
+                </Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link href="https://github.com/nesalia-inc/core" target="_blank" rel="noreferrer">
+                  GitHub
+                </Link>
+              </Button>
             </div>
           </div>
         </div>
