@@ -97,7 +97,15 @@ export const retry = <T>(fn: () => T, options: RetryOptions = {}): T => {
     predicate = defaultPredicate,
     onRetry,
     jitter = false,
+    signal,
   } = options;
+
+  // Check if already aborted before starting
+  if (signal?.aborted) {
+    const error = new Error("Retry aborted") as RetryAbortedError;
+    error.name = "RETRY_ABORTED";
+    throw error;
+  }
 
   let lastError: Error | undefined = undefined;
   let succeeded = false;
@@ -119,6 +127,13 @@ export const retry = <T>(fn: () => T, options: RetryOptions = {}): T => {
       // Check if we should retry
       if (attempt >= attempts || !predicate(lastError)) {
         throw lastError;
+      }
+
+      // Check if signal was aborted between attempts
+      if (signal?.aborted) {
+        const error = new Error("Retry aborted") as RetryAbortedError;
+        error.name = "RETRY_ABORTED";
+        throw error;
       }
 
       // Calculate and apply delay
