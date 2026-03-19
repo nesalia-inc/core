@@ -242,6 +242,16 @@ export const match = <T, E, U>(
 ): U => (isOk(result) ? ok(result.value) : err(result.error));
 
 /**
+ * Swaps Ok and Err variants
+ * @typeParam T - The type of the value
+ * @typeParam E - The type of the error
+ * @param result - The Result to swap
+ * @returns Err if Ok, Ok if Err
+ */
+export const swap = <T, E>(result: Result<T, E>): Result<E, T> =>
+  isOk(result) ? createErr(result.value) : createOk(result.error);
+
+/**
  * Converts Result to a nullable value
  * @typeParam T - The type of the value
  * @typeParam E - The type of the error

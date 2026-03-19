@@ -12,6 +12,7 @@ import {
   tap,
   tapErr,
   match,
+  swap,
   toNullable,
   toUndefined,
   Result,
@@ -356,6 +357,40 @@ describe("Result", () => {
 
       const failure: Result<string, Error> = err(new Error("oops"));
       const inverted2: Result<Error, string> = failure.swap();
+      expect(inverted2.ok).toBe(true);
+      if (inverted2.ok) {
+        expect(inverted2.value).toBeInstanceOf(Error);
+      }
+    });
+  });
+
+  describe("standalone swap function", () => {
+    it("should swap Ok to Err using standalone function", () => {
+      const result = swap(ok(42));
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error).toBe(42);
+      }
+    });
+
+    it("should swap Err to Ok using standalone function", () => {
+      const result = swap(err("error"));
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value).toBe("error");
+      }
+    });
+
+    it("should preserve type when swapping using standalone function", () => {
+      const success: Result<string, Error> = ok("hello");
+      const inverted: Result<Error, string> = swap(success);
+      expect(inverted.ok).toBe(false);
+      if (!inverted.ok) {
+        expect(inverted.error).toBe("hello");
+      }
+
+      const failure: Result<string, Error> = err(new Error("oops"));
+      const inverted2: Result<Error, string> = swap(failure);
       expect(inverted2.ok).toBe(true);
       if (inverted2.ok) {
         expect(inverted2.value).toBeInstanceOf(Error);
