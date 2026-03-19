@@ -25,6 +25,8 @@ export {
   match as matchMaybe,
   toNullable as toNullableMaybe,
   toUndefined as toUndefinedMaybe,
+  equals as equalsMaybe,
+  equalsWith as equalsWithMaybe,
   all as allMaybe,
 } from "./maybe.js";
 
