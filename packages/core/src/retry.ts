@@ -2,7 +2,7 @@
  * Retry utilities - resilience patterns for handling transient failures
  */
 
-import { sleep } from "./sleep.js";
+import { sleep, sleepWithSignal } from "./sleep.js";
 
 /**
  * Retry options
@@ -20,6 +20,8 @@ export interface RetryOptions {
   onRetry?: (error: Error, attempt: number) => void;
   /** Add jitter to prevent thundering herd (default: false) */
   jitter?: boolean;
+  /** AbortSignal to cancel retries */
+  signal?: AbortSignal;
 }
 
 /**
@@ -95,7 +97,15 @@ export const retry = <T>(fn: () => T, options: RetryOptions = {}): T => {
     predicate = defaultPredicate,
     onRetry,
     jitter = false,
+    signal,
   } = options;
+
+  // Check if already aborted before starting
+  if (signal?.aborted) {
+    const error = new Error("Retry aborted") as RetryAbortedError;
+    error.name = "RETRY_ABORTED";
+    throw error;
+  }
 
   let lastError: Error | undefined = undefined;
   let succeeded = false;
@@ -117,6 +127,13 @@ export const retry = <T>(fn: () => T, options: RetryOptions = {}): T => {
       // Check if we should retry
       if (attempt >= attempts || !predicate(lastError)) {
         throw lastError;
+      }
+
+      // Check if signal was aborted between attempts
+      if (signal?.aborted) {
+        const error = new Error("Retry aborted") as RetryAbortedError;
+        error.name = "RETRY_ABORTED";
+        throw error;
       }
 
       // Calculate and apply delay
@@ -162,7 +179,15 @@ export const retryAsync = async <T>(fn: () => Promise<T>, options: RetryOptions 
     predicate = defaultPredicate,
     onRetry,
     jitter = false,
+    signal,
   } = options;
+
+  // Check if already aborted before starting
+  if (signal?.aborted) {
+    const error = new Error("Retry aborted") as RetryAbortedError;
+    error.name = "RETRY_ABORTED";
+    throw error;
+  }
 
   let lastError: Error | undefined = undefined;
   let succeeded = false;
@@ -189,7 +214,12 @@ export const retryAsync = async <T>(fn: () => Promise<T>, options: RetryOptions 
       // Calculate and apply delay
       if (attempt < attempts) {
         const delayMs = addJitter(calculateDelay(attempt, delay, backoff), jitter);
-        await sleep(delayMs);
+        // Use sleepWithSignal if signal is provided, otherwise use regular sleep
+        if (signal) {
+          await sleepWithSignal(delayMs, signal);
+        } else {
+          await sleep(delayMs);
+        }
       }
     }
 
@@ -199,6 +229,13 @@ export const retryAsync = async <T>(fn: () => Promise<T>, options: RetryOptions 
   // This should be unreachable - all paths either return or throw
   // But we keep it for safety and to satisfy TypeScript
   return throwIfUnreachable(succeeded, result!, lastError);
+};
+
+/**
+ * Retry aborted error type
+ */
+export type RetryAbortedError = Error & {
+  name: "RETRY_ABORTED";
 };
 
 /**

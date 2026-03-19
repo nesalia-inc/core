@@ -13,10 +13,10 @@ import {
   match,
   toNullable,
   toUndefined,
-  someUnit,
   equals,
   equalsWith,
   Maybe,
+  all,
 } from "../src/maybe";
 
 describe("Maybe", () => {
@@ -289,29 +289,6 @@ describe("Maybe", () => {
     });
   });
 
-  describe("someUnit", () => {
-    it("should create a Some with undefined value", () => {
-      const result = someUnit();
-      expect(result.ok).toBe(true);
-      expect(result.value).toBe(undefined);
-    });
-
-    it("should be a frozen object", () => {
-      const result = someUnit();
-      expect(Object.isFrozen(result)).toBe(true);
-    });
-
-    it("isSome should return true", () => {
-      const result = someUnit();
-      expect(result.isSome()).toBe(true);
-    });
-
-    it("isNone should return false", () => {
-      const result = someUnit();
-      expect(result.isNone()).toBe(false);
-    });
-  });
-
   describe("tap", () => {
     it("should call function with value if Some", () => {
       let captured = 0;
@@ -498,19 +475,84 @@ describe("Maybe", () => {
         expect(none().equals(some(42), cmp)).toBe(false);
       });
     });
+  });
 
-    describe("equals method on someUnit", () => {
-      it("should return true for two someUnit", () => {
-        expect(someUnit().equals(someUnit())).toBe(true);
-      });
+  describe("all", () => {
+    it("should combine two Somes into Some<[T1, T2]>", () => {
+      const result = all(some(1), some("hello"));
+      expect(isSome(result)).toBe(true);
+      if (isSome(result)) {
+        expect(result.value).toEqual([1, "hello"]);
+      }
+    });
 
-      it("should return false for someUnit vs none", () => {
-        expect(someUnit().equals(none())).toBe(false);
-      });
+    it("should return None if any is None (two maybes)", () => {
+      const result = all(some(1), none());
+      expect(isNone(result)).toBe(true);
+    });
 
-      it("should return false for someUnit vs some with value", () => {
-        expect(someUnit().equals(some(undefined))).toBe(true);
-      });
+    it("should return None if first is None", () => {
+      const result = all(none(), some(2));
+      expect(isNone(result)).toBe(true);
+    });
+
+    it("should combine three Somes", () => {
+      const result = all(some(1), some(2), some(3));
+      expect(isSome(result)).toBe(true);
+      if (isSome(result)) {
+        expect(result.value).toEqual([1, 2, 3]);
+      }
+    });
+
+    it("should return None if any of three is None", () => {
+      const result = all(some(1), none(), some(3));
+      expect(isNone(result)).toBe(true);
+    });
+
+    it("should combine four Somes", () => {
+      const result = all(some(1), some(2), some(3), some(4));
+      expect(isSome(result)).toBe(true);
+      if (isSome(result)) {
+        expect(result.value).toEqual([1, 2, 3, 4]);
+      }
+    });
+
+    it("should combine array of maybes", () => {
+      const result = all([some(1), some(2), some(3)]);
+      expect(isSome(result)).toBe(true);
+      if (isSome(result)) {
+        expect(result.value).toEqual([1, 2, 3]);
+      }
+    });
+
+    it("should return None if any in array is None", () => {
+      const result = all([some(1), none(), some(3)]);
+      expect(isNone(result)).toBe(true);
+    });
+
+    it("should return Some<[]> for empty array", () => {
+      const result = all([]);
+      expect(isSome(result)).toBe(true);
+      if (isSome(result)) {
+        expect(result.value).toEqual([]);
+      }
+    });
+
+    it("should work with map after all", () => {
+      const firstName = some("John");
+      const lastName = some("Doe");
+      const result = map(all(firstName, lastName), ([f, l]) => `${f} ${l}`);
+      expect(isSome(result)).toBe(true);
+      if (isSome(result)) {
+        expect(result.value).toBe("John Doe");
+      }
+    });
+
+    it("should return None when combining with none after map", () => {
+      const firstName = some("John");
+      const lastName = none();
+      const result = map(all(firstName, lastName), ([f, l]) => `${f} ${l}`);
+      expect(isNone(result)).toBe(true);
     });
   });
 });
