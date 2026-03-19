@@ -13,7 +13,6 @@ export type { Result, Ok, Err } from "./result.js";
 // Maybe
 export {
   some,
-  someUnit,
   none,
   fromNullable,
   isSome,

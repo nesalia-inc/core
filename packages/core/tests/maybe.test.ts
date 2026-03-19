@@ -13,7 +13,6 @@ import {
   match,
   toNullable,
   toUndefined,
-  someUnit,
   Maybe,
   all,
 } from "../src/maybe";
@@ -285,29 +284,6 @@ describe("Maybe", () => {
         expect(user.value.id).toBe(1);
         expect(user.value.name).toBe("John");
       }
-    });
-  });
-
-  describe("someUnit", () => {
-    it("should create a Some with undefined value", () => {
-      const result = someUnit();
-      expect(result.ok).toBe(true);
-      expect(result.value).toBe(undefined);
-    });
-
-    it("should be a frozen object", () => {
-      const result = someUnit();
-      expect(Object.isFrozen(result)).toBe(true);
-    });
-
-    it("isSome should return true", () => {
-      const result = someUnit();
-      expect(result.isSome()).toBe(true);
-    });
-
-    it("isNone should return false", () => {
-      const result = someUnit();
-      expect(result.isNone()).toBe(false);
     });
   });
 
