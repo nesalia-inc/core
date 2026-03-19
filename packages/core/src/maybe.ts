@@ -252,3 +252,29 @@ export function all<T>(first: Maybe<T> | readonly Maybe<T>[], ...rest: Maybe<T>[
   }
   return some(values);
 }
+
+/**
+ * Filters a Maybe based on a predicate
+ * @typeParam T - The type of the value
+ * @typeParam E - The type of the error when onNone is provided
+ * @param maybe - The Maybe to filter
+ * @param predicate - The predicate function
+ * @param onNone - Optional callback when filter fails
+ * @returns Some<T> if predicate passes, None otherwise (or Result<T, E> if onNone provided)
+ */
+export const filter = <T, E>(
+  maybe: Maybe<T>,
+  predicate: (value: T) => boolean,
+  onNone?: () => E
+): Maybe<T> | Result<T, E> =>
+  isSome(maybe)
+    ? predicate(maybe.value)
+      ? onNone !== undefined
+        ? ok(maybe.value)
+        : maybe
+      : onNone !== undefined
+        ? err(onNone())
+        : none()
+    : onNone !== undefined
+      ? err(onNone())
+      : none();

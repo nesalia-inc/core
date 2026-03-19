@@ -28,6 +28,7 @@ export {
   equals as equalsMaybe,
   equalsWith as equalsWithMaybe,
   all as allMaybe,
+  filter as filterMaybe,
 } from "./maybe.js";
 
 // Result
