@@ -68,13 +68,15 @@ export {
 } from "./try.js";
 
 // AsyncResult
-export type { AsyncResult, AsyncResultInner, AsyncOk, AsyncErr } from "./async-result.js";
+export type { AsyncResult, AsyncResultInner, AsyncOk, AsyncErr, AbortError, FromPromiseOptions } from "./async-result.js";
 export {
   okAsync,
   errAsync,
   fromPromise,
+  fromPromiseWithOptions,
   isOk as isAsyncOk,
   isErr as isAsyncErr,
+  isAbortError,
   mapAsync,
   flatMapAsync,
   map as mapAsyncResult,
@@ -89,6 +91,7 @@ export {
   traverse,
   toNullable as toNullableAsyncResult,
   toUndefined as toUndefinedAsyncResult,
+  withSignal,
 } from "./async-result.js";
 
 // Sleep

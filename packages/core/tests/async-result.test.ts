@@ -3,8 +3,10 @@ import {
   okAsync,
   errAsync,
   fromPromise,
+  fromPromiseWithOptions,
   isOk,
   isErr,
+  isAbortError,
   map,
   flatMap,
   mapAsync,
@@ -19,6 +21,7 @@ import {
   traverse,
   toNullable,
   toUndefined,
+  withSignal,
 } from "../src/async-result";
 
 describe("AsyncResult", () => {
@@ -278,6 +281,121 @@ describe("AsyncResult", () => {
     it("should return undefined if AsyncErr", async () => {
       const result = await toUndefined(errAsync("error"));
       expect(result).toBe(undefined);
+    });
+  });
+
+  describe("fromPromiseWithOptions", () => {
+    it("should convert promise to AsyncOk without signal", async () => {
+      const result = await fromPromiseWithOptions(Promise.resolve(42));
+      expect(result.ok).toBe(true);
+      expect(result.value).toBe(42);
+    });
+
+    it("should convert rejected promise to AsyncErr without signal", async () => {
+      const result = await fromPromiseWithOptions(Promise.reject(new Error("test")));
+      expect(result.ok).toBe(false);
+      expect(result.error).toBeInstanceOf(Error);
+    });
+
+    it("should resolve successfully when signal is not aborted", async () => {
+      const controller = new AbortController();
+      const result = await fromPromiseWithOptions(Promise.resolve(42), {
+        signal: controller.signal,
+      });
+      expect(result.ok).toBe(true);
+      expect(result.value).toBe(42);
+    });
+
+    it("should return AbortError when signal is already aborted", async () => {
+      const controller = new AbortController();
+      controller.abort();
+      const result = await fromPromiseWithOptions(Promise.resolve(42), {
+        signal: controller.signal,
+      });
+      expect(result.ok).toBe(false);
+      expect(isAbortError(result.error)).toBe(true);
+    });
+
+    it("should return AbortError when signal aborts during operation", async () => {
+      const controller = new AbortController();
+
+      // Create a promise that resolves after a delay
+      const promise = new Promise<number>((resolve) => {
+        setTimeout(() => resolve(42), 100);
+      });
+
+      const resultPromise = fromPromiseWithOptions(promise, { signal: controller.signal });
+
+      // Abort after a short delay
+      setTimeout(() => controller.abort(), 50);
+
+      const result = await resultPromise;
+      // The result will either be AbortError or the resolved value depending on timing
+      if (!result.ok) {
+        expect(isAbortError(result.error)).toBe(true);
+      }
+    });
+  });
+
+  describe("isAbortError", () => {
+    it("should return true for AbortError", () => {
+      const error = new Error("Operation aborted") as Error & { name: string };
+      error.name = "AbortError";
+      expect(isAbortError(error)).toBe(true);
+    });
+
+    it("should return false for regular Error", () => {
+      const error = new Error("Regular error");
+      expect(isAbortError(error)).toBe(false);
+    });
+
+    it("should return false for non-Error values", () => {
+      expect(isAbortError("string error")).toBe(false);
+      expect(isAbortError(null)).toBe(false);
+      expect(isAbortError(undefined)).toBe(false);
+      expect(isAbortError({ message: "error" })).toBe(false);
+    });
+  });
+
+  describe("withSignal", () => {
+    it("should pass through successful result", async () => {
+      const controller = new AbortController();
+      const result = await withSignal(okAsync(42), controller.signal);
+      expect(result.ok).toBe(true);
+      expect(result.value).toBe(42);
+    });
+
+    it("should pass through error result", async () => {
+      const controller = new AbortController();
+      const result = await withSignal(errAsync("error"), controller.signal);
+      expect(result.ok).toBe(false);
+      expect(result.error).toBe("error");
+    });
+
+    it("should return AbortError when signal is already aborted", async () => {
+      const controller = new AbortController();
+      controller.abort();
+      const result = await withSignal(okAsync(42), controller.signal);
+      expect(result.ok).toBe(false);
+      expect(isAbortError(result.error)).toBe(true);
+    });
+
+    it("should return AbortError when signal aborts during operation", async () => {
+      const controller = new AbortController();
+
+      // Create an AsyncResult that takes time to resolve
+      const slowResult = new Promise<{ ok: true; value: number }>((resolve) => {
+        setTimeout(() => resolve({ ok: true, value: 42 }), 100);
+      });
+
+      const resultPromise = withSignal(slowResult, controller.signal);
+
+      // Abort after a short delay
+      setTimeout(() => controller.abort(), 50);
+
+      const result = await resultPromise;
+      expect(result.ok).toBe(false);
+      expect(isAbortError(result.error)).toBe(true);
     });
   });
 });

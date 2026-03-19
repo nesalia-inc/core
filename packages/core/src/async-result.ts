@@ -4,6 +4,21 @@
  */
 
 /**
+ * Abort error type for AsyncResult operations
+ */
+export type AbortError = Error & {
+  name: "AbortError";
+};
+
+/**
+ * Options for fromPromise
+ */
+export interface FromPromiseOptions {
+  /** AbortSignal to cancel the operation */
+  signal?: AbortSignal;
+}
+
+/**
  * AsyncResult type - represents async success or failure
  * @typeParam T - The type of the success value
  * @typeParam E - The type of the error
@@ -61,12 +76,56 @@ export const errAsync = <E>(error: E): AsyncResult<never, E> =>
  * @returns AsyncResult<T, Error>
  */
 export const fromPromise = <T>(promise: Promise<T>): AsyncResult<T, Error> =>
-  promise
-    .then((value) => ({ ok: true as const, value }))
-    .catch((error) => ({
-      ok: false as const,
-      error: error instanceof Error ? error : new Error(String(error)),
-    }));
+  fromPromiseWithOptions(promise);
+
+/**
+ * Creates an AsyncResult from a Promise with options
+ * @param promise - The promise to convert
+ * @param options - Options including AbortSignal
+ * @returns AsyncResult<T, Error>
+ */
+export const fromPromiseWithOptions = <T>(
+  promise: Promise<T>,
+  options: FromPromiseOptions = {}
+): AsyncResult<T, Error> => {
+  const { signal } = options;
+
+  // If already aborted, return immediately with AbortError
+  if (signal?.aborted) {
+    const error = new Error("Operation aborted") as AbortError;
+    error.name = "AbortError";
+    return Promise.resolve({ ok: false as const, error });
+  }
+
+  return new Promise((resolve) => {
+    if (signal) {
+      const abortHandler = () => {
+        const error = new Error("Operation aborted") as AbortError;
+        error.name = "AbortError";
+        resolve({ ok: false as const, error });
+      };
+
+      signal.addEventListener("abort", abortHandler, { once: true });
+    }
+
+    promise
+      .then((value) => resolve({ ok: true as const, value }))
+      .catch((error) =>
+        resolve({
+          ok: false as const,
+          error: error instanceof Error ? error : new Error(String(error)),
+        })
+      );
+  });
+};
+
+/**
+ * Checks if an error is an AbortError
+ * @param error - The error to check
+ * @returns true if error is an AbortError
+ */
+export const isAbortError = (error: unknown): error is AbortError =>
+  error instanceof Error && error.name === "AbortError";
 
 /**
  * Type guard to check if AsyncResult is AsyncOk
@@ -314,3 +373,37 @@ export const toNullable = <T, E>(result: AsyncResult<T, E>): Promise<T | null> =
  */
 export const toUndefined = <T, E>(result: AsyncResult<T, E>): Promise<T | undefined> =>
   result.then((r) => (isOk(r) ? r.value : undefined));
+
+/**
+ * Wraps an AsyncResult chain to abort when signal is triggered
+ * @param result - The AsyncResult to wrap
+ * @param signal - The AbortSignal to monitor
+ * @returns AsyncResult that will abort when signal is triggered
+ */
+export const withSignal = <T, E = Error>(
+  result: AsyncResult<T, E>,
+  signal: AbortSignal
+): AsyncResult<T, E | AbortError> => {
+  // If already aborted, return immediately with AbortError
+  if (signal.aborted) {
+    const error = new Error("Operation aborted") as AbortError;
+    error.name = "AbortError";
+    return Promise.resolve({ ok: false as const, error });
+  }
+
+  return new Promise((resolve) => {
+    const abortHandler = () => {
+      const error = new Error("Operation aborted") as AbortError;
+      error.name = "AbortError";
+      resolve({ ok: false as const, error });
+    };
+
+    signal.addEventListener("abort", abortHandler, { once: true });
+
+    result.then((r) => {
+      // Remove the listener since the operation completed
+      signal.removeEventListener("abort", abortHandler);
+      resolve(r);
+    });
+  });
+};
