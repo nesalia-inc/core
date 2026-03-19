@@ -47,6 +47,7 @@ export {
   toNullable as toNullableResult,
   toUndefined as toUndefinedResult,
   all as allResult,
+  unwrap as unwrapResult,
 } from "./result.js";
 
 // Try

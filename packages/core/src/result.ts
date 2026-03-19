@@ -24,6 +24,7 @@ export type Ok<T> = {
   match<U>(ok: (value: T) => U, _err: (error: never) => U): U;
   // Swap Ok to Err
   swap(): Err<T>;
+  unwrap(): T;
 };
 
 /**
@@ -47,6 +48,7 @@ export type Err<E> = {
   match<U>(_ok: (value: never) => U, err: (error: E) => U): U;
   // Swap Err to Ok
   swap(): Ok<E>;
+  unwrap(): never;
 };
 
 /**
@@ -77,6 +79,7 @@ const createOk = <T>(value: T): Ok<T> =>
     tapErr() { return this; },
     match(ok) { return ok(value); },
     swap() { return createErr(value); },
+    unwrap() { return value; },
   });
 
 /**
@@ -100,6 +103,7 @@ const createErr = <E>(error: E): Err<E> =>
     tapErr(fn) { fn(error); return this; },
     match(_, err) { return err(error); },
     swap() { return createOk(error); },
+    unwrap() { throw error; },
   });
 
 /**
@@ -286,4 +290,19 @@ export const all = <T, E>(...results: Array<Result<T, E>>): Result<T[], E> => {
     return createErr(firstErr.error);
   }
   return createOk(results.map((r) => (r as Ok<T>).value));
+};
+
+/**
+ * Unwraps a Result, returning the value if Ok, throwing the error if Err
+ * @typeParam T - The type of the value
+ * @typeParam E - The type of the error
+ * @param result - The Result to unwrap
+ * @returns The value if Ok, throws the error if Err
+ * @throws The error if Result is Err
+ */
+export const unwrap = <T, E>(result: Result<T, E>): T => {
+  if (isOk(result)) {
+    return result.value;
+  }
+  throw result.error;
 };

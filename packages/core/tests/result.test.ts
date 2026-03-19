@@ -16,6 +16,7 @@ import {
   toNullable,
   toUndefined,
   all,
+  unwrap,
   Result,
 } from "../src/result";
 
@@ -472,6 +473,58 @@ describe("Result", () => {
       if (isOk(result)) {
         expect(result.value).toEqual([42]);
       }
+    });
+  });
+
+  describe("unwrap", () => {
+    describe("method", () => {
+      it("should return value when Ok", () => {
+        const result = ok(42);
+        expect(result.unwrap()).toBe(42);
+      });
+
+      it("should throw error when Err", () => {
+        const result = err("error message");
+        expect(() => result.unwrap()).toThrow("error message");
+      });
+
+      it("should work with object values", () => {
+        const obj = { key: "value" };
+        const result = ok(obj);
+        expect(result.unwrap()).toBe(obj);
+      });
+
+      it("should throw with object errors", () => {
+        const errorObj = { code: "NOT_FOUND", message: "Not found" };
+        const result = err(errorObj);
+        expect(() => result.unwrap()).toThrow();
+        try {
+          result.unwrap();
+        } catch (e) {
+          expect(e).toEqual(errorObj);
+        }
+      });
+    });
+
+    describe("standalone function", () => {
+      it("should return value when Ok", () => {
+        const result = unwrap(ok(42));
+        expect(result).toBe(42);
+      });
+
+      it("should throw error when Err", () => {
+        expect(() => unwrap(err("error message"))).toThrow("error message");
+      });
+
+      it("should work with complex types", () => {
+        const result = unwrap(ok([1, 2, 3]));
+        expect(result).toEqual([1, 2, 3]);
+      });
+
+      it("should throw with Error objects", () => {
+        const error = new Error("something went wrong");
+        expect(() => unwrap(err(error))).toThrow(error);
+      });
     });
   });
 });
