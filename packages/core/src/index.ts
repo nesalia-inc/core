@@ -95,6 +95,9 @@ export {
 export { sleep, withTimeout, sleepWithSignal } from "./sleep.js";
 export type { TimeoutOptions, TimeoutError } from "./sleep.js";
 
+// Yield
+export { yieldControl as yield, immediate } from "./yield.js";
+
 // Retry
 export { retry, retryAsync, exponentialBackoff, linearBackoff, constantBackoff } from "./retry.js";
 export type { RetryOptions, RetryAbortedError } from "./retry.js";
