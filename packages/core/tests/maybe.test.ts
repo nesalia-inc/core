@@ -14,6 +14,8 @@ import {
   toNullable,
   toUndefined,
   someUnit,
+  equals,
+  equalsWith,
   Maybe,
 } from "../src/maybe";
 
@@ -374,6 +376,141 @@ describe("Maybe", () => {
     it("should return undefined if None", () => {
       const result = toUndefined(none());
       expect(result).toBe(undefined);
+    });
+  });
+
+  describe("equals", () => {
+    describe("equals function", () => {
+      it("should return true for two Some with same value", () => {
+        expect(equals(some(42), some(42))).toBe(true);
+      });
+
+      it("should return false for two Some with different values", () => {
+        expect(equals(some(42), some(100))).toBe(false);
+      });
+
+      it("should return true for two None", () => {
+        expect(equals(none(), none())).toBe(true);
+      });
+
+      it("should return false for Some and None", () => {
+        expect(equals(some(42), none())).toBe(false);
+      });
+
+      it("should return false for None and Some", () => {
+        expect(equals(none(), some(42))).toBe(false);
+      });
+
+      it("should compare strings correctly", () => {
+        expect(equals(some("hello"), some("hello"))).toBe(true);
+        expect(equals(some("hello"), some("world"))).toBe(false);
+      });
+
+      it("should compare objects by reference", () => {
+        const obj = { id: 1 };
+        expect(equals(some(obj), some(obj))).toBe(true);
+        expect(equals(some({ id: 1 }), some({ id: 1 }))).toBe(false);
+      });
+
+      it("should compare null values", () => {
+        expect(equals(some(null), some(null))).toBe(true);
+        expect(equals(some(null), none())).toBe(false);
+      });
+
+      it("should compare undefined values", () => {
+        expect(equals(some(undefined), some(undefined))).toBe(true);
+        expect(equals(some(undefined), none())).toBe(false);
+      });
+
+      it("should compare 0 and false correctly", () => {
+        expect(equals(some(0), some(0))).toBe(true);
+        expect(equals(some(false), some(false))).toBe(true);
+        expect(equals(some(0), some(1))).toBe(false);
+        expect(equals(some(false), some(true))).toBe(false);
+      });
+    });
+
+    describe("equalsWith custom comparator", () => {
+      it("should use custom comparator for Some", () => {
+        const cmp = (a: number, b: number) => a === b;
+        expect(equalsWith(some(42), some(42), cmp)).toBe(true);
+        expect(equalsWith(some(42), some(100), cmp)).toBe(false);
+      });
+
+      it("should return true for None with custom comparator", () => {
+        const cmp = () => false;
+        expect(equalsWith(none(), none(), cmp)).toBe(true);
+      });
+
+      it("should return false for Some vs None with custom comparator", () => {
+        const cmp = () => true;
+        expect(equalsWith(some(42), none(), cmp)).toBe(false);
+      });
+
+      it("should compare objects by custom property", () => {
+        interface User {
+          id: number;
+          name: string;
+        }
+        const cmp = (a: User, b: User) => a.id === b.id;
+        expect(equalsWith(some({ id: 1, name: "John" }), some({ id: 1, name: "Jane" }), cmp)).toBe(true);
+        expect(equalsWith(some({ id: 1, name: "John" }), some({ id: 2, name: "John" }), cmp)).toBe(false);
+      });
+    });
+
+    describe("equals method on Some", () => {
+      it("should return true for two Some with same value", () => {
+        expect(some(42).equals(some(42))).toBe(true);
+      });
+
+      it("should return false for two Some with different values", () => {
+        expect(some(42).equals(some(100))).toBe(false);
+      });
+
+      it("should return false for Some vs None", () => {
+        expect(some(42).equals(none())).toBe(false);
+      });
+
+      it("should accept custom comparator", () => {
+        const cmp = (a: number, b: number) => a === b;
+        expect(some(42).equals(some(42), cmp)).toBe(true);
+        expect(some(42).equals(some(100), cmp)).toBe(false);
+      });
+
+      it("should compare objects by custom property", () => {
+        expect(some({ id: 1 }).equals(some({ id: 1 }), (a, b) => a.id === b.id)).toBe(true);
+        expect(some({ id: 1 }).equals(some({ id: 2 }), (a, b) => a.id === b.id)).toBe(false);
+      });
+    });
+
+    describe("equals method on None", () => {
+      it("should return true for two None", () => {
+        expect(none().equals(none())).toBe(true);
+      });
+
+      it("should return false for None vs Some", () => {
+        expect(none().equals(some(42))).toBe(false);
+      });
+
+      it("should ignore custom comparator for None", () => {
+        const cmp = () => true;
+        expect(none().equals(none(), cmp)).toBe(true);
+        expect(none().equals(some(42), cmp)).toBe(false);
+      });
+    });
+
+    describe("equals method on someUnit", () => {
+      it("should return true for two someUnit", () => {
+        expect(someUnit().equals(someUnit())).toBe(true);
+      });
+
+      it("should return false for someUnit vs none", () => {
+        expect(someUnit().equals(none())).toBe(false);
+      });
+
+      it("should return false for someUnit vs some with value", () => {
+        expect(someUnit().equals(some(undefined))).toBe(true);
+      });
     });
   });
 });

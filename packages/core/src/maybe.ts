@@ -18,6 +18,8 @@ export type Some<T> = {
   readonly value: T;
   isSome(): true;
   isNone(): false;
+  equals(other: Maybe<T>): boolean;
+  equals(other: Maybe<T>, comparator: (a: T, b: T) => boolean): boolean;
 };
 
 /**
@@ -27,6 +29,8 @@ export type None = {
   readonly ok: false;
   isSome(): false;
   isNone(): true;
+  equals(other: Maybe<unknown>): boolean;
+  equals(other: Maybe<unknown>, comparator: (a: unknown, b: unknown) => boolean): boolean;
 };
 
 /**
@@ -42,6 +46,15 @@ export const some = <T>(value: T): Some<T> =>
       return true;
     },
     isNone() {
+      return false;
+    },
+    equals(other: Maybe<T>, comparator?: (a: T, b: T) => boolean): boolean {
+      if (isSome(other)) {
+        if (comparator !== undefined) {
+          return comparator(this.value, other.value);
+        }
+        return this.value === other.value;
+      }
       return false;
     },
   });
@@ -60,6 +73,15 @@ export const someUnit = (): Some<void> =>
     isNone() {
       return false;
     },
+    equals(other: Maybe<void>, comparator?: (a: void, b: void) => boolean): boolean {
+      if (isSome(other)) {
+        if (comparator !== undefined) {
+          return comparator(this.value, other.value);
+        }
+        return this.value === other.value;
+      }
+      return false;
+    },
   });
 
 /**
@@ -73,6 +95,9 @@ const NONE: None = Object.freeze({
   },
   isNone() {
     return true;
+  },
+  equals(_other: Maybe<unknown>, _comparator?: (a: unknown, b: unknown) => boolean): boolean {
+    return isNone(_other);
   },
 });
 
@@ -191,3 +216,20 @@ export const getOrElse = <T>(maybe: Maybe<T>, defaultValue: T): T =>
  */
 export const getOrCompute = <T, U>(maybe: Maybe<T>, fn: () => U): T | U =>
   isSome(maybe) ? maybe.value : fn();
+
+/**
+ * Compares two Maybe values for equality
+ * @typeParam T - The type of the value
+ * @param a - The first Maybe
+ * @param b - The second Maybe
+ * @param comparator - Optional custom comparator function
+ * @returns true if both are Some with equal values, or both are None
+ */
+export const equals = <T>(a: Maybe<T>, b: Maybe<T>): boolean =>
+  a.equals(b);
+
+export const equalsWith = <T>(
+  a: Maybe<T>,
+  b: Maybe<T>,
+  comparator: (a: T, b: T) => boolean
+): boolean => a.equals(b, comparator);
