@@ -13,7 +13,6 @@ export type { Result, Ok, Err } from "./result.js";
 // Maybe
 export {
   some,
-  someUnit,
   none,
   fromNullable,
   isSome,
@@ -26,6 +25,7 @@ export {
   match as matchMaybe,
   toNullable as toNullableMaybe,
   toUndefined as toUndefinedMaybe,
+  all as allMaybe,
 } from "./maybe.js";
 
 // Result
@@ -41,8 +41,10 @@ export {
   getOrCompute as getOrComputeResult,
   tap as tapResult,
   match as matchResult,
+  swap as swapResult,
   toNullable as toNullableResult,
   toUndefined as toUndefinedResult,
+  all as allResult,
   unwrap as unwrapResult,
 } from "./result.js";
 
@@ -81,6 +83,7 @@ export {
   match as matchAsyncResult,
   race,
   all,
+  allSettled,
   traverse,
   toNullable as toNullableAsyncResult,
   toUndefined as toUndefinedAsyncResult,
@@ -92,7 +95,7 @@ export type { TimeoutOptions, TimeoutError } from "./sleep.js";
 
 // Retry
 export { retry, retryAsync, exponentialBackoff, linearBackoff, constantBackoff } from "./retry.js";
-export type { RetryOptions } from "./retry.js";
+export type { RetryOptions, RetryAbortedError } from "./retry.js";
 
 // Conversions
 export {

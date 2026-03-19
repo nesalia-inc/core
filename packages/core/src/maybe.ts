@@ -31,29 +31,13 @@ export type None = {
 
 /**
  * Creates a Some (present value)
- * @param value - The value
+ * @param value - The value (must be non-null/non-undefined)
  * @returns Some<T>
  */
-export const some = <T>(value: T): Some<T> =>
+export const some = <T,>(value: NonNullable<T>): Some<NonNullable<T>> =>
   Object.freeze({
     ok: true,
-    value,
-    isSome() {
-      return true;
-    },
-    isNone() {
-      return false;
-    },
-  });
-
-/**
- * Creates a Some with a Unit value
- * @returns Some<Unit>
- */
-export const someUnit = (): Some<void> =>
-  Object.freeze({
-    ok: true,
-    value: undefined,
+    value: value as NonNullable<T>,
     isSome() {
       return true;
     },
@@ -111,7 +95,7 @@ export const isNone = <T>(maybe: Maybe<T>): maybe is None => maybe.ok === false;
  * @returns Some<U> if Some, None otherwise
  */
 export const map = <T, U>(maybe: Maybe<T>, fn: (value: T) => U): Maybe<U> =>
-  isSome(maybe) ? some(fn(maybe.value)) : none();
+  isSome(maybe) ? some(fn(maybe.value) as NonNullable<U>) : none();
 
 /**
  * Chains Maybes - function if Some, returns None otherwise
@@ -191,3 +175,26 @@ export const getOrElse = <T>(maybe: Maybe<T>, defaultValue: T): T =>
  */
 export const getOrCompute = <T, U>(maybe: Maybe<T>, fn: () => U): T | U =>
   isSome(maybe) ? maybe.value : fn();
+
+/**
+ * Combines multiple Maybes into one
+ * @typeParam T - The types of the values
+ * @param maybes - The Maybes to combine
+ * @returns Some<[T1, T2, ...]> if all are Some, None otherwise
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function all<T extends readonly []>(...maybes: T): Some<[]>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function all<T extends [Maybe<any>, ...Maybe<any>[]]>(...maybes: T): Maybe<{ [K in keyof T]: T[K] extends Maybe<infer U> ? U : never }>;
+export function all<T>(maybes: readonly Maybe<T>[]): Maybe<T[]>;
+export function all<T>(first: Maybe<T> | readonly Maybe<T>[], ...rest: Maybe<T>[]): Maybe<T[]> {
+  const maybes: Maybe<T>[] = Array.isArray(first) ? first : [first, ...rest];
+  const values: T[] = [];
+  for (const maybe of maybes) {
+    if (isNone(maybe)) {
+      return none();
+    }
+    values.push(maybe.value);
+  }
+  return some(values);
+}

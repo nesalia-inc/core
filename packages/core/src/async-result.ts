@@ -236,16 +236,16 @@ export const race = <T, E>(...results: Array<AsyncResult<T, E>>): Promise<T> =>
  * @typeParam T - The type of the values
  * @typeParam E - The type of the error
  * @param results - The AsyncResults to run in parallel
- * @returns Promise<T[]> - Array of values
+ * @returns AsyncResult<T[], E> - Array of values or first error
  */
-export const all = <T, E>(...results: Array<AsyncResult<T, E>>): Promise<T[]> =>
+export const all = <T, E>(...results: Array<AsyncResult<T, E>>): AsyncResult<T[], E> =>
   Promise.all(results).then((rs) => {
     // Check for errors
     const firstErr = rs.find((r) => isErr(r)) as AsyncErr<E> | undefined;
     if (firstErr) {
-      throw firstErr.error;
+      return { ok: false, error: firstErr.error };
     }
-    return rs.map((r) => (r as AsyncOk<T>).value);
+    return { ok: true, value: rs.map((r) => (r as AsyncOk<T>).value) };
   });
 
 /**
@@ -255,19 +255,45 @@ export const all = <T, E>(...results: Array<AsyncResult<T, E>>): Promise<T[]> =>
  * @typeParam E - The type of the error
  * @param items - The items to traverse
  * @param fn - The async function to run for each item
- * @returns Promise<U[]> - Array of results
+ * @returns AsyncResult<U[], E> - Array of results or first error
  */
 export const traverse = async <T, U, E>(
   items: T[],
   fn: (item: T) => AsyncResult<U, E>
-): Promise<U[]> => {
+): AsyncResult<U[], E> => {
   const results = await Promise.all(items.map(fn));
   const firstErr = results.find((r) => isErr(r)) as AsyncErr<E> | undefined;
   if (firstErr) {
-    throw firstErr.error;
+    return { ok: false, error: firstErr.error };
   }
-  return results.map((r) => (r as AsyncOk<U>).value);
+  return { ok: true, value: results.map((r) => (r as AsyncOk<U>).value) };
 };
+
+/**
+ * AllSettled - runs all async results in parallel, collecting all errors
+ * @typeParam T - The type of the values
+ * @typeParam E - The type of the error
+ * @param results - The AsyncResults to run in parallel
+ * @returns AsyncResult<[T[], E[]], E[]> - Tuple of [values, errors]
+ */
+export const allSettled = <T, E>(
+  ...results: Array<AsyncResult<T, E>>
+): AsyncResult<[T[], E[]], E[]> =>
+  Promise.all(results).then((rs) => {
+    const values: T[] = [];
+    const errors: E[] = [];
+
+    for (const r of rs) {
+      if (isOk(r)) {
+        values.push(r.value);
+      } else {
+        errors.push(r.error);
+      }
+    }
+
+    // Always return Ok with [values, errors] tuple
+    return { ok: true, value: [values, errors] };
+  });
 
 /**
  * Converts AsyncResult to a nullable value

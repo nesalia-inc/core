@@ -22,6 +22,8 @@ export type Ok<T> = {
   tap(fn: (value: T) => void): Ok<T>;
   tapErr(fn: (error: never) => void): Ok<T>;
   match<U>(ok: (value: T) => U, _err: (error: never) => U): U;
+  // Swap Ok to Err
+  swap(): Err<T>;
   unwrap(): T;
 };
 
@@ -44,6 +46,8 @@ export type Err<E> = {
   tap(_fn: (value: never) => void): Err<E>;
   tapErr(fn: (error: E) => void): Err<E>;
   match<U>(_ok: (value: never) => U, err: (error: E) => U): U;
+  // Swap Err to Ok
+  swap(): Ok<E>;
   unwrap(): never;
 };
 
@@ -74,6 +78,7 @@ const createOk = <T>(value: T): Ok<T> =>
     tap(fn) { fn(value); return this; },
     tapErr() { return this; },
     match(ok) { return ok(value); },
+    swap() { return createErr(value); },
     unwrap() { return value; },
   });
 
@@ -97,6 +102,7 @@ const createErr = <E>(error: E): Err<E> =>
     tap() { return this as Err<E>; },
     tapErr(fn) { fn(error); return this; },
     match(_, err) { return err(error); },
+    swap() { return createOk(error); },
     unwrap() { throw error; },
   });
 
@@ -240,6 +246,16 @@ export const match = <T, E, U>(
 ): U => (isOk(result) ? ok(result.value) : err(result.error));
 
 /**
+ * Swaps Ok and Err variants
+ * @typeParam T - The type of the value
+ * @typeParam E - The type of the error
+ * @param result - The Result to swap
+ * @returns Err if Ok, Ok if Err
+ */
+export const swap = <T, E>(result: Result<T, E>): Result<E, T> =>
+  isOk(result) ? createErr(result.value) : createOk(result.error);
+
+/**
  * Converts Result to a nullable value
  * @typeParam T - The type of the value
  * @typeParam E - The type of the error
@@ -258,6 +274,23 @@ export const toNullable = <T, E>(result: Result<T, E>): T | null =>
  */
 export const toUndefined = <T, E>(result: Result<T, E>): T | undefined =>
   isOk(result) ? result.value : undefined;
+
+/**
+ * Combines multiple Results into a single Result
+ * Returns Ok with array of values if all are Ok
+ * Returns first Err if any is Err (fail-fast)
+ * @typeParam T - The type of the values
+ * @typeParam E - The type of the error
+ * @param results - The Results to combine
+ * @returns Result<T[], E>
+ */
+export const all = <T, E>(...results: Array<Result<T, E>>): Result<T[], E> => {
+  const firstErr = results.find(isErr);
+  if (firstErr) {
+    return createErr(firstErr.error);
+  }
+  return createOk(results.map((r) => (r as Ok<T>).value));
+};
 
 /**
  * Unwraps a Result, returning the value if Ok, throwing the error if Err

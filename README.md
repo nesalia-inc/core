@@ -92,7 +92,7 @@ The `Maybe` type represents optional values - a value that may or may not be pre
 
 ```typescript
 import {
-  some, none, someUnit,
+  some, none,
   fromNullable, isSome, isNone,
   map, flatMap, getOrElse, getOrCompute,
   tap, match, toNullable, toUndefined
@@ -101,7 +101,6 @@ import {
 // Creation
 const present = some(42)           // Some<number>
 const absent = none()              // None
-const unit = someUnit()            // Some<void>
 
 // From nullable
 const value1 = fromNullable(42)    // Some<number>
