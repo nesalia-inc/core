@@ -68,7 +68,8 @@ export {
 } from "./try.js";
 
 // AsyncResult
-export type { AsyncResult, AsyncResultInner, AsyncOk, AsyncErr } from "./async-result.js";
+export type { AsyncResultInner, AsyncOk, AsyncErr } from "./async-result.js";
+export { AsyncResult } from "./async-result.js";
 export {
   okAsync,
   errAsync,
@@ -79,10 +80,14 @@ export {
   flatMapAsync,
   map as mapAsyncResult,
   flatMap as flatMapAsyncResult,
+  mapErr as mapErrAsyncResult,
   getOrElse as getOrElseAsyncResult,
   getOrCompute as getOrComputeAsyncResult,
   tap as tapAsyncResult,
+  tapErr as tapErrAsyncResult,
   match as matchAsyncResult,
+  unwrap as unwrapAsyncResult,
+  unwrapOr as unwrapOrAsyncResult,
   race,
   all,
   allSettled,
