@@ -93,7 +93,7 @@ export {
 
 // Sleep
 export { sleep, withTimeout, sleepWithSignal } from "./sleep.js";
-export type { TimeoutOptions, TimeoutError } from "./sleep.js";
+export type { TimeoutOptions, TimeoutError, TimeoutCleanup, TimeoutResult } from "./sleep.js";
 
 // Retry
 export { retry, retryAsync, exponentialBackoff, linearBackoff, constantBackoff } from "./retry.js";
