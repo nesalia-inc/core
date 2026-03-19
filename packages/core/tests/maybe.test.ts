@@ -555,4 +555,115 @@ describe("Maybe", () => {
       expect(isNone(result)).toBe(true);
     });
   });
+
+  describe("filter", () => {
+    describe("filter on Some", () => {
+      it("should return Some if predicate passes", () => {
+        const result = some(25).filter((age) => age >= 18);
+        expect(isSome(result)).toBe(true);
+        if (isSome(result)) {
+          expect(result.value).toBe(25);
+        }
+      });
+
+      it("should return None if predicate fails", () => {
+        const result = some(15).filter((age) => age >= 18);
+        expect(isNone(result)).toBe(true);
+      });
+
+      it("should not call predicate if None", () => {
+        let called = false;
+        none().filter(() => {
+          called = true;
+          return true;
+        });
+        expect(called).toBe(false);
+      });
+
+      it("should return Some for predicate returning true on value 0", () => {
+        const result = some(0).filter((x) => x > 0);
+        expect(isNone(result)).toBe(true);
+      });
+
+      it("should return Some for predicate returning true on empty string", () => {
+        const result = some("").filter((s) => s.length > 0);
+        expect(isNone(result)).toBe(true);
+      });
+
+      it("should return Some for predicate returning true on false", () => {
+        const result = some(false).filter((b) => b === true);
+        expect(isNone(result)).toBe(true);
+      });
+
+      it("should work with type guard predicate", () => {
+        const result = some(25).filter((x): x is number => typeof x === "number" && x >= 18);
+        expect(isSome(result)).toBe(true);
+        if (isSome(result)) {
+          expect(result.value).toBe(25);
+        }
+      });
+    });
+
+    describe("filter with onNone on Some", () => {
+      it("should return Ok if predicate passes", () => {
+        const result = some(25).filter((age) => age >= 18, () => "TOO_YOUNG");
+        expect(result.ok).toBe(true);
+        if (result.ok) {
+          expect(result.value).toBe(25);
+        }
+      });
+
+      it("should return Err if predicate fails", () => {
+        const result = some(15).filter((age) => age >= 18, () => "TOO_YOUNG");
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+          expect(result.error).toBe("TOO_YOUNG");
+        }
+      });
+
+      it("should call onNone function only when predicate fails", () => {
+        let called = false;
+        some(15).filter((age) => age >= 18, () => {
+          called = true;
+          return "TOO_YOUNG";
+        });
+        expect(called).toBe(true);
+      });
+
+      it("should not call onNone function when predicate passes", () => {
+        let called = false;
+        some(25).filter((age) => age >= 18, () => {
+          called = true;
+          return "TOO_YOUNG";
+        });
+        expect(called).toBe(false);
+      });
+    });
+
+    describe("filter on None", () => {
+      it("should return None regardless of predicate", () => {
+        const result = none().filter((age) => age >= 18);
+        expect(isNone(result)).toBe(true);
+      });
+    });
+
+    describe("filter with onNone on None", () => {
+      it("should return Err with onNone result", () => {
+        const result = none().filter((age) => age >= 18, () => "NO_AGE");
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+          expect(result.error).toBe("NO_AGE");
+        }
+      });
+
+      it("should call onNone when None", () => {
+        let called = false;
+        none().filter((_age) => true, () => {
+          called = true;
+          return "NO_AGE";
+        });
+        expect(called).toBe(true);
+      });
+    });
+  });
 });
