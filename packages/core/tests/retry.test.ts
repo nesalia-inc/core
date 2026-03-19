@@ -128,6 +128,82 @@ describe("Retry", () => {
     });
   });
 
+  describe("retry (sync) with AbortSignal", () => {
+    it("should throw RetryAbortedError if signal is already aborted", () => {
+      const controller = new AbortController();
+      controller.abort();
+
+      expect(() =>
+        retry(() => { throw new Error("fail"); }, { attempts: 3, signal: controller.signal })
+      ).toThrow("Retry aborted");
+    });
+
+    it("should throw RetryAbortedError with correct name", () => {
+      const controller = new AbortController();
+      controller.abort();
+
+      try {
+        retry(() => { throw new Error("fail"); }, { attempts: 3, signal: controller.signal });
+        fail("Should have thrown");
+      } catch (error) {
+        // Type guard - check that it's a RetryAbortedError
+        const isRetryAbortedError = (e: unknown): e is RetryAbortedError =>
+          error instanceof Error && "name" in error && error.name === "RETRY_ABORTED";
+
+        expect(isRetryAbortedError(error)).toBe(true);
+      }
+    });
+
+    it("should abort between attempts when signal is aborted", () => {
+      const controller = new AbortController();
+      let attemptCount = 0;
+
+      // Abort in the onRetry callback after the first failure
+      // The signal check runs after the predicate check passes
+      const onRetry = (_error: Error, attempt: number) => {
+        // Abort after the first attempt's onRetry is called
+        if (attempt === 1) {
+          controller.abort();
+        }
+      };
+
+      const fn = () => {
+        attemptCount++;
+        throw new Error("fail");
+      };
+
+      // The signal is aborted in onRetry after the first failure
+      // The predicate allows retry (default predicate returns true)
+      // So the code proceeds to check signal?.aborted which is now true
+      // and throws RetryAbortedError
+      expect(() =>
+        retry(fn, { attempts: 3, delay: 10, signal: controller.signal, onRetry })
+      ).toThrow("Retry aborted");
+
+      // First attempt fails, onRetry aborts signal, signal check throws
+      // We never get to attempt 2 because the signal is checked after onRetry
+      expect(attemptCount).toBe(1);
+    });
+
+    it("should complete successfully when signal is not aborted", () => {
+      const controller = new AbortController();
+
+      const result = retry(() => {
+        return 42;
+      }, { attempts: 3, signal: controller.signal });
+
+      expect(result).toBe(42);
+    });
+
+    it("should work with AbortSignal.timeout", () => {
+      const result = retry(() => {
+        return 42;
+      }, { attempts: 3, signal: AbortSignal.timeout(5000) });
+
+      expect(result).toBe(42);
+    });
+  });
+
   describe("retryAsync", () => {
     it("should return value on success", async () => {
       const result = await retryAsync(async () => 42);
