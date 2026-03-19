@@ -14,6 +14,7 @@ import {
   match,
   toNullable,
   toUndefined,
+  all,
   Result,
 } from "../src/result";
 
@@ -351,6 +352,56 @@ describe("Result", () => {
       if (isOk(user)) {
         expect(user.value.id).toBe(1);
         expect(user.value.name).toBe("John");
+      }
+    });
+  });
+
+  describe("all", () => {
+    it("should combine multiple Ok results into array", () => {
+      const result = all(ok(1), ok(2), ok(3));
+      expect(isOk(result)).toBe(true);
+      if (isOk(result)) {
+        expect(result.value).toEqual([1, 2, 3]);
+      }
+    });
+
+    it("should return Err if any result is Err (fail-fast)", () => {
+      const result = all(ok(1), err("error"), ok(3));
+      expect(isErr(result)).toBe(true);
+      if (isErr(result)) {
+        expect(result.error).toBe("error");
+      }
+    });
+
+    it("should return first error when multiple are Err", () => {
+      const result = all(err("first"), err("second"), err("third"));
+      expect(isErr(result)).toBe(true);
+      if (isErr(result)) {
+        expect(result.error).toBe("first");
+      }
+    });
+
+    it("should return Ok with empty array for no results", () => {
+      const result = all();
+      expect(isOk(result)).toBe(true);
+      if (isOk(result)) {
+        expect(result.value).toEqual([]);
+      }
+    });
+
+    it("should work with object values", () => {
+      const result = all(ok({ a: 1 }), ok({ b: 2 }));
+      expect(isOk(result)).toBe(true);
+      if (isOk(result)) {
+        expect(result.value).toEqual([{ a: 1 }, { b: 2 }]);
+      }
+    });
+
+    it("should work with single result", () => {
+      const result = all(ok(42));
+      expect(isOk(result)).toBe(true);
+      if (isOk(result)) {
+        expect(result.value).toEqual([42]);
       }
     });
   });
