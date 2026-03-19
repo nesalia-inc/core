@@ -41,6 +41,7 @@ export {
   getOrCompute as getOrComputeResult,
   tap as tapResult,
   match as matchResult,
+  swap as swapResult,
   toNullable as toNullableResult,
   toUndefined as toUndefinedResult,
   all as allResult,
