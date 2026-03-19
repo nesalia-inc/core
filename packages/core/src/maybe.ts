@@ -125,6 +125,15 @@ export const flatMap = <T, U>(maybe: Maybe<T>, fn: (value: T) => Maybe<U>): Mayb
   isSome(maybe) ? fn(maybe.value) : none();
 
 /**
+ * Flattens a nested Maybe (Maybe<Maybe<T>> -> Maybe<T>)
+ * @typeParam T - The type of the inner value
+ * @param maybe - The nested Maybe to flatten
+ * @returns The flattened Maybe
+ */
+export const flatten = <T>(maybe: Maybe<Maybe<T>>): Maybe<T> =>
+  isSome(maybe) ? maybe.value : none();
+
+/**
  * Performs a side effect without changing the value
  * @typeParam T - The type of the value
  * @param maybe - The Maybe to inspect

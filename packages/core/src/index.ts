@@ -19,6 +19,7 @@ export {
   isNone,
   map as mapMaybe,
   flatMap as flatMapMaybe,
+  flatten as flattenMaybe,
   getOrElse as getOrElseMaybe,
   getOrCompute as getOrComputeMaybe,
   tap as tapMaybe,
