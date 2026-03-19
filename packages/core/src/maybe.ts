@@ -191,3 +191,26 @@ export const getOrElse = <T>(maybe: Maybe<T>, defaultValue: T): T =>
  */
 export const getOrCompute = <T, U>(maybe: Maybe<T>, fn: () => U): T | U =>
   isSome(maybe) ? maybe.value : fn();
+
+/**
+ * Combines multiple Maybes into one
+ * @typeParam T - The types of the values
+ * @param maybes - The Maybes to combine
+ * @returns Some<[T1, T2, ...]> if all are Some, None otherwise
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function all<T extends readonly []>(...maybes: T): Some<[]>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function all<T extends [Maybe<any>, ...Maybe<any>[]]>(...maybes: T): Maybe<{ [K in keyof T]: T[K] extends Maybe<infer U> ? U : never }>;
+export function all<T>(maybes: readonly Maybe<T>[]): Maybe<T[]>;
+export function all<T>(first: Maybe<T> | readonly Maybe<T>[], ...rest: Maybe<T>[]): Maybe<T[]> {
+  const maybes: Maybe<T>[] = Array.isArray(first) ? first : [first, ...rest];
+  const values: T[] = [];
+  for (const maybe of maybes) {
+    if (isNone(maybe)) {
+      return none();
+    }
+    values.push(maybe.value);
+  }
+  return some(values);
+}
