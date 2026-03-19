@@ -58,15 +58,24 @@ export const errAsync = <E>(error: E): AsyncResult<never, E> =>
 /**
  * Creates an AsyncResult from a Promise
  * @param promise - The promise to convert
- * @returns AsyncResult<T, Error>
+ * @param onError - Optional function to transform the error
+ * @returns AsyncResult<T, E> (E defaults to Error when onError is not provided)
  */
-export const fromPromise = <T>(promise: Promise<T>): AsyncResult<T, Error> =>
+export const fromPromise = <T, E = Error>(
+  promise: Promise<T>,
+  onError?: (error: unknown) => E
+): AsyncResult<T, E> =>
   promise
     .then((value) => ({ ok: true as const, value }))
-    .catch((error) => ({
-      ok: false as const,
-      error: error instanceof Error ? error : new Error(String(error)),
-    }));
+    .catch((error) => {
+      if (onError) {
+        return { ok: false as const, error: onError(error) } as AsyncResultInner<T, E>;
+      }
+      return {
+        ok: false as const,
+        error: error instanceof Error ? error : new Error(String(error)),
+      } as AsyncResultInner<T, E>;
+    });
 
 /**
  * Type guard to check if AsyncResult is AsyncOk
