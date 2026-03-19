@@ -31,13 +31,13 @@ export type None = {
 
 /**
  * Creates a Some (present value)
- * @param value - The value
+ * @param value - The value (must be non-null/non-undefined)
  * @returns Some<T>
  */
-export const some = <T>(value: T): Some<T> =>
+export const some = <T,>(value: NonNullable<T>): Some<NonNullable<T>> =>
   Object.freeze({
     ok: true,
-    value,
+    value: value as NonNullable<T>,
     isSome() {
       return true;
     },
@@ -111,7 +111,7 @@ export const isNone = <T>(maybe: Maybe<T>): maybe is None => maybe.ok === false;
  * @returns Some<U> if Some, None otherwise
  */
 export const map = <T, U>(maybe: Maybe<T>, fn: (value: T) => U): Maybe<U> =>
-  isSome(maybe) ? some(fn(maybe.value)) : none();
+  isSome(maybe) ? some(fn(maybe.value) as NonNullable<U>) : none();
 
 /**
  * Chains Maybes - function if Some, returns None otherwise
