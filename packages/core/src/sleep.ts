@@ -133,8 +133,14 @@ export const withTimeout = <T>(
     }, ms);
   });
 
+  // Track if cleanup has been called to prevent double calls
+  let cleanupCalled = false;
+
   // Define cleanup function
   const cleanup: TimeoutCleanup = () => {
+    if (cleanupCalled) return;
+    cleanupCalled = true;
+
     clearTimeout(timeoutId);
     if (!signal.aborted) {
       controller.abort();
@@ -150,9 +156,16 @@ export const withTimeout = <T>(
   // For signal injection mode, return result object with wrapped promise
   if (isSignalInjection) {
     // Race between the operation and timeout
+    // Also clean up timeout when the promise resolves/rejects
     Promise.race([p, timeoutPromise]).then(
-      (value) => deferred?.resolve(value),
-      (error) => deferred?.reject(error)
+      (value) => {
+        clearTimeout(timeoutId);
+        deferred?.resolve(value);
+      },
+      (error) => {
+        clearTimeout(timeoutId);
+        deferred?.reject(error);
+      }
     );
 
     return {
