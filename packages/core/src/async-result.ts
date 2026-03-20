@@ -98,6 +98,44 @@ export const isErr = <T, E>(result: AsyncResultInner<T, E>): result is AsyncErr<
   result.ok === false;
 
 /**
+ * Maps the value of AsyncResult if AsyncOk (handles both sync and async functions)
+ * @typeParam T - The type of the value
+ * @typeParam E - The type of the error
+ * @typeParam U - The type of the mapped value
+ * @param result - The AsyncResult to map
+ * @param fn - The mapping function (sync or async)
+ * @returns AsyncResult<U, E>
+ */
+export const map = async <T, E, U>(
+  result: AsyncResult<T, E>,
+  fn: (value: T) => U | Promise<U>
+): AsyncResult<U, E> => {
+  const r = await result;
+  if (!isOk(r)) return r;
+  const mapped = await Promise.resolve(fn(r.value));
+  return { ok: true, value: mapped };
+};
+
+/**
+ * Chains AsyncResults (handles both sync and async functions)
+ * @typeParam T - The type of the value
+ * @typeParam E - The type of the error
+ * @typeParam U - The type of the chained value
+ * @param result - The AsyncResult to chain
+ * @param fn - The chaining function (sync or async)
+ * @returns AsyncResult of the function if AsyncOk, AsyncErr otherwise
+ */
+export const flatMap = async <T, E, U>(
+  result: AsyncResult<T, E>,
+  fn: (value: T) => AsyncResult<U, E> | Promise<AsyncResult<U, E>>
+): AsyncResult<U, E> => {
+  const r = await result;
+  if (!isOk(r)) return r;
+  return await Promise.resolve(fn(r.value));
+};
+
+/**
+ * @deprecated Use `map` instead. `map` now handles both sync and async functions automatically.
  * Maps the value of AsyncResult if AsyncOk, returns AsyncErr otherwise
  * @typeParam T - The type of the value
  * @typeParam E - The type of the error
@@ -115,6 +153,7 @@ export const mapAsync = async <T, E, U>(
 };
 
 /**
+ * @deprecated Use `flatMap` instead. `flatMap` now handles both sync and async functions automatically.
  * Chains AsyncResults - function if AsyncOk, returns AsyncErr otherwise
  * @typeParam T - The type of the value
  * @typeParam E - The type of the error
@@ -130,35 +169,6 @@ export const flatMapAsync = async <T, E, U>(
   const r = await result;
   return isOk(r) ? fn(r.value) : r;
 };
-
-/**
- * Maps the value of AsyncResult if AsyncOk (sync version)
- * @typeParam T - The type of the value
- * @typeParam E - The type of the error
- * @typeParam U - The type of the mapped value
- * @param result - The AsyncResult to map
- * @param fn - The mapping function
- * @returns AsyncResult<U, E>
- */
-export const map = <T, E, U>(
-  result: AsyncResult<T, E>,
-  fn: (value: T) => U
-): AsyncResult<U, E> =>
-  result.then((r) => (isOk(r) ? { ok: true, value: fn(r.value) } : r));
-
-/**
- * Chains AsyncResults (sync version)
- * @typeParam T - The type of the value
- * @typeParam E - The type of the error
- * @typeParam U - The type of the chained value
- * @param result - The AsyncResult to chain
- * @param fn - The chaining function
- * @returns AsyncResult of the function if AsyncOk, AsyncErr otherwise
- */
-export const flatMap = <T, E, U>(
-  result: AsyncResult<T, E>,
-  fn: (value: T) => AsyncResult<U, E>
-): AsyncResult<U, E> => result.then((r) => (isOk(r) ? fn(r.value) : r));
 
 /**
  * Gets the value or a default
