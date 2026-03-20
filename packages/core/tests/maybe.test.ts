@@ -7,6 +7,7 @@ import {
   isNone,
   map,
   flatMap,
+  flatten,
   getOrElse,
   getOrCompute,
   tap,
@@ -213,6 +214,29 @@ describe("Maybe", () => {
 
     it("should allow returning None from function when condition fails", () => {
       const result = flatMap(some(-1), (x) => (x > 0 ? some(x) : none()));
+      expect(isNone(result)).toBe(true);
+    });
+  });
+
+  describe("flatten", () => {
+    it("should flatten Some(Some(value)) to Some(value)", () => {
+      const nested = some(some(42));
+      const result = flatten(nested);
+      expect(isSome(result)).toBe(true);
+      if (isSome(result)) {
+        expect(result.value).toBe(42);
+      }
+    });
+
+    it("should flatten Some(none()) to none()", () => {
+      const nested = some(none());
+      const result = flatten(nested);
+      expect(isNone(result)).toBe(true);
+    });
+
+    it("should flatten none() to none()", () => {
+      const nested = none();
+      const result = flatten(nested);
       expect(isNone(result)).toBe(true);
     });
   });

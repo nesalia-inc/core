@@ -96,6 +96,18 @@ some({ id: 1 })
   .flatMap(user => findUser(user.id)); // Maybe<User>
 ```
 
+### flatten - Flatten Nested Maybe
+
+```typescript
+import { flattenMaybe, some, none } from "@deessejs/core";
+
+flattenMaybe(some(some(42)));  // Some(42)
+flattenMaybe(some(none()));    // None
+flattenMaybe(none());          // None
+```
+
+Equivalent to `flatMap(x => x)`, but cleaner for nested Maybes.
+
 ## Extracting
 
 ### getOrElse - Default Value
