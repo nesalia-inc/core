@@ -3,6 +3,8 @@
  * Used for values that may or may not be present
  */
 
+import { ok, err, Result } from "./result.js";
+
 /**
  * Maybe type - union of Some and None
  * @typeParam T - The type of the value if present
@@ -20,6 +22,7 @@ export type Some<T> = {
   isNone(): false;
   equals(other: Maybe<T>): boolean;
   equals(other: Maybe<T>, comparator: (a: T, b: T) => boolean): boolean;
+  filter<E>(predicate: (value: T) => boolean, onNone?: () => E): Maybe<T> | Result<T, E>;
 };
 
 /**
@@ -31,6 +34,7 @@ export type None = {
   isNone(): true;
   equals(other: Maybe<unknown>): boolean;
   equals(other: Maybe<unknown>, comparator: (a: unknown, b: unknown) => boolean): boolean;
+  filter<T, E>(predicate: (value: T) => boolean, onNone?: () => E): None | Result<T, E>;
 };
 
 /**
@@ -38,8 +42,8 @@ export type None = {
  * @param value - The value (must be non-null/non-undefined)
  * @returns Some<T>
  */
-export const some = <T,>(value: NonNullable<T>): Some<NonNullable<T>> =>
-  Object.freeze({
+export const some = <T,>(value: NonNullable<T>): Some<NonNullable<T>> => {
+  const someValue: Some<NonNullable<T>> = {
     ok: true,
     value: value as NonNullable<T>,
     isSome() {
@@ -57,7 +61,18 @@ export const some = <T,>(value: NonNullable<T>): Some<NonNullable<T>> =>
       }
       return false;
     },
-  });
+    filter<E>(
+      predicate: (value: NonNullable<T>) => boolean,
+      onNone?: () => E
+    ): Maybe<NonNullable<T>> | Result<NonNullable<T>, E> {
+      if (predicate(this.value)) {
+        return onNone !== undefined ? ok(this.value) : this;
+      }
+      return onNone !== undefined ? err(onNone()) : none();
+    },
+  };
+  return Object.freeze(someValue);
+};
 
 /**
  * Creates a None (absent value)
@@ -73,6 +88,12 @@ const NONE: None = Object.freeze({
   },
   equals(_other: Maybe<unknown>, _comparator?: (a: unknown, b: unknown) => boolean): boolean {
     return isNone(_other);
+  },
+  filter<T, E>(_predicate: (value: T) => boolean, onNone?: () => E): None | Result<T, E> {
+    if (onNone !== undefined) {
+      return err(onNone());
+    }
+    return NONE;
   },
 });
 
@@ -123,6 +144,15 @@ export const map = <T, U>(maybe: Maybe<T>, fn: (value: T) => U): Maybe<U> =>
  */
 export const flatMap = <T, U>(maybe: Maybe<T>, fn: (value: T) => Maybe<U>): Maybe<U> =>
   isSome(maybe) ? fn(maybe.value) : none();
+
+/**
+ * Flattens a nested Maybe (Maybe<Maybe<T>> -> Maybe<T>)
+ * @typeParam T - The type of the inner value
+ * @param maybe - The nested Maybe to flatten
+ * @returns The flattened Maybe
+ */
+export const flatten = <T>(maybe: Maybe<Maybe<T>>): Maybe<T> =>
+  isSome(maybe) ? maybe.value : none();
 
 /**
  * Performs a side effect without changing the value
@@ -231,3 +261,29 @@ export function all<T>(first: Maybe<T> | readonly Maybe<T>[], ...rest: Maybe<T>[
   }
   return some(values);
 }
+
+/**
+ * Filters a Maybe based on a predicate
+ * @typeParam T - The type of the value
+ * @typeParam E - The type of the error when onNone is provided
+ * @param maybe - The Maybe to filter
+ * @param predicate - The predicate function
+ * @param onNone - Optional callback when filter fails
+ * @returns Some<T> if predicate passes, None otherwise (or Result<T, E> if onNone provided)
+ */
+export const filter = <T, E>(
+  maybe: Maybe<T>,
+  predicate: (value: T) => boolean,
+  onNone?: () => E
+): Maybe<T> | Result<T, E> =>
+  isSome(maybe)
+    ? predicate(maybe.value)
+      ? onNone !== undefined
+        ? ok(maybe.value)
+        : maybe
+      : onNone !== undefined
+        ? err(onNone())
+        : none()
+    : onNone !== undefined
+      ? err(onNone())
+      : none();

@@ -112,6 +112,7 @@ if (isOk(result)) {
 | `some<T>(value)` | Create a Some |
 | `none()` | Create a None |
 | `try<T>(fn)` | Wrap a function in Try |
+| `flattenMaybe(maybe)` | Flatten a nested Maybe |
 
 ### Type Guards
 

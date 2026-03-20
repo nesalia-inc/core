@@ -73,28 +73,32 @@ export const errAsync = <E>(error: E): AsyncResult<never, E> =>
 /**
  * Creates an AsyncResult from a Promise
  * @param promise - The promise to convert
- * @returns AsyncResult<T, Error>
+ * @param onError - Optional function to transform the error
+ * @returns AsyncResult<T, E> (E defaults to Error when onError is not provided)
  */
-export const fromPromise = <T>(promise: Promise<T>): AsyncResult<T, Error> =>
-  fromPromiseWithOptions(promise);
-
-/**
- * Creates an AsyncResult from a Promise with options
- * @param promise - The promise to convert
- * @param options - Options including AbortSignal
- * @returns AsyncResult<T, Error>
- */
-export const fromPromiseWithOptions = <T>(
+export const fromPromise = <T, E = Error>(
   promise: Promise<T>,
-  options: FromPromiseOptions = {}
-): AsyncResult<T, Error> => {
-  const { signal } = options;
+  onErrorOrOptions?: ((error: unknown) => E) | FromPromiseOptions,
+  options?: FromPromiseOptions
+): AsyncResult<T, E> => {
+  // Handle function overload: fromPromise(promise, onError)
+  if (typeof onErrorOrOptions === "function") {
+    const onError = onErrorOrOptions;
+    return promise
+      .then((value) => ({ ok: true as const, value }))
+      .catch((error) => {
+        return { ok: false as const, error: onError(error) } as AsyncResultInner<T, E>;
+      });
+  }
+
+  // Handle options overload: fromPromise(promise, options) or fromPromise(promise, options, signal)
+  const signal = onErrorOrOptions?.signal ?? options?.signal;
 
   // If already aborted, return immediately with AbortError
   if (signal?.aborted) {
     const error = new Error("Operation aborted") as AbortError;
     error.name = "AbortError";
-    return Promise.resolve({ ok: false as const, error });
+    return Promise.resolve({ ok: false as const, error: error as E });
   }
 
   return new Promise((resolve) => {
@@ -102,7 +106,7 @@ export const fromPromiseWithOptions = <T>(
       const abortHandler = () => {
         const error = new Error("Operation aborted") as AbortError;
         error.name = "AbortError";
-        resolve({ ok: false as const, error });
+        resolve({ ok: false as const, error: error as E });
       };
 
       signal.addEventListener("abort", abortHandler, { once: true });
@@ -113,11 +117,22 @@ export const fromPromiseWithOptions = <T>(
       .catch((error) =>
         resolve({
           ok: false as const,
-          error: error instanceof Error ? error : new Error(String(error)),
+          error: (error instanceof Error ? error : new Error(String(error))) as E,
         })
       );
   });
 };
+
+/**
+ * Creates an AsyncResult from a Promise with options (alias for fromPromise with options)
+ * @param promise - The promise to convert
+ * @param options - Options including AbortSignal
+ * @returns AsyncResult<T, Error>
+ */
+export const fromPromiseWithOptions = <T>(
+  promise: Promise<T>,
+  options: FromPromiseOptions = {}
+): AsyncResult<T, Error> => fromPromise(promise, options);
 
 /**
  * Checks if an error is an AbortError
@@ -148,6 +163,44 @@ export const isErr = <T, E>(result: AsyncResultInner<T, E>): result is AsyncErr<
   result.ok === false;
 
 /**
+ * Maps the value of AsyncResult if AsyncOk (handles both sync and async functions)
+ * @typeParam T - The type of the value
+ * @typeParam E - The type of the error
+ * @typeParam U - The type of the mapped value
+ * @param result - The AsyncResult to map
+ * @param fn - The mapping function (sync or async)
+ * @returns AsyncResult<U, E>
+ */
+export const map = async <T, E, U>(
+  result: AsyncResult<T, E>,
+  fn: (value: T) => U | Promise<U>
+): AsyncResult<U, E> => {
+  const r = await result;
+  if (!isOk(r)) return r;
+  const mapped = await Promise.resolve(fn(r.value));
+  return { ok: true, value: mapped };
+};
+
+/**
+ * Chains AsyncResults (handles both sync and async functions)
+ * @typeParam T - The type of the value
+ * @typeParam E - The type of the error
+ * @typeParam U - The type of the chained value
+ * @param result - The AsyncResult to chain
+ * @param fn - The chaining function (sync or async)
+ * @returns AsyncResult of the function if AsyncOk, AsyncErr otherwise
+ */
+export const flatMap = async <T, E, U>(
+  result: AsyncResult<T, E>,
+  fn: (value: T) => AsyncResult<U, E> | Promise<AsyncResult<U, E>>
+): AsyncResult<U, E> => {
+  const r = await result;
+  if (!isOk(r)) return r;
+  return await Promise.resolve(fn(r.value));
+};
+
+/**
+ * @deprecated Use `map` instead. `map` now handles both sync and async functions automatically.
  * Maps the value of AsyncResult if AsyncOk, returns AsyncErr otherwise
  * @typeParam T - The type of the value
  * @typeParam E - The type of the error
@@ -165,6 +218,7 @@ export const mapAsync = async <T, E, U>(
 };
 
 /**
+ * @deprecated Use `flatMap` instead. `flatMap` now handles both sync and async functions automatically.
  * Chains AsyncResults - function if AsyncOk, returns AsyncErr otherwise
  * @typeParam T - The type of the value
  * @typeParam E - The type of the error
@@ -180,35 +234,6 @@ export const flatMapAsync = async <T, E, U>(
   const r = await result;
   return isOk(r) ? fn(r.value) : r;
 };
-
-/**
- * Maps the value of AsyncResult if AsyncOk (sync version)
- * @typeParam T - The type of the value
- * @typeParam E - The type of the error
- * @typeParam U - The type of the mapped value
- * @param result - The AsyncResult to map
- * @param fn - The mapping function
- * @returns AsyncResult<U, E>
- */
-export const map = <T, E, U>(
-  result: AsyncResult<T, E>,
-  fn: (value: T) => U
-): AsyncResult<U, E> =>
-  result.then((r) => (isOk(r) ? { ok: true, value: fn(r.value) } : r));
-
-/**
- * Chains AsyncResults (sync version)
- * @typeParam T - The type of the value
- * @typeParam E - The type of the error
- * @typeParam U - The type of the chained value
- * @param result - The AsyncResult to chain
- * @param fn - The chaining function
- * @returns AsyncResult of the function if AsyncOk, AsyncErr otherwise
- */
-export const flatMap = <T, E, U>(
-  result: AsyncResult<T, E>,
-  fn: (value: T) => AsyncResult<U, E>
-): AsyncResult<U, E> => result.then((r) => (isOk(r) ? fn(r.value) : r));
 
 /**
  * Gets the value or a default

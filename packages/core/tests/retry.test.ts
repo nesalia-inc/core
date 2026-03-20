@@ -126,6 +126,60 @@ describe("Retry", () => {
       expect(result).toBe(42);
       expect(attempts).toBe(3);
     });
+
+    it("should cap delay with maxDelay option", () => {
+      // Use built-in exponential backoff and capture the actual delay used
+
+      try {
+        retry(
+          () => {
+            throw new Error("fail");
+          },
+          {
+            attempts: 4,
+            delay: 1000,
+            backoff: "exponential",
+            maxDelay: 500,
+            onRetry: (_error, _attempt) => {
+              // We can't easily capture the delay here since it's already applied
+              // Instead, verify the function doesn't hang forever (delay is capped)
+            },
+          }
+        );
+      } catch {
+        // Expected to throw
+      }
+
+      // With exponential backoff (1000, 2000, 4000) and maxDelay(500),
+      // the delays should be capped at 500 each time
+      // The test verifies this works without hanging (sync retry would hang
+      // for 4000ms if maxDelay wasn't applied)
+    });
+
+    it("should cap delay with maxDelay option - verify with timing", () => {
+      const start = Date.now();
+      try {
+        retry(
+          () => {
+            throw new Error("fail");
+          },
+          {
+            attempts: 4,
+            delay: 1000,
+            backoff: "exponential",
+            maxDelay: 500,
+          }
+        );
+      } catch {
+        // Expected to throw
+      }
+      const elapsed = Date.now() - start;
+
+      // Without maxDelay: 1000 + 2000 + 4000 = 7000ms
+      // With maxDelay: 500 + 500 + 500 = 1500ms
+      // Allow some margin for test flakiness
+      expect(elapsed).toBeLessThan(3000);
+    });
   });
 
   describe("retry (sync) with AbortSignal", () => {
@@ -283,6 +337,32 @@ describe("Retry", () => {
       expect(result).toBe(42);
       expect(attempts).toBe(3);
     });
+
+    it("should cap delay with maxDelay option", async () => {
+      // Use built-in exponential backoff and verify the delay is capped with timing
+      const start = Date.now();
+      try {
+        await retryAsync(
+          async () => {
+            throw new Error("fail");
+          },
+          {
+            attempts: 4,
+            delay: 1000,
+            backoff: "exponential",
+            maxDelay: 500,
+          }
+        );
+      } catch {
+        // Expected to throw
+      }
+      const elapsed = Date.now() - start;
+
+      // Without maxDelay: 1000 + 2000 + 4000 = 7000ms
+      // With maxDelay: 500 + 500 + 500 = 1500ms
+      // Allow some margin for test flakiness
+      expect(elapsed).toBeLessThan(3000);
+    });
   });
 
   describe("Backoff strategies", () => {
@@ -311,9 +391,36 @@ describe("Retry", () => {
       expect(calculateDelay(2, 100, fn)).toBe(200);
     });
 
+    it("calculateDelay should handle function backoff with maxDelay", () => {
+      const fn = (attempt: number, delay: number) => delay * attempt;
+      // 2*100 = 200, but maxDelay is 150, so result should be 150
+      expect(calculateDelay(2, 100, fn, 150)).toBe(150);
+    });
+
     it("calculateDelay should handle undefined backoff", () => {
       expect(calculateDelay(1, 100, undefined)).toBe(100);
       expect(calculateDelay(2, 100, undefined)).toBe(200);
+    });
+
+    it("calculateDelay should cap delay with maxDelay", () => {
+      // Exponential: attempt 3 with delay 1000 = 4000ms, capped at 500ms
+      expect(calculateDelay(3, 1000, "exponential", 500)).toBe(500);
+      // Linear: attempt 5 with delay 1000 = 5000ms, capped at 500ms
+      expect(calculateDelay(5, 1000, "linear", 500)).toBe(500);
+      // Constant: always 1000ms, capped at 500ms
+      expect(calculateDelay(10, 1000, "constant", 500)).toBe(500);
+    });
+
+    it("calculateDelay should not cap when under maxDelay", () => {
+      // Exponential: attempt 1 with delay 1000 = 1000ms, maxDelay is 2000, no cap
+      expect(calculateDelay(1, 1000, "exponential", 2000)).toBe(1000);
+      // Linear: attempt 1 with delay 100 = 100ms, maxDelay is 500, no cap
+      expect(calculateDelay(1, 100, "linear", 500)).toBe(100);
+    });
+
+    it("calculateDelay should handle undefined maxDelay (no cap)", () => {
+      expect(calculateDelay(5, 1000, "exponential", undefined)).toBe(16000);
+      expect(calculateDelay(5, 1000, "linear", undefined)).toBe(5000);
     });
 
     it("handleUnknownBackoff should handle valid backoffs", () => {
