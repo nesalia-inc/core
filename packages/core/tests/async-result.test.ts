@@ -57,6 +57,34 @@ describe("AsyncResult", () => {
       expect(result.error).toBeInstanceOf(Error);
       expect(result.error.message).toBe("string error");
     });
+
+    it("should use onError to transform the error", async () => {
+      type CustomError = { code: number; message: string };
+      const result = await fromPromise<number, CustomError>(
+        Promise.reject(new Error("test")),
+        (error) => ({ code: 500, message: error instanceof Error ? error.message : String(error) })
+      );
+      expect(result.ok).toBe(false);
+      expect(result.error).toEqual({ code: 500, message: "test" });
+    });
+
+    it("should preserve custom error structure with onError", async () => {
+      type GraphQLError = { errors: string[]; status: number };
+      const originalError = { errors: ["User not found"], status: 404 };
+      const result = await fromPromise<unknown, GraphQLError>(
+        Promise.reject(originalError),
+        (error) => error as GraphQLError
+      );
+      expect(result.ok).toBe(false);
+      expect(result.error).toEqual(originalError);
+    });
+
+    it("should not call onError on success", async () => {
+      const onError = () => ({ code: 500 });
+      const result = await fromPromise(Promise.resolve(42), onError);
+      expect(result.ok).toBe(true);
+      expect(result.value).toBe(42);
+    });
   });
 
   describe("isOk", () => {
