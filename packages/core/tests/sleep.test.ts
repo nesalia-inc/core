@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { sleep, withTimeout, TimeoutError, sleepWithSignal } from "../src/sleep";
 
 describe("Sleep", () => {
@@ -80,6 +80,122 @@ describe("Sleep", () => {
       await expect(
         withTimeout(Promise.reject(new Error("Original error")), 1000)
       ).rejects.toThrow("Original error");
+    });
+
+    describe("signal injection mode", () => {
+      it("should return TimeoutResult when function receives signal", async () => {
+        const result = withTimeout(
+          (_signal) => new Promise<number>((resolve) => setTimeout(() => resolve(42), 100)),
+          1000
+        );
+
+        // Should return TimeoutResult object
+        expect(result).toHaveProperty("promise");
+        expect(result).toHaveProperty("cleanup");
+        expect(typeof result.cleanup).toBe("function");
+
+        // Promise should resolve with value
+        const value = await result.promise;
+        expect(value).toBe(42);
+      });
+
+      it("should abort operation on timeout", async () => {
+        const abortFn = vi.fn();
+
+        const result = withTimeout(
+          (signal) =>
+            new Promise<number>((resolve, reject) => {
+              signal.addEventListener("abort", () => {
+                abortFn();
+                reject(new Error("Aborted"));
+              });
+              setTimeout(() => resolve(42), 1000);
+            }),
+          50
+        );
+
+        // Should reject on timeout
+        await expect(result.promise).rejects.toThrow();
+
+        // Should have called abort
+        expect(abortFn).toHaveBeenCalled();
+      });
+
+      it("should allow manual abort via cleanup", async () => {
+        let resolved = false;
+
+        const result = withTimeout(
+          (signal) =>
+            new Promise<number>((resolve, reject) => {
+              const id = setTimeout(() => {
+                resolved = true;
+                resolve(42);
+              }, 1000);
+
+              // Listen to abort and clear timeout
+              signal.addEventListener("abort", () => {
+                clearTimeout(id);
+                reject(new Error("Aborted"));
+              });
+            }),
+          5000
+        );
+
+        // Call cleanup to abort manually
+        result.cleanup();
+
+        // Promise should reject due to abort
+        await expect(result.promise).rejects.toThrow();
+
+        // Operation should not have resolved
+        expect(resolved).toBe(false);
+      });
+
+      it("should work with external AbortController", async () => {
+        const controller = new AbortController();
+
+        const result = withTimeout(
+          (signal) =>
+            new Promise<number>((resolve, reject) => {
+              const id = setTimeout(() => resolve(42), 1000);
+
+              // Use external signal
+              signal.addEventListener("abort", () => {
+                clearTimeout(id);
+                reject(new Error("Aborted"));
+              });
+            }),
+          5000,
+          { abortController: controller }
+        );
+
+        // Manual abort via external controller
+        controller.abort();
+
+        await expect(result.promise).rejects.toThrow();
+      });
+
+      it("should abort when signal is already aborted", async () => {
+        const controller = new AbortController();
+        controller.abort();
+
+        const result = withTimeout(
+          (signal) =>
+            new Promise<number>((resolve, reject) => {
+              // Check if already aborted
+              if (signal.aborted) {
+                reject(new Error("Aborted"));
+                return;
+              }
+              setTimeout(() => resolve(42), 100);
+            }),
+          5000,
+          { abortController: controller }
+        );
+
+        // Should reject immediately since signal is already aborted
+        await expect(result.promise).rejects.toThrow();
+      });
     });
   });
 
