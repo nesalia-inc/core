@@ -85,7 +85,7 @@ describe("Sleep", () => {
     describe("signal injection mode", () => {
       it("should return TimeoutResult when function receives signal", async () => {
         const result = withTimeout(
-          (signal) => new Promise<number>((resolve) => setTimeout(() => resolve(42), 100)),
+          (_signal) => new Promise<number>((resolve) => setTimeout(() => resolve(42), 100)),
           1000
         );
 
