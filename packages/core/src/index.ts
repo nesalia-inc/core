@@ -71,6 +71,7 @@ export {
 
 // AsyncResult
 export type { AsyncResult, AsyncResultInner, AsyncOk, AsyncErr, AbortError, FromPromiseOptions } from "./async-result.js";
+export { AsyncResult } from "./async-result.js";
 export {
   okAsync,
   errAsync,
@@ -83,10 +84,14 @@ export {
   flatMapAsync,
   map as mapAsyncResult,
   flatMap as flatMapAsyncResult,
+  mapErr as mapErrAsyncResult,
   getOrElse as getOrElseAsyncResult,
   getOrCompute as getOrComputeAsyncResult,
   tap as tapAsyncResult,
+  tapErr as tapErrAsyncResult,
   match as matchAsyncResult,
+  unwrap as unwrapAsyncResult,
+  unwrapOr as unwrapOrAsyncResult,
   race,
   all,
   allSettled,
@@ -97,8 +102,8 @@ export {
 } from "./async-result.js";
 
 // Sleep
-export { sleep, withTimeout, sleepWithSignal } from "./sleep.js";
-export type { TimeoutOptions, TimeoutError, TimeoutCleanup, TimeoutResult } from "./sleep.js";
+export { sleep, withTimeout, sleepWithSignal, addJitter } from "./sleep.js";
+export type { TimeoutOptions, TimeoutError, SleepOptions, TimeoutCleanup, TimeoutResult } from "./sleep.js";
 
 // Yield
 export { yieldControl as yield, immediate } from "./yield.js";

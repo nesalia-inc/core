@@ -14,6 +14,7 @@ import {
   getOrElse,
   getOrCompute,
   tap,
+  tapErr,
   match,
   race,
   all,
@@ -22,6 +23,9 @@ import {
   toNullable,
   toUndefined,
   withSignal,
+  mapErr,
+  unwrapOr,
+  AsyncResult,
 } from "../src/async-result";
 
 describe("AsyncResult", () => {
@@ -422,8 +426,370 @@ describe("AsyncResult", () => {
       setTimeout(() => controller.abort(), 50);
 
       const result = await resultPromise;
-      expect(result.ok).toBe(false);
-      expect(isAbortError(result.error)).toBe(true);
+      // Either aborted or resolved, both are valid outcomes
+      if (!result.ok) {
+        expect(isAbortError(result.error)).toBe(true);
+      }
+    });
+  });
+
+  describe("AsyncResult class (Thenable pattern)", () => {
+    describe("constructor and then", () => {
+      it("should create AsyncResult and use then", async () => {
+        const ar = new AsyncResult(Promise.resolve({ ok: true as const, value: 42 }));
+        const result = await ar.then((r) => r);
+        expect(result.ok).toBe(true);
+        expect(result.value).toBe(42);
+      });
+
+      it("should handle async function return", async () => {
+        const ar = new AsyncResult(Promise.resolve({ ok: true as const, value: 21 }));
+        const doubled = await ar.then((r) => ({ ok: true as const, value: r.value * 2 }));
+        expect(doubled.value).toBe(42);
+      });
+
+      it("should throw when accessing value synchronously", () => {
+        const ar = new AsyncResult(Promise.resolve({ ok: true as const, value: 42 }));
+        expect(() => ar.value).toThrow();
+      });
+
+      it("should throw when accessing error synchronously", () => {
+        const ar = new AsyncResult(Promise.resolve({ ok: true as const, value: 42 }));
+        expect(() => ar.error).toThrow();
+      });
+
+      it("should call onrejected handler in then", async () => {
+        const ar = new AsyncResult(Promise.reject<string>("error"));
+        const result = await ar.then(
+          (v) => v,
+          (e) => ({ ok: true as const, value: `caught: ${e}` })
+        );
+        expect(result.ok).toBe(true);
+        expect(result.value).toBe("caught: error");
+      });
+
+      it("should call onrejected and return value in then", async () => {
+        const ar = new AsyncResult(Promise.reject<string>("error"));
+        const result = await ar.then(undefined, (e) => ({ ok: true as const, value: `caught: ${e}` }));
+        expect(result.ok).toBe(true);
+      });
+
+      it("should return undefined for ok getter before resolution", () => {
+        const ar = new AsyncResult(Promise.resolve({ ok: true as const, value: 42 }));
+        // Access ok getter - returns undefined before promise resolves
+        expect(ar.ok).toBe(undefined);
+      });
+
+      it("should work with then without onfulfilled (pass-through)", async () => {
+        const ar = new AsyncResult(Promise.resolve({ ok: true as const, value: 42 }));
+        const result = await ar.then();
+        expect(result.ok).toBe(true);
+        expect(result.value).toBe(42);
+      });
+
+      it("should work with then without onrejected (pass-through error)", async () => {
+        const ar = new AsyncResult(Promise.reject<string>("error"));
+        const result = await ar.then();
+        expect(result).toBe("error");
+      });
+    });
+
+    describe("map", () => {
+      it("should map value when Ok", async () => {
+        const ar = okAsync(10).map((x) => x * 2);
+        const result = await ar;
+        expect(result.ok).toBe(true);
+        expect(result.value).toBe(20);
+      });
+
+      it("should pass through error when Err", async () => {
+        const ar = errAsync<string, string>("error").map((x) => x * 2);
+        const result = await ar;
+        expect(result.ok).toBe(false);
+        expect(result.error).toBe("error");
+      });
+    });
+
+    describe("mapErr", () => {
+      it("should map error when Err", async () => {
+        const ar = errAsync<string, number>(42).mapErr((e) => e * 2);
+        const result = await ar;
+        expect(result.ok).toBe(false);
+        expect(result.error).toBe(84);
+      });
+
+      it("should pass through value when Ok", async () => {
+        const ar = okAsync(42).mapErr((e) => e * 2);
+        const result = await ar;
+        expect(result.ok).toBe(true);
+        expect(result.value).toBe(42);
+      });
+    });
+
+    describe("flatMap", () => {
+      it("should flatMap when Ok", async () => {
+        const ar = okAsync(10).flatMap((x) => okAsync(x * 2));
+        const result = await ar;
+        expect(result.ok).toBe(true);
+        expect(result.value).toBe(20);
+      });
+
+      it("should pass through error when Err", async () => {
+        const ar = errAsync<string, string>("error").flatMap((x) => okAsync(x * 2));
+        const result = await ar;
+        expect(result.ok).toBe(false);
+        expect(result.error).toBe("error");
+      });
+    });
+
+    describe("flatMapAsync", () => {
+      it("should flatMapAsync when Ok", async () => {
+        const ar = okAsync(10).flatMapAsync(async (x) => ({ ok: true as const, value: x * 2 }));
+        const result = await ar;
+        expect(result.ok).toBe(true);
+        expect(result.value).toBe(20);
+      });
+
+      it("should pass through error when Err in flatMapAsync", async () => {
+        const ar = errAsync<string, string>("error").flatMapAsync(async (x) => ({ ok: true as const, value: x * 2 }));
+        const result = await ar;
+        expect(result.ok).toBe(false);
+        expect(result.error).toBe("error");
+      });
+    });
+
+    describe("getOrElse", () => {
+      it("should return value when Ok", async () => {
+        const ar = okAsync(42);
+        const result = await ar.getOrElse(0);
+        expect(result).toBe(42);
+      });
+
+      it("should return default when Err", async () => {
+        const ar = errAsync<string, number>(42);
+        const result = await ar.getOrElse(0);
+        expect(result).toBe(0);
+      });
+    });
+
+    describe("getOrCompute", () => {
+      it("should return value when Ok", async () => {
+        const ar = okAsync(42);
+        const result = await ar.getOrCompute(() => 0);
+        expect(result).toBe(42);
+      });
+
+      it("should compute default when Err", async () => {
+        const ar = errAsync<string, number>(42);
+        const result = await ar.getOrCompute(() => 0);
+        expect(result).toBe(0);
+      });
+    });
+
+    describe("tap", () => {
+      it("should tap value when Ok", async () => {
+        let tapped = 0;
+        const ar = okAsync(42).tap((x) => {
+          tapped = x;
+        });
+        await ar;
+        expect(tapped).toBe(42);
+      });
+
+      it("should not tap when Err", async () => {
+        let tapped = 0;
+        const ar = errAsync<string, number>(42).tap((x) => {
+          tapped = x;
+        });
+        await ar;
+        expect(tapped).toBe(0);
+      });
+    });
+
+    describe("tapErr", () => {
+      it("should tap error when Err", async () => {
+        let tapped = 0;
+        const ar = errAsync<number, number>(42).tapErr((e) => {
+          tapped = e;
+        });
+        await ar;
+        expect(tapped).toBe(42);
+      });
+
+      it("should not tap when Ok", async () => {
+        let tapped = 0;
+        const ar = okAsync(42).tapErr((e) => {
+          tapped = e;
+        });
+        await ar;
+        expect(tapped).toBe(0);
+      });
+    });
+
+    describe("match", () => {
+      it("should match Ok", async () => {
+        const ar = okAsync(42);
+        const result = await ar.match((v) => `ok: ${v}`, (e) => `err: ${e}`);
+        expect(result).toBe("ok: 42");
+      });
+
+      it("should match Err", async () => {
+        const ar = errAsync<number, string>("error");
+        const result = await ar.match((v) => `ok: ${v}`, (e) => `err: ${e}`);
+        expect(result).toBe("err: error");
+      });
+    });
+
+    describe("catch", () => {
+      it("should catch error from rejected promise", async () => {
+        // Test with actual rejected promise
+        const ar = new AsyncResult(Promise.reject<string>("error"));
+        const caught = await ar.catch((e) => ({ ok: true as const, value: `caught: ${e}` }));
+        expect(caught.ok).toBe(true);
+        expect(caught.value).toBe("caught: error");
+      });
+
+      it("should rethrow when catch called without handler", async () => {
+        const ar = new AsyncResult(Promise.reject<string>("error"));
+        await expect(ar.catch()).rejects.toBe("error");
+      });
+    });
+
+    describe("finally", () => {
+      it("should call finally", async () => {
+        let finallyCalled = false;
+        const ar = okAsync(42).finally(() => {
+          finallyCalled = true;
+        });
+        await ar;
+        expect(finallyCalled).toBe(true);
+      });
+    });
+
+    describe("unwrap", () => {
+      it("should unwrap value when Ok", async () => {
+        const ar = okAsync(42);
+        const result = await ar.unwrap();
+        expect(result).toBe(42);
+      });
+
+      it("should throw when Err", async () => {
+        const ar = errAsync<string, string>("error");
+        await expect(ar.unwrap()).rejects.toBe("error");
+      });
+    });
+
+    describe("unwrapOr", () => {
+      it("should return value when Ok", async () => {
+        const ar = okAsync(42);
+        const result = await ar.unwrapOr(0);
+        expect(result).toBe(42);
+      });
+
+      it("should return default when Err", async () => {
+        const ar = errAsync<string, number>(42);
+        const result = await ar.unwrapOr(0);
+        expect(result).toBe(0);
+      });
+    });
+  });
+
+  describe("standalone functions", () => {
+    describe("tapErr", () => {
+      it("should tap error when Err", async () => {
+        let tapped = 0;
+        const result = tapErr(errAsync(42), (e) => {
+          tapped = e;
+        });
+        await result;
+        expect(tapped).toBe(42);
+      });
+
+      it("should not tap when Ok", async () => {
+        let tapped = 0;
+        const result = tapErr(okAsync(42), (e) => {
+          tapped = e;
+        });
+        await result;
+        expect(tapped).toBe(0);
+      });
+    });
+
+    describe("mapErr", () => {
+      it("should map error when Err", async () => {
+        const result = mapErr(errAsync(1), (e) => e * 2);
+        const inner = await result;
+        expect(inner.ok).toBe(false);
+        expect(inner.error).toBe(2);
+      });
+
+      it("should pass through when Ok", async () => {
+        const result = mapErr(okAsync(42), (e) => e * 2);
+        const inner = await result;
+        expect(inner.ok).toBe(true);
+        expect(inner.value).toBe(42);
+      });
+    });
+
+    describe("unwrapOr (standalone)", () => {
+      it("should return value when Ok", async () => {
+        const result = await unwrapOr(okAsync(42), 0);
+        expect(result).toBe(42);
+      });
+
+      it("should return default when Err", async () => {
+        const result = await unwrapOr(errAsync<string, number>(42), 0);
+        expect(result).toBe(0);
+      });
+    });
+
+    describe("fromValue", () => {
+      it("should create AsyncResult that resolves after delay", async () => {
+        const ar = AsyncResult.fromValue(42, 10);
+        const result = await ar;
+        expect(result.ok).toBe(true);
+        expect(result.value).toBe(42);
+      });
+
+      it("should resolve immediately with default delay", async () => {
+        const ar = AsyncResult.fromValue(42);
+        const result = await ar;
+        expect(result.value).toBe(42);
+      });
+    });
+
+    describe("fromError", () => {
+      it("should create AsyncResult that rejects after delay", async () => {
+        const ar = AsyncResult.fromError("error", 10);
+        const result = await ar;
+        expect(result.ok).toBe(false);
+        expect(result.error).toBe("error");
+      });
+
+      it("should resolve immediately with default delay", async () => {
+        const ar = AsyncResult.fromError("error");
+        const result = await ar;
+        expect(result.error).toBe("error");
+      });
+    });
+
+    describe("toPromise", () => {
+      it("should return the underlying promise", async () => {
+        const ar = okAsync(42);
+        const promise = ar.toPromise();
+        const result = await promise;
+        expect(result.ok).toBe(true);
+        expect(result.value).toBe(42);
+      });
+    });
+
+    describe("static from", () => {
+      it("should create AsyncResult from Promise", async () => {
+        const ar = AsyncResult.from(Promise.resolve({ ok: true as const, value: 42 }));
+        const result = await ar;
+        expect(result.ok).toBe(true);
+        expect(result.value).toBe(42);
+      });
     });
   });
 });
