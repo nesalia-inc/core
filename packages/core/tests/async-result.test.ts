@@ -129,6 +129,12 @@ describe("AsyncResult", () => {
       const result = await map(errAsync("error"), (x) => x * 2);
       expect(isErr(result)).toBe(true);
     });
+
+    it("should use sync branch for function with no parameters", async () => {
+      const result = await map(okAsync(2), () => 42);
+      expect(isOk(result)).toBe(true);
+      expect((result as { value: number }).value).toBe(42);
+    });
   });
 
   describe("flatMap", () => {
@@ -789,6 +795,30 @@ describe("AsyncResult", () => {
         const result = await ar;
         expect(result.ok).toBe(true);
         expect(result.value).toBe(42);
+      });
+    });
+
+    describe("static fromPromise", () => {
+      it("should create AsyncResult from resolving Promise", async () => {
+        const ar = AsyncResult.fromPromise(Promise.resolve(42));
+        const result = await ar;
+        expect(result.ok).toBe(true);
+        expect(result.value).toBe(42);
+      });
+
+      it("should create AsyncResult from rejected Promise", async () => {
+        const ar = AsyncResult.fromPromise(Promise.reject(new Error("test")));
+        const result = await ar;
+        expect(result.ok).toBe(false);
+        expect(result.error).toBeInstanceOf(Error);
+      });
+
+      it("should convert non-Error rejection to Error", async () => {
+        const ar = AsyncResult.fromPromise(Promise.reject("string error"));
+        const result = await ar;
+        expect(result.ok).toBe(false);
+        expect(result.error).toBeInstanceOf(Error);
+        expect(result.error.message).toBe("string error");
       });
     });
   });
