@@ -299,6 +299,51 @@ describe("AsyncResult", () => {
         const doubled = await ar.then((r) => ({ ok: true as const, value: r.value * 2 }));
         expect(doubled.value).toBe(42);
       });
+
+      it("should throw when accessing value synchronously", () => {
+        const ar = new AsyncResult(Promise.resolve({ ok: true as const, value: 42 }));
+        expect(() => ar.value).toThrow();
+      });
+
+      it("should throw when accessing error synchronously", () => {
+        const ar = new AsyncResult(Promise.resolve({ ok: true as const, value: 42 }));
+        expect(() => ar.error).toThrow();
+      });
+
+      it("should call onrejected handler in then", async () => {
+        const ar = new AsyncResult(Promise.reject<string>("error"));
+        const result = await ar.then(
+          (v) => v,
+          (e) => ({ ok: true as const, value: `caught: ${e}` })
+        );
+        expect(result.ok).toBe(true);
+        expect(result.value).toBe("caught: error");
+      });
+
+      it("should call onrejected and return value in then", async () => {
+        const ar = new AsyncResult(Promise.reject<string>("error"));
+        const result = await ar.then(undefined, (e) => ({ ok: true as const, value: `caught: ${e}` }));
+        expect(result.ok).toBe(true);
+      });
+
+      it("should return undefined for ok getter before resolution", () => {
+        const ar = new AsyncResult(Promise.resolve({ ok: true as const, value: 42 }));
+        // Access ok getter - returns undefined before promise resolves
+        expect(ar.ok).toBe(undefined);
+      });
+
+      it("should work with then without onfulfilled (pass-through)", async () => {
+        const ar = new AsyncResult(Promise.resolve({ ok: true as const, value: 42 }));
+        const result = await ar.then();
+        expect(result.ok).toBe(true);
+        expect(result.value).toBe(42);
+      });
+
+      it("should work with then without onrejected (pass-through error)", async () => {
+        const ar = new AsyncResult(Promise.reject<string>("error"));
+        const result = await ar.then();
+        expect(result).toBe("error");
+      });
     });
 
     describe("map", () => {
@@ -355,6 +400,13 @@ describe("AsyncResult", () => {
         const result = await ar;
         expect(result.ok).toBe(true);
         expect(result.value).toBe(20);
+      });
+
+      it("should pass through error when Err in flatMapAsync", async () => {
+        const ar = errAsync<string, string>("error").flatMapAsync(async (x) => ({ ok: true as const, value: x * 2 }));
+        const result = await ar;
+        expect(result.ok).toBe(false);
+        expect(result.error).toBe("error");
       });
     });
 
@@ -447,6 +499,11 @@ describe("AsyncResult", () => {
         const caught = await ar.catch((e) => ({ ok: true as const, value: `caught: ${e}` }));
         expect(caught.ok).toBe(true);
         expect(caught.value).toBe("caught: error");
+      });
+
+      it("should rethrow when catch called without handler", async () => {
+        const ar = new AsyncResult(Promise.reject<string>("error"));
+        await expect(ar.catch()).rejects.toBe("error");
       });
     });
 
