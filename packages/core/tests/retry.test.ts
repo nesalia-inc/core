@@ -129,7 +129,6 @@ describe("Retry", () => {
 
     it("should cap delay with maxDelay option", () => {
       // Use built-in exponential backoff and capture the actual delay used
-      const actualDelays: number[] = [];
 
       try {
         retry(
@@ -141,7 +140,7 @@ describe("Retry", () => {
             delay: 1000,
             backoff: "exponential",
             maxDelay: 500,
-            onRetry: (_error, attempt) => {
+            onRetry: (_error, _attempt) => {
               // We can't easily capture the delay here since it's already applied
               // Instead, verify the function doesn't hang forever (delay is capped)
             },
