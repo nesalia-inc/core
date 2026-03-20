@@ -54,6 +54,11 @@ describe("Sleep", () => {
         expect(result).toBeLessThanOrEqual(1100);
       }
     });
+
+    it("should return delay unchanged when jitter is negative (treated as no jitter)", () => {
+      expect(addJitter(1000, -0.5)).toBe(1000);
+      expect(addJitter(1000, -1)).toBe(1000);
+    });
   });
 
   describe("sleep with jitter", () => {
@@ -178,6 +183,25 @@ describe("Sleep", () => {
       controller.abort();
 
       await expect(sleepWithSignal(1000, controller.signal)).rejects.toThrow("Sleep aborted");
+    });
+
+    it("should apply jitter when options object is provided", async () => {
+      const start = Date.now();
+      await sleepWithSignal(50, { jitter: true });
+      const elapsed = Date.now() - start;
+      // With full jitter (0.5-1.5), delay should be roughly 25-75ms
+      expect(elapsed).toBeGreaterThanOrEqual(20);
+      expect(elapsed).toBeLessThan(100);
+    });
+
+    it("should work with signal and jitter together", async () => {
+      const controller = new AbortController();
+      const sleepPromise = sleepWithSignal(50, { jitter: true, signal: controller.signal });
+
+      // Abort after a short delay
+      setTimeout(() => controller.abort(), 20);
+
+      await expect(sleepPromise).rejects.toThrow("Sleep aborted");
     });
   });
 });

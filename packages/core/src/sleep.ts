@@ -43,6 +43,11 @@ export interface TimeoutOptions {
 export const addJitter = (delay: number, jitter?: boolean | number): number => {
   if (jitter === undefined || jitter === false) return delay;
 
+  // Validate jitter value - treat negative as 0 (no jitter)
+  if (jitter < 0) {
+    return delay;
+  }
+
   // true = full jitter (0.5 to 1.5 range)
   // number = specific variance (e.g., 0.2 = 0.8 to 1.2 range)
   const variance = jitter === true ? 0.5 : jitter;
