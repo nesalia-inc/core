@@ -3,6 +3,17 @@
  */
 
 /**
+ * Sleep options
+ */
+export interface SleepOptions {
+  /** Add jitter to prevent thundering herd
+   * - true: full jitter (0.5 to 1.5 range)
+   * - number: specific variance (e.g., 0.2 = 0.8 to 1.2 range)
+   */
+  jitter?: boolean | number;
+}
+
+/**
  * Timeout error type
  */
 export type TimeoutError = Error & {
@@ -39,12 +50,37 @@ export interface TimeoutResult<T> {
 }
 
 /**
+ * Adds jitter to delay
+ * @param delay - Base delay in milliseconds
+ * @param jitter - Jitter option (true = full jitter, number = specific variance)
+ * @returns Delayed value with jitter applied
+ */
+export const addJitter = (delay: number, jitter?: boolean | number): number => {
+  if (jitter === undefined || jitter === false) return delay;
+
+  // Validate jitter value - treat negative as 0 (no jitter)
+  if (typeof jitter === "number" && jitter < 0) {
+    return delay;
+  }
+
+  // true = full jitter (0.5 to 1.5 range)
+  // number = specific variance (e.g., 0.2 = 0.8 to 1.2 range)
+  const variance = jitter === true ? 0.5 : jitter;
+  const min = delay * (1 - variance);
+  const max = delay * (1 + variance);
+  return min + Math.random() * (max - min);
+};
+
+/**
  * Creates a promise that resolves after the specified delay
  * @param ms - The delay in milliseconds
+ * @param options - Sleep options
  * @returns Promise<void>
  */
-export const sleep = (ms: number): Promise<void> =>
-  new Promise((resolve) => setTimeout(resolve, ms));
+export const sleep = (ms: number, options?: SleepOptions): Promise<void> => {
+  const actualDelay = addJitter(ms, options?.jitter);
+  return new Promise((resolve) => setTimeout(resolve, actualDelay));
+};
 
 /**
  * Deferred promise for fine-grained control
@@ -185,12 +221,37 @@ export const withTimeout = <T>(
 /**
  * Sleep with AbortController support
  * @param ms - The delay in milliseconds
- * @param signal - AbortSignal to cancel the sleep
+ * @param signal - AbortSignal to cancel the sleep (legacy signature)
  * @returns Promise<void>
  */
-export const sleepWithSignal = (ms: number, signal?: AbortSignal): Promise<void> =>
-  new Promise((resolve, reject) => {
-    const id = setTimeout(resolve, ms);
+export function sleepWithSignal(ms: number, signal: AbortSignal): Promise<void>;
+/**
+ * Sleep with AbortController support
+ * @param ms - The delay in milliseconds
+ * @param options - Sleep options (signal and jitter)
+ * @returns Promise<void>
+ */
+export function sleepWithSignal(ms: number, options?: SleepOptions & { signal?: AbortSignal }): Promise<void>;
+/**
+ * Sleep with AbortController support - implementation
+ */
+export function sleepWithSignal(ms: number, optionsOrSignal?: SleepOptions & { signal?: AbortSignal } | AbortSignal): Promise<void> {
+  // Handle backward compatibility - if second arg is AbortSignal, treat it as legacy signature
+  let jitter: boolean | number | undefined;
+  let signal: AbortSignal | undefined;
+
+  if (optionsOrSignal instanceof AbortSignal) {
+    signal = optionsOrSignal;
+    jitter = undefined;
+  } else {
+    jitter = optionsOrSignal?.jitter;
+    signal = optionsOrSignal?.signal;
+  }
+
+  const actualDelay = addJitter(ms, jitter);
+
+  return new Promise((resolve, reject) => {
+    const id = setTimeout(resolve, actualDelay);
 
     if (signal) {
       const abortHandler = () => {
@@ -208,3 +269,4 @@ export const sleepWithSignal = (ms: number, signal?: AbortSignal): Promise<void>
       }
     }
   });
+}

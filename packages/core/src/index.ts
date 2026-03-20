@@ -94,8 +94,8 @@ export {
 } from "./async-result.js";
 
 // Sleep
-export { sleep, withTimeout, sleepWithSignal } from "./sleep.js";
-export type { TimeoutOptions, TimeoutError, TimeoutCleanup, TimeoutResult } from "./sleep.js";
+export { sleep, withTimeout, sleepWithSignal, addJitter } from "./sleep.js";
+export type { TimeoutOptions, TimeoutError, SleepOptions, TimeoutCleanup, TimeoutResult } from "./sleep.js";
 
 // Yield
 export { yieldControl as yield, immediate } from "./yield.js";

@@ -2,7 +2,7 @@
  * Retry utilities - resilience patterns for handling transient failures
  */
 
-import { sleep, sleepWithSignal } from "./sleep.js";
+import { sleep, sleepWithSignal, addJitter } from "./sleep.js";
 
 /**
  * Retry options
@@ -79,15 +79,6 @@ export const handleUnknownBackoff = (backoff: string, delay: number, attempt: nu
       // This branch is only reachable via type assertion in tests
       return delay * Math.pow(2, attempt - 1);
   }
-};
-
-/**
- * Adds jitter to delay
- */
-const addJitter = (delay: number, jitter?: boolean): number => {
-  if (!jitter) return delay;
-  // Random value between 0.5 and 1.5 of the delay
-  return delay * (0.5 + Math.random());
 };
 
 /**
