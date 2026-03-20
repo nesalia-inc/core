@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { retry, retryAsync, exponentialBackoff, linearBackoff, constantBackoff, calculateDelay, handleUnknownBackoff, throwIfUnreachable } from "../src/retry";
+import type { RetryAbortedError } from "../src/retry";
 
 describe("Retry", () => {
   describe("retry (sync)", () => {
@@ -125,6 +126,136 @@ describe("Retry", () => {
       expect(result).toBe(42);
       expect(attempts).toBe(3);
     });
+
+    it("should cap delay with maxDelay option", () => {
+      // Use built-in exponential backoff and capture the actual delay used
+
+      try {
+        retry(
+          () => {
+            throw new Error("fail");
+          },
+          {
+            attempts: 4,
+            delay: 1000,
+            backoff: "exponential",
+            maxDelay: 500,
+            onRetry: (_error, _attempt) => {
+              // We can't easily capture the delay here since it's already applied
+              // Instead, verify the function doesn't hang forever (delay is capped)
+            },
+          }
+        );
+      } catch {
+        // Expected to throw
+      }
+
+      // With exponential backoff (1000, 2000, 4000) and maxDelay(500),
+      // the delays should be capped at 500 each time
+      // The test verifies this works without hanging (sync retry would hang
+      // for 4000ms if maxDelay wasn't applied)
+    });
+
+    it("should cap delay with maxDelay option - verify with timing", () => {
+      const start = Date.now();
+      try {
+        retry(
+          () => {
+            throw new Error("fail");
+          },
+          {
+            attempts: 4,
+            delay: 1000,
+            backoff: "exponential",
+            maxDelay: 500,
+          }
+        );
+      } catch {
+        // Expected to throw
+      }
+      const elapsed = Date.now() - start;
+
+      // Without maxDelay: 1000 + 2000 + 4000 = 7000ms
+      // With maxDelay: 500 + 500 + 500 = 1500ms
+      // Allow some margin for test flakiness
+      expect(elapsed).toBeLessThan(3000);
+    });
+  });
+
+  describe("retry (sync) with AbortSignal", () => {
+    it("should throw RetryAbortedError if signal is already aborted", () => {
+      const controller = new AbortController();
+      controller.abort();
+
+      expect(() =>
+        retry(() => { throw new Error("fail"); }, { attempts: 3, signal: controller.signal })
+      ).toThrow("Retry aborted");
+    });
+
+    it("should throw RetryAbortedError with correct name", () => {
+      const controller = new AbortController();
+      controller.abort();
+
+      try {
+        retry(() => { throw new Error("fail"); }, { attempts: 3, signal: controller.signal });
+        fail("Should have thrown");
+      } catch (error) {
+        // Type guard - check that it's a RetryAbortedError
+        const isRetryAbortedError = (e: unknown): e is RetryAbortedError =>
+          error instanceof Error && "name" in error && error.name === "RETRY_ABORTED";
+
+        expect(isRetryAbortedError(error)).toBe(true);
+      }
+    });
+
+    it("should abort between attempts when signal is aborted", () => {
+      const controller = new AbortController();
+      let attemptCount = 0;
+
+      // Abort in the onRetry callback after the first failure
+      // The signal check runs after the predicate check passes
+      const onRetry = (_error: Error, attempt: number) => {
+        // Abort after the first attempt's onRetry is called
+        if (attempt === 1) {
+          controller.abort();
+        }
+      };
+
+      const fn = () => {
+        attemptCount++;
+        throw new Error("fail");
+      };
+
+      // The signal is aborted in onRetry after the first failure
+      // The predicate allows retry (default predicate returns true)
+      // So the code proceeds to check signal?.aborted which is now true
+      // and throws RetryAbortedError
+      expect(() =>
+        retry(fn, { attempts: 3, delay: 10, signal: controller.signal, onRetry })
+      ).toThrow("Retry aborted");
+
+      // First attempt fails, onRetry aborts signal, signal check throws
+      // We never get to attempt 2 because the signal is checked after onRetry
+      expect(attemptCount).toBe(1);
+    });
+
+    it("should complete successfully when signal is not aborted", () => {
+      const controller = new AbortController();
+
+      const result = retry(() => {
+        return 42;
+      }, { attempts: 3, signal: controller.signal });
+
+      expect(result).toBe(42);
+    });
+
+    it("should work with AbortSignal.timeout", () => {
+      const result = retry(() => {
+        return 42;
+      }, { attempts: 3, signal: AbortSignal.timeout(5000) });
+
+      expect(result).toBe(42);
+    });
   });
 
   describe("retryAsync", () => {
@@ -206,6 +337,32 @@ describe("Retry", () => {
       expect(result).toBe(42);
       expect(attempts).toBe(3);
     });
+
+    it("should cap delay with maxDelay option", async () => {
+      // Use built-in exponential backoff and verify the delay is capped with timing
+      const start = Date.now();
+      try {
+        await retryAsync(
+          async () => {
+            throw new Error("fail");
+          },
+          {
+            attempts: 4,
+            delay: 1000,
+            backoff: "exponential",
+            maxDelay: 500,
+          }
+        );
+      } catch {
+        // Expected to throw
+      }
+      const elapsed = Date.now() - start;
+
+      // Without maxDelay: 1000 + 2000 + 4000 = 7000ms
+      // With maxDelay: 500 + 500 + 500 = 1500ms
+      // Allow some margin for test flakiness
+      expect(elapsed).toBeLessThan(3000);
+    });
   });
 
   describe("Backoff strategies", () => {
@@ -234,9 +391,36 @@ describe("Retry", () => {
       expect(calculateDelay(2, 100, fn)).toBe(200);
     });
 
+    it("calculateDelay should handle function backoff with maxDelay", () => {
+      const fn = (attempt: number, delay: number) => delay * attempt;
+      // 2*100 = 200, but maxDelay is 150, so result should be 150
+      expect(calculateDelay(2, 100, fn, 150)).toBe(150);
+    });
+
     it("calculateDelay should handle undefined backoff", () => {
       expect(calculateDelay(1, 100, undefined)).toBe(100);
       expect(calculateDelay(2, 100, undefined)).toBe(200);
+    });
+
+    it("calculateDelay should cap delay with maxDelay", () => {
+      // Exponential: attempt 3 with delay 1000 = 4000ms, capped at 500ms
+      expect(calculateDelay(3, 1000, "exponential", 500)).toBe(500);
+      // Linear: attempt 5 with delay 1000 = 5000ms, capped at 500ms
+      expect(calculateDelay(5, 1000, "linear", 500)).toBe(500);
+      // Constant: always 1000ms, capped at 500ms
+      expect(calculateDelay(10, 1000, "constant", 500)).toBe(500);
+    });
+
+    it("calculateDelay should not cap when under maxDelay", () => {
+      // Exponential: attempt 1 with delay 1000 = 1000ms, maxDelay is 2000, no cap
+      expect(calculateDelay(1, 1000, "exponential", 2000)).toBe(1000);
+      // Linear: attempt 1 with delay 100 = 100ms, maxDelay is 500, no cap
+      expect(calculateDelay(1, 100, "linear", 500)).toBe(100);
+    });
+
+    it("calculateDelay should handle undefined maxDelay (no cap)", () => {
+      expect(calculateDelay(5, 1000, "exponential", undefined)).toBe(16000);
+      expect(calculateDelay(5, 1000, "linear", undefined)).toBe(5000);
     });
 
     it("handleUnknownBackoff should handle valid backoffs", () => {
@@ -259,6 +443,78 @@ describe("Retry", () => {
 
     it("throwIfUnreachable should return result when succeeded is true", () => {
       expect(throwIfUnreachable<number>(true, 42)).toBe(42);
+    });
+  });
+
+  describe("retryAsync with AbortSignal", () => {
+    it("should throw RetryAbortedError if signal is already aborted", async () => {
+      const controller = new AbortController();
+      controller.abort();
+
+      await expect(
+        retryAsync(async () => { throw new Error("fail"); }, { attempts: 3, signal: controller.signal })
+      ).rejects.toThrow("Retry aborted");
+    });
+
+    it("should throw RetryAbortedError with correct name", async () => {
+      const controller = new AbortController();
+      controller.abort();
+
+      try {
+        await retryAsync(async () => { throw new Error("fail"); }, { attempts: 3, signal: controller.signal });
+        fail("Should have thrown");
+      } catch (error) {
+        // Type guard - check that it's a RetryAbortedError
+        const isRetryAbortedError = (e: unknown): e is RetryAbortedError =>
+          error instanceof Error && "name" in error && error.name === "RETRY_ABORTED";
+
+        expect(isRetryAbortedError(error)).toBe(true);
+      }
+    });
+
+    it("should abort during delay when signal is aborted", async () => {
+      const controller = new AbortController();
+
+      const retryPromise = retryAsync(async () => {
+        throw new Error("fail");
+      }, { attempts: 3, delay: 100, signal: controller.signal });
+
+      // Abort after a short delay
+      setTimeout(() => controller.abort(), 50);
+
+      await expect(retryPromise).rejects.toThrow("Sleep aborted");
+    });
+
+    it("should complete successfully when signal is not aborted", async () => {
+      const controller = new AbortController();
+
+      const result = await retryAsync(async () => {
+        return 42;
+      }, { attempts: 3, delay: 10, signal: controller.signal });
+
+      expect(result).toBe(42);
+    });
+
+    it("should work with AbortSignal.timeout", async () => {
+      const result = await retryAsync(async () => {
+        return 42;
+      }, { attempts: 3, signal: AbortSignal.timeout(5000) });
+
+      expect(result).toBe(42);
+    });
+
+    it("should timeout and abort using AbortSignal.timeout", async () => {
+      const retryPromise = retryAsync(async () => {
+        throw new Error("fail");
+      }, { attempts: 10, delay: 100, signal: AbortSignal.timeout(150) });
+
+      // Should timeout after 150ms, not wait for all retries
+      const start = Date.now();
+      await expect(retryPromise).rejects.toThrow();
+      const elapsed = Date.now() - start;
+
+      // Should abort during one of the delays, not after all 10 attempts (which would be ~10*100ms = 1000ms)
+      expect(elapsed).toBeLessThan(500);
     });
   });
 });

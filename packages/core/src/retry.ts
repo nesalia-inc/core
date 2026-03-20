@@ -2,7 +2,7 @@
  * Retry utilities - resilience patterns for handling transient failures
  */
 
-import { sleep } from "./sleep.js";
+import { sleep, sleepWithSignal, addJitter } from "./sleep.js";
 
 /**
  * Retry options
@@ -14,37 +14,51 @@ export interface RetryOptions {
   delay?: number;
   /** Backoff strategy */
   backoff?: "exponential" | "linear" | "constant" | ((attempt: number, delay: number) => number);
+  /** Maximum delay in ms (caps the delay regardless of backoff) */
+  maxDelay?: number;
   /** Predicate to determine if error is retryable */
   predicate?: (error: Error) => boolean;
   /** Callback on each retry */
   onRetry?: (error: Error, attempt: number) => void;
   /** Add jitter to prevent thundering herd (default: false) */
   jitter?: boolean;
+  /** AbortSignal to cancel retries */
+  signal?: AbortSignal;
 }
 
 /**
  * Calculates the delay for a given attempt
  */
-export const calculateDelay = (attempt: number, delay: number, backoff: RetryOptions["backoff"]): number => {
+export const calculateDelay = (attempt: number, delay: number, backoff: RetryOptions["backoff"], maxDelay?: number): number => {
+  let calculatedDelay: number;
+
   if (typeof backoff === "function") {
-    return backoff(attempt, delay);
+    calculatedDelay = backoff(attempt, delay);
+  } else if (backoff === undefined) {
+    calculatedDelay = delay * Math.pow(2, attempt - 1);
+  } else {
+    switch (backoff) {
+      case "exponential":
+        calculatedDelay = delay * Math.pow(2, attempt - 1);
+        break;
+      case "linear":
+        calculatedDelay = delay * attempt;
+        break;
+      case "constant":
+        calculatedDelay = delay;
+        break;
+      default:
+        // Exhaustive check - should be unreachable if backoff is correctly typed
+        calculatedDelay = handleUnknownBackoff(backoff, delay, attempt);
+    }
   }
 
-  if (backoff === undefined) {
-    return delay * Math.pow(2, attempt - 1);
+  // Apply maxDelay cap if specified
+  if (maxDelay !== undefined) {
+    return Math.min(calculatedDelay, maxDelay);
   }
 
-  switch (backoff) {
-    case "exponential":
-      return delay * Math.pow(2, attempt - 1);
-    case "linear":
-      return delay * attempt;
-    case "constant":
-      return delay;
-    default:
-      // Exhaustive check - should be unreachable if backoff is correctly typed
-      return handleUnknownBackoff(backoff, delay, attempt);
-  }
+  return calculatedDelay;
 };
 
 /**
@@ -68,15 +82,6 @@ export const handleUnknownBackoff = (backoff: string, delay: number, attempt: nu
 };
 
 /**
- * Adds jitter to delay
- */
-const addJitter = (delay: number, jitter?: boolean): number => {
-  if (!jitter) return delay;
-  // Random value between 0.5 and 1.5 of the delay
-  return delay * (0.5 + Math.random());
-};
-
-/**
  * Default predicate - retries on all errors
  */
 const defaultPredicate = () => true;
@@ -92,10 +97,19 @@ export const retry = <T>(fn: () => T, options: RetryOptions = {}): T => {
     attempts = 3,
     delay = 1000,
     backoff = "exponential",
+    maxDelay,
     predicate = defaultPredicate,
     onRetry,
     jitter = false,
+    signal,
   } = options;
+
+  // Check if already aborted before starting
+  if (signal?.aborted) {
+    const error = new Error("Retry aborted") as RetryAbortedError;
+    error.name = "RETRY_ABORTED";
+    throw error;
+  }
 
   let lastError: Error | undefined = undefined;
   let succeeded = false;
@@ -119,9 +133,16 @@ export const retry = <T>(fn: () => T, options: RetryOptions = {}): T => {
         throw lastError;
       }
 
+      // Check if signal was aborted between attempts
+      if (signal?.aborted) {
+        const error = new Error("Retry aborted") as RetryAbortedError;
+        error.name = "RETRY_ABORTED";
+        throw error;
+      }
+
       // Calculate and apply delay
       if (attempt < attempts) {
-        const delayMs = addJitter(calculateDelay(attempt, delay, backoff), jitter);
+        const delayMs = addJitter(calculateDelay(attempt, delay, backoff, maxDelay), jitter);
         // Synchronous blocking sleep (use retryAsync for non-blocking)
         const start = Date.now();
         while (Date.now() - start < delayMs) {
@@ -159,10 +180,19 @@ export const retryAsync = async <T>(fn: () => Promise<T>, options: RetryOptions 
     attempts = 3,
     delay = 1000,
     backoff = "exponential",
+    maxDelay,
     predicate = defaultPredicate,
     onRetry,
     jitter = false,
+    signal,
   } = options;
+
+  // Check if already aborted before starting
+  if (signal?.aborted) {
+    const error = new Error("Retry aborted") as RetryAbortedError;
+    error.name = "RETRY_ABORTED";
+    throw error;
+  }
 
   let lastError: Error | undefined = undefined;
   let succeeded = false;
@@ -188,8 +218,13 @@ export const retryAsync = async <T>(fn: () => Promise<T>, options: RetryOptions 
 
       // Calculate and apply delay
       if (attempt < attempts) {
-        const delayMs = addJitter(calculateDelay(attempt, delay, backoff), jitter);
-        await sleep(delayMs);
+        const delayMs = addJitter(calculateDelay(attempt, delay, backoff, maxDelay), jitter);
+        // Use sleepWithSignal if signal is provided, otherwise use regular sleep
+        if (signal) {
+          await sleepWithSignal(delayMs, signal);
+        } else {
+          await sleep(delayMs);
+        }
       }
     }
 
@@ -199,6 +234,13 @@ export const retryAsync = async <T>(fn: () => Promise<T>, options: RetryOptions 
   // This should be unreachable - all paths either return or throw
   // But we keep it for safety and to satisfy TypeScript
   return throwIfUnreachable(succeeded, result!, lastError);
+};
+
+/**
+ * Retry aborted error type
+ */
+export type RetryAbortedError = Error & {
+  name: "RETRY_ABORTED";
 };
 
 /**

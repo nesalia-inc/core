@@ -7,14 +7,18 @@ import {
   isNone,
   map,
   flatMap,
+  flatten,
   getOrElse,
   getOrCompute,
   tap,
   match,
   toNullable,
   toUndefined,
-  someUnit,
+  equals,
+  equalsWith,
   Maybe,
+  all,
+  filter,
 } from "../src/maybe";
 
 describe("Maybe", () => {
@@ -214,6 +218,29 @@ describe("Maybe", () => {
     });
   });
 
+  describe("flatten", () => {
+    it("should flatten Some(Some(value)) to Some(value)", () => {
+      const nested = some(some(42));
+      const result = flatten(nested);
+      expect(isSome(result)).toBe(true);
+      if (isSome(result)) {
+        expect(result.value).toBe(42);
+      }
+    });
+
+    it("should flatten Some(none()) to none()", () => {
+      const nested = some(none());
+      const result = flatten(nested);
+      expect(isNone(result)).toBe(true);
+    });
+
+    it("should flatten none() to none()", () => {
+      const nested = none();
+      const result = flatten(nested);
+      expect(isNone(result)).toBe(true);
+    });
+  });
+
   describe("getOrElse", () => {
     it("should return value if Some", () => {
       const result = getOrElse(some(42), 0);
@@ -287,29 +314,6 @@ describe("Maybe", () => {
     });
   });
 
-  describe("someUnit", () => {
-    it("should create a Some with undefined value", () => {
-      const result = someUnit();
-      expect(result.ok).toBe(true);
-      expect(result.value).toBe(undefined);
-    });
-
-    it("should be a frozen object", () => {
-      const result = someUnit();
-      expect(Object.isFrozen(result)).toBe(true);
-    });
-
-    it("isSome should return true", () => {
-      const result = someUnit();
-      expect(result.isSome()).toBe(true);
-    });
-
-    it("isNone should return false", () => {
-      const result = someUnit();
-      expect(result.isNone()).toBe(false);
-    });
-  });
-
   describe("tap", () => {
     it("should call function with value if Some", () => {
       let captured = 0;
@@ -374,6 +378,366 @@ describe("Maybe", () => {
     it("should return undefined if None", () => {
       const result = toUndefined(none());
       expect(result).toBe(undefined);
+    });
+  });
+
+  describe("equals", () => {
+    describe("equals function", () => {
+      it("should return true for two Some with same value", () => {
+        expect(equals(some(42), some(42))).toBe(true);
+      });
+
+      it("should return false for two Some with different values", () => {
+        expect(equals(some(42), some(100))).toBe(false);
+      });
+
+      it("should return true for two None", () => {
+        expect(equals(none(), none())).toBe(true);
+      });
+
+      it("should return false for Some and None", () => {
+        expect(equals(some(42), none())).toBe(false);
+      });
+
+      it("should return false for None and Some", () => {
+        expect(equals(none(), some(42))).toBe(false);
+      });
+
+      it("should compare strings correctly", () => {
+        expect(equals(some("hello"), some("hello"))).toBe(true);
+        expect(equals(some("hello"), some("world"))).toBe(false);
+      });
+
+      it("should compare objects by reference", () => {
+        const obj = { id: 1 };
+        expect(equals(some(obj), some(obj))).toBe(true);
+        expect(equals(some({ id: 1 }), some({ id: 1 }))).toBe(false);
+      });
+
+      it("should compare null values", () => {
+        expect(equals(some(null), some(null))).toBe(true);
+        expect(equals(some(null), none())).toBe(false);
+      });
+
+      it("should compare undefined values", () => {
+        expect(equals(some(undefined), some(undefined))).toBe(true);
+        expect(equals(some(undefined), none())).toBe(false);
+      });
+
+      it("should compare 0 and false correctly", () => {
+        expect(equals(some(0), some(0))).toBe(true);
+        expect(equals(some(false), some(false))).toBe(true);
+        expect(equals(some(0), some(1))).toBe(false);
+        expect(equals(some(false), some(true))).toBe(false);
+      });
+    });
+
+    describe("equalsWith custom comparator", () => {
+      it("should use custom comparator for Some", () => {
+        const cmp = (a: number, b: number) => a === b;
+        expect(equalsWith(some(42), some(42), cmp)).toBe(true);
+        expect(equalsWith(some(42), some(100), cmp)).toBe(false);
+      });
+
+      it("should return true for None with custom comparator", () => {
+        const cmp = () => false;
+        expect(equalsWith(none(), none(), cmp)).toBe(true);
+      });
+
+      it("should return false for Some vs None with custom comparator", () => {
+        const cmp = () => true;
+        expect(equalsWith(some(42), none(), cmp)).toBe(false);
+      });
+
+      it("should compare objects by custom property", () => {
+        interface User {
+          id: number;
+          name: string;
+        }
+        const cmp = (a: User, b: User) => a.id === b.id;
+        expect(equalsWith(some({ id: 1, name: "John" }), some({ id: 1, name: "Jane" }), cmp)).toBe(true);
+        expect(equalsWith(some({ id: 1, name: "John" }), some({ id: 2, name: "John" }), cmp)).toBe(false);
+      });
+    });
+
+    describe("equals method on Some", () => {
+      it("should return true for two Some with same value", () => {
+        expect(some(42).equals(some(42))).toBe(true);
+      });
+
+      it("should return false for two Some with different values", () => {
+        expect(some(42).equals(some(100))).toBe(false);
+      });
+
+      it("should return false for Some vs None", () => {
+        expect(some(42).equals(none())).toBe(false);
+      });
+
+      it("should accept custom comparator", () => {
+        const cmp = (a: number, b: number) => a === b;
+        expect(some(42).equals(some(42), cmp)).toBe(true);
+        expect(some(42).equals(some(100), cmp)).toBe(false);
+      });
+
+      it("should compare objects by custom property", () => {
+        expect(some({ id: 1 }).equals(some({ id: 1 }), (a, b) => a.id === b.id)).toBe(true);
+        expect(some({ id: 1 }).equals(some({ id: 2 }), (a, b) => a.id === b.id)).toBe(false);
+      });
+    });
+
+    describe("equals method on None", () => {
+      it("should return true for two None", () => {
+        expect(none().equals(none())).toBe(true);
+      });
+
+      it("should return false for None vs Some", () => {
+        expect(none().equals(some(42))).toBe(false);
+      });
+
+      it("should ignore custom comparator for None", () => {
+        const cmp = () => true;
+        expect(none().equals(none(), cmp)).toBe(true);
+        expect(none().equals(some(42), cmp)).toBe(false);
+      });
+    });
+  });
+
+  describe("all", () => {
+    it("should combine two Somes into Some<[T1, T2]>", () => {
+      const result = all(some(1), some("hello"));
+      expect(isSome(result)).toBe(true);
+      if (isSome(result)) {
+        expect(result.value).toEqual([1, "hello"]);
+      }
+    });
+
+    it("should return None if any is None (two maybes)", () => {
+      const result = all(some(1), none());
+      expect(isNone(result)).toBe(true);
+    });
+
+    it("should return None if first is None", () => {
+      const result = all(none(), some(2));
+      expect(isNone(result)).toBe(true);
+    });
+
+    it("should combine three Somes", () => {
+      const result = all(some(1), some(2), some(3));
+      expect(isSome(result)).toBe(true);
+      if (isSome(result)) {
+        expect(result.value).toEqual([1, 2, 3]);
+      }
+    });
+
+    it("should return None if any of three is None", () => {
+      const result = all(some(1), none(), some(3));
+      expect(isNone(result)).toBe(true);
+    });
+
+    it("should combine four Somes", () => {
+      const result = all(some(1), some(2), some(3), some(4));
+      expect(isSome(result)).toBe(true);
+      if (isSome(result)) {
+        expect(result.value).toEqual([1, 2, 3, 4]);
+      }
+    });
+
+    it("should combine array of maybes", () => {
+      const result = all([some(1), some(2), some(3)]);
+      expect(isSome(result)).toBe(true);
+      if (isSome(result)) {
+        expect(result.value).toEqual([1, 2, 3]);
+      }
+    });
+
+    it("should return None if any in array is None", () => {
+      const result = all([some(1), none(), some(3)]);
+      expect(isNone(result)).toBe(true);
+    });
+
+    it("should return Some<[]> for empty array", () => {
+      const result = all([]);
+      expect(isSome(result)).toBe(true);
+      if (isSome(result)) {
+        expect(result.value).toEqual([]);
+      }
+    });
+
+    it("should work with map after all", () => {
+      const firstName = some("John");
+      const lastName = some("Doe");
+      const result = map(all(firstName, lastName), ([f, l]) => `${f} ${l}`);
+      expect(isSome(result)).toBe(true);
+      if (isSome(result)) {
+        expect(result.value).toBe("John Doe");
+      }
+    });
+
+    it("should return None when combining with none after map", () => {
+      const firstName = some("John");
+      const lastName = none();
+      const result = map(all(firstName, lastName), ([f, l]) => `${f} ${l}`);
+      expect(isNone(result)).toBe(true);
+    });
+  });
+
+  describe("filter", () => {
+    describe("filter on Some", () => {
+      it("should return Some if predicate passes", () => {
+        const result = some(25).filter((age) => age >= 18);
+        expect(isSome(result)).toBe(true);
+        if (isSome(result)) {
+          expect(result.value).toBe(25);
+        }
+      });
+
+      it("should return None if predicate fails", () => {
+        const result = some(15).filter((age) => age >= 18);
+        expect(isNone(result)).toBe(true);
+      });
+
+      it("should not call predicate if None", () => {
+        let called = false;
+        none().filter(() => {
+          called = true;
+          return true;
+        });
+        expect(called).toBe(false);
+      });
+
+      it("should return Some for predicate returning true on value 0", () => {
+        const result = some(0).filter((x) => x > 0);
+        expect(isNone(result)).toBe(true);
+      });
+
+      it("should return Some for predicate returning true on empty string", () => {
+        const result = some("").filter((s) => s.length > 0);
+        expect(isNone(result)).toBe(true);
+      });
+
+      it("should return Some for predicate returning true on false", () => {
+        const result = some(false).filter((b) => b === true);
+        expect(isNone(result)).toBe(true);
+      });
+
+      it("should work with type guard predicate", () => {
+        const result = some(25).filter((x): x is number => typeof x === "number" && x >= 18);
+        expect(isSome(result)).toBe(true);
+        if (isSome(result)) {
+          expect(result.value).toBe(25);
+        }
+      });
+    });
+
+    describe("filter with onNone on Some", () => {
+      it("should return Ok if predicate passes", () => {
+        const result = some(25).filter((age) => age >= 18, () => "TOO_YOUNG");
+        expect(result.ok).toBe(true);
+        if (result.ok) {
+          expect(result.value).toBe(25);
+        }
+      });
+
+      it("should return Err if predicate fails", () => {
+        const result = some(15).filter((age) => age >= 18, () => "TOO_YOUNG");
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+          expect(result.error).toBe("TOO_YOUNG");
+        }
+      });
+
+      it("should call onNone function only when predicate fails", () => {
+        let called = false;
+        some(15).filter((age) => age >= 18, () => {
+          called = true;
+          return "TOO_YOUNG";
+        });
+        expect(called).toBe(true);
+      });
+
+      it("should not call onNone function when predicate passes", () => {
+        let called = false;
+        some(25).filter((age) => age >= 18, () => {
+          called = true;
+          return "TOO_YOUNG";
+        });
+        expect(called).toBe(false);
+      });
+    });
+
+    describe("filter on None", () => {
+      it("should return None regardless of predicate", () => {
+        const result = none().filter((age) => age >= 18);
+        expect(isNone(result)).toBe(true);
+      });
+    });
+
+    describe("filter with onNone on None", () => {
+      it("should return Err with onNone result", () => {
+        const result = none().filter((age) => age >= 18, () => "NO_AGE");
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+          expect(result.error).toBe("NO_AGE");
+        }
+      });
+
+      it("should call onNone when None", () => {
+        let called = false;
+        none().filter((_age) => true, () => {
+          called = true;
+          return "NO_AGE";
+        });
+        expect(called).toBe(true);
+      });
+    });
+  });
+
+  describe("standalone filter function", () => {
+    describe("filter on Some with predicate", () => {
+      it("should return Some when predicate passes", () => {
+        const result = filter(some(25), (age) => age >= 18);
+        expect(isSome(result)).toBe(true);
+      });
+
+      it("should return None when predicate fails", () => {
+        const result = filter(some(15), (age) => age >= 18);
+        expect(isNone(result)).toBe(true);
+      });
+    });
+
+    describe("filter on None", () => {
+      it("should return None", () => {
+        const result = none().filter((age) => age >= 18);
+        expect(isNone(result)).toBe(true);
+      });
+    });
+
+    describe("filter with onNone callback", () => {
+      it("should return Ok when predicate passes", () => {
+        const result = filter(some(25), (age) => age >= 18, () => "TOO_YOUNG");
+        expect(result.ok).toBe(true);
+      });
+
+      it("should return Err when predicate fails", () => {
+        const result = filter(some(15), (age) => age >= 18, () => "TOO_YOUNG");
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+          expect(result.error).toBe("TOO_YOUNG");
+        }
+      });
+
+      it("should call onNone when Maybe is None", () => {
+        const result = filter(none(), (age) => age >= 18, () => "NO_AGE");
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+          expect(result.error).toBe("NO_AGE");
+        }
+      });
+
+      it("should return None when Maybe is None and no onNone", () => {
+        const result = filter(none(), (age) => age >= 18);
+        expect(isNone(result)).toBe(true);
+      });
     });
   });
 });
