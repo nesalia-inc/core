@@ -32,6 +32,21 @@ export interface TimeoutOptions {
   name?: string;
   /** Include elapsed time in error data */
   includeElapsed?: boolean;
+  /** AbortController to abort the operation on timeout */
+  abortController?: AbortController;
+}
+
+/**
+ * Cleanup function returned by withTimeout
+ */
+export type TimeoutCleanup = () => void;
+
+/**
+ * Result of withTimeout when using signal injection
+ */
+export interface TimeoutResult<T> {
+  promise: Promise<T>;
+  cleanup: TimeoutCleanup;
 }
 
 /**
@@ -44,7 +59,7 @@ export const addJitter = (delay: number, jitter?: boolean | number): number => {
   if (jitter === undefined || jitter === false) return delay;
 
   // Validate jitter value - treat negative as 0 (no jitter)
-  if (jitter < 0) {
+  if (typeof jitter === "number" && jitter < 0) {
     return delay;
   }
 
@@ -68,23 +83,58 @@ export const sleep = (ms: number, options?: SleepOptions): Promise<void> => {
 };
 
 /**
+ * Deferred promise for fine-grained control
+ */
+const createDeferredPromise = <T>(): {
+  promise: Promise<T>;
+  resolve: (value: T | PromiseLike<T>) => void;
+  reject: (reason?: unknown) => void;
+} => {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+};
+
+/**
  * Adds a timeout to a promise or function
  * @param promise - The promise or function to timeout
  * @param ms - Timeout in milliseconds
  * @param options - Timeout options
- * @returns The promise result or throws TimeoutError on timeout
+ * @returns The promise result or throws TimeoutError on timeout. When using signal injection with a function, returns TimeoutResult with promise and cleanup
  */
 export const withTimeout = <T>(
-  promise: Promise<T> | (() => Promise<T>),
+  promise: Promise<T> | ((signal: AbortSignal) => Promise<T>) | (() => Promise<T>),
   ms: number,
   options: TimeoutOptions = {}
-): Promise<T> => {
-  const { message, name = "TIMEOUT", includeElapsed = true } = options;
+): Promise<T> | TimeoutResult<T> => {
+  const { message, name = "TIMEOUT", includeElapsed = true, abortController } = options;
 
-  // Convert function to promise if needed
-  const p = typeof promise === "function" ? promise() : promise;
+  // Create internal AbortController for timeout handling
+  const controller = abortController ?? new AbortController();
+  const signal = controller.signal;
+
+  // Check if promise is a function
+  const isFunction = typeof promise === "function";
+
+  // Determine if this is signal injection mode (function expects signal parameter)
+  // For backward compatibility: if function takes no parameters, use old behavior
+  const isSignalInjection = isFunction && (promise as (...args: unknown[]) => Promise<T>).length > 0;
+
+  // Convert function to promise
+  const p = isFunction
+    ? isSignalInjection
+      ? (promise as (signal: AbortSignal) => Promise<T>)(signal)
+      : (promise as () => Promise<T>)()
+    : (promise as Promise<T>);
 
   const start = Date.now();
+
+  // Create deferred promise wrapper for signal injection mode
+  const deferred = isSignalInjection ? createDeferredPromise<T>() : null;
 
   // Create timeout promise with proper cleanup
   let timeoutId: ReturnType<typeof setTimeout>;
@@ -92,19 +142,77 @@ export const withTimeout = <T>(
     timeoutId = setTimeout(() => {
       const elapsed = Date.now() - start;
 
-      // Create error with proper typing
-      const error = new Error(message ?? `Timeout after ${elapsed}ms`) as TimeoutError;
-      error.name = name;
-      error.timeout = ms;
-      if (includeElapsed) {
-        error.elapsed = elapsed;
+      // Abort the operation
+      if (!signal.aborted) {
+        controller.abort();
       }
 
-      reject(error);
+      // For signal injection mode, reject the deferred promise
+      if (deferred) {
+        const error = new Error(message ?? `Timeout after ${elapsed}ms`) as TimeoutError;
+        error.name = name;
+        error.timeout = ms;
+        if (includeElapsed) {
+          error.elapsed = elapsed;
+        }
+        deferred.reject(error);
+      } else {
+        // Original behavior: reject timeout promise
+        const error = new Error(message ?? `Timeout after ${elapsed}ms`) as TimeoutError;
+        error.name = name;
+        error.timeout = ms;
+        if (includeElapsed) {
+          error.elapsed = elapsed;
+        }
+        reject(error);
+      }
     }, ms);
   });
 
-  // Race between the promise and timeout
+  // Track if cleanup has been called to prevent double calls
+  let cleanupCalled = false;
+
+  // Define cleanup function
+  const cleanup: TimeoutCleanup = () => {
+    if (cleanupCalled) return;
+    cleanupCalled = true;
+
+    clearTimeout(timeoutId);
+    if (!signal.aborted) {
+      controller.abort();
+    }
+    // For signal injection mode, reject deferred promise on manual cleanup
+    if (deferred && !signal.aborted) {
+      const error = new Error("Aborted") as TimeoutError;
+      error.name = "ABORTED";
+      deferred.reject(error);
+    }
+  };
+
+  // For signal injection mode, return result object with wrapped promise
+  if (isSignalInjection) {
+    // Race between the operation and timeout
+    // Also clean up timeout when the promise resolves/rejects
+    Promise.race([p, timeoutPromise]).then(
+      (value) => {
+        clearTimeout(timeoutId);
+        deferred?.resolve(value);
+      },
+      (error) => {
+        clearTimeout(timeoutId);
+        deferred?.reject(error);
+      }
+    );
+
+    return {
+      promise: deferred!.promise.finally(() => {
+        clearTimeout(timeoutId);
+      }),
+      cleanup,
+    };
+  }
+
+  // Original behavior: return just the promise
   return Promise.race([p, timeoutPromise]).finally(() => {
     clearTimeout(timeoutId);
   });
