@@ -370,10 +370,24 @@ export const errAsync = <E>(error: E): AsyncResult<never, E> => AsyncResult.err(
 /**
  * Creates an AsyncResult from a Promise
  * @param promise - The promise to convert
- * @returns AsyncResult<T, Error>
+ * @param onError - Optional function to transform the error
+ * @returns AsyncResult<T, E> (E defaults to Error when onError is not provided)
  */
-export const fromPromise = <T>(promise: Promise<T>): AsyncResult<T, Error> =>
-  AsyncResult.fromPromise(promise);
+export const fromPromise = <T, E = Error>(
+  promise: Promise<T>,
+  onError?: (error: unknown) => E
+): AsyncResult<T, E> => {
+  // If no onError, use the class method
+  if (!onError) {
+    return AsyncResult.fromPromise(promise) as AsyncResult<T, E>;
+  }
+  // Use from() to preserve custom error types
+  const wrapped = promise.then(
+    (value) => ({ ok: true as const, value }),
+    (error) => ({ ok: false as const, error: onError(error) })
+  );
+  return AsyncResult.from(wrapped) as AsyncResult<T, E>;
+};
 
 /**
  * Type guard to check if AsyncResult is AsyncOk
@@ -396,6 +410,56 @@ export const isErr = <T, E>(result: AsyncResultInner<T, E>): result is AsyncErr<
   result.ok === false;
 
 /**
+ * Maps the value of AsyncResult if AsyncOk (handles both sync and async functions)
+ * @typeParam T - The type of the value
+ * @typeParam E - The type of the error
+ * @typeParam U - The type of the mapped value
+ * @param result - The AsyncResult to map
+ * @param fn - The mapping function (sync or async)
+ * @returns AsyncResult<U, E>
+ */
+/**
+ * Maps the value of AsyncResult if AsyncOk (handles both sync and async functions)
+ * @typeParam T - The type of the value
+ * @typeParam E - The type of the error
+ * @typeParam U - The type of the mapped value
+ * @param result - The AsyncResult to map
+ * @param fn - The mapping function (sync or async)
+ * @returns AsyncResult<U, E>
+ */
+export const map = <T, E, U>(
+  result: AsyncResult<T, E>,
+  fn: (value: T) => U | Promise<U>
+): AsyncResult<U, E> => {
+  // Use class method for sync functions, wrap for async
+  const isAsync = fn.length > 0 || fn.constructor.name === "AsyncFunction";
+  if (!isAsync) {
+    return result.map(fn as (value: T) => U);
+  }
+  // For async functions, use then
+  return result.then(async (r) => {
+    if (!isOk(r)) return r;
+    const mapped = await Promise.resolve(fn(r.value));
+    return { ok: true as const, value: mapped };
+  }) as unknown as AsyncResult<U, E>;
+};
+
+/**
+ * Chains AsyncResults (handles both sync and async functions)
+ * @typeParam T - The type of the value
+ * @typeParam E - The type of the error
+ * @typeParam U - The type of the chained value
+ * @param result - The AsyncResult to chain
+ * @param fn - The chaining function (sync or async)
+ * @returns AsyncResult of the function if AsyncOk, AsyncErr otherwise
+ */
+export const flatMap = <T, E, U>(
+  result: AsyncResult<T, E>,
+  fn: (value: T) => AsyncResult<U, E> | Promise<AsyncResult<U, E>>
+): AsyncResult<U, E> => result.flatMap(fn as (value: T) => AsyncResult<U, E>);
+
+/**
+ * @deprecated Use `map` instead. `map` now handles both sync and async functions automatically.
  * Maps the value of AsyncResult if AsyncOk, returns AsyncErr otherwise
  * @typeParam T - The type of the value
  * @typeParam E - The type of the error
@@ -417,6 +481,7 @@ export const mapAsync = <T, E, U>(
 };
 
 /**
+ * @deprecated Use `flatMap` instead. `flatMap` now handles both sync and async functions automatically.
  * Chains AsyncResults - function if AsyncOk, returns AsyncErr otherwise
  * @typeParam T - The type of the value
  * @typeParam E - The type of the error
@@ -433,34 +498,6 @@ export const flatMapAsync = <T, E, U>(
     return isOk(r) ? fn(r.value) : r;
   }) as unknown as AsyncResult<U, E>;
 };
-
-/**
- * Maps the value of AsyncResult if AsyncOk (sync version)
- * @typeParam T - The type of the value
- * @typeParam E - The type of the error
- * @typeParam U - The type of the mapped value
- * @param result - The AsyncResult to map
- * @param fn - The mapping function
- * @returns AsyncResult<U, E>
- */
-export const map = <T, E, U>(
-  result: AsyncResult<T, E>,
-  fn: (value: T) => U
-): AsyncResult<U, E> => result.map(fn);
-
-/**
- * Chains AsyncResults (sync version)
- * @typeParam T - The type of the value
- * @typeParam E - The type of the error
- * @typeParam U - The type of the chained value
- * @param result - The AsyncResult to chain
- * @param fn - The chaining function
- * @returns AsyncResult of the function if AsyncOk, AsyncErr otherwise
- */
-export const flatMap = <T, E, U>(
-  result: AsyncResult<T, E>,
-  fn: (value: T) => AsyncResult<U, E>
-): AsyncResult<U, E> => result.flatMap(fn);
 
 /**
  * Gets the value or a default

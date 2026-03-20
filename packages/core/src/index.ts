@@ -19,6 +19,7 @@ export {
   isNone,
   map as mapMaybe,
   flatMap as flatMapMaybe,
+  flatten as flattenMaybe,
   getOrElse as getOrElseMaybe,
   getOrCompute as getOrComputeMaybe,
   tap as tapMaybe,
@@ -28,6 +29,7 @@ export {
   equals as equalsMaybe,
   equalsWith as equalsWithMaybe,
   all as allMaybe,
+  filter as filterMaybe,
 } from "./maybe.js";
 
 // Result
@@ -97,8 +99,11 @@ export {
 } from "./async-result.js";
 
 // Sleep
-export { sleep, withTimeout, sleepWithSignal } from "./sleep.js";
-export type { TimeoutOptions, TimeoutError } from "./sleep.js";
+export { sleep, withTimeout, sleepWithSignal, addJitter } from "./sleep.js";
+export type { TimeoutOptions, TimeoutError, SleepOptions, TimeoutCleanup, TimeoutResult } from "./sleep.js";
+
+// Yield
+export { yieldControl as yield, immediate } from "./yield.js";
 
 // Retry
 export { retry, retryAsync, exponentialBackoff, linearBackoff, constantBackoff } from "./retry.js";
