@@ -115,7 +115,9 @@ export type { RetryOptions, RetryAbortedError } from "./retry.js";
 // Conversions
 export {
   toResult,
+  fromMaybe,
   toMaybeFromResult,
+  fromResult,
   fromUndefinedable,
   resultFromNullable,
   resultFromThrowable,

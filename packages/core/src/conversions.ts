@@ -23,12 +23,27 @@ export const toResult = <T, E>(maybe: Maybe<T>, onNone: () => E): Result<T, E> =
   isSome(maybe) ? ok(maybe.value) : err(onNone());
 
 /**
+ * Alias for toResult - converts Maybe to Result
+ * @param maybe - The Maybe to convert
+ * @param onNone - Error to use when Maybe is None
+ * @returns Result<T, E>
+ */
+export const fromMaybe = toResult;
+
+/**
  * Converts Result to Maybe
  * @param result - The Result to convert
  * @returns Maybe<T> (loses error info)
  */
 export const toMaybeFromResult = <T, E>(result: Result<T, E>): Maybe<T> =>
   isOk(result) ? some(result.value as NonNullable<T>) : none();
+
+/**
+ * Alias for toMaybeFromResult - converts Result to Maybe
+ * @param result - The Result to convert
+ * @returns Maybe<T> (loses error info)
+ */
+export const fromResult = toMaybeFromResult;
 
 /**
  * Converts undefined to None, otherwise to Some
