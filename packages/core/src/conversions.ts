@@ -46,14 +46,6 @@ export const toMaybeFromResult = <T, E>(result: Result<T, E>): Maybe<T> =>
 export const fromResult = toMaybeFromResult;
 
 /**
- * Converts undefined to None, otherwise to Some
- * @param value - The value to convert
- * @returns Maybe<T>
- */
-export const fromUndefinedable = <T>(value: T | undefined): Maybe<T> =>
-  value === undefined ? none() : some(value as NonNullable<T>);
-
-/**
  * Converts a nullable value directly to Result in one step.
  * Shorthand for combining fromNullable and toResult.
  *
