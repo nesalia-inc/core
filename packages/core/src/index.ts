@@ -120,6 +120,9 @@ export {
 } from "./conversions.js";
 export type { ToResultOptions } from "./conversions.js";
 
+// Pipe & Flow
+export { pipe, flow } from "./pipe.js";
+
 // Error System
 export type { Error, ErrorGroup, ErrorOptions } from "./error.js";
 export {
