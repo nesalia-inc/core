@@ -70,7 +70,7 @@ export {
 } from "./try.js";
 
 // AsyncResult
-export type { AsyncResult, AsyncResultInner, AsyncOk, AsyncErr, AbortError, FromPromiseOptions } from "./async-result.js";
+export type { AsyncResultInner, AsyncOk, AsyncErr, AbortError, FromPromiseOptions } from "./async-result.js";
 export { AsyncResult } from "./async-result.js";
 export {
   okAsync,

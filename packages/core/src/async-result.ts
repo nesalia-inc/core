@@ -395,11 +395,13 @@ export const fromPromise = <T, E = Error>(
   // Handle function overload: fromPromise(promise, onError)
   if (typeof onErrorOrOptions === "function") {
     const onError = onErrorOrOptions;
-    return promise
-      .then((value) => ({ ok: true as const, value }))
-      .catch((error) => {
-        return { ok: false as const, error: onError(error) } as AsyncResultInner<T, E>;
-      });
+    return new AsyncResult(
+      promise
+        .then((value) => ({ ok: true as const, value }))
+        .catch((error) => {
+          return { ok: false as const, error: onError(error) } as AsyncResultInner<T, E>;
+        })
+    );
   }
 
   // Handle options overload: fromPromise(promise, options) or fromPromise(promise, options, signal)
@@ -409,29 +411,31 @@ export const fromPromise = <T, E = Error>(
   if (signal?.aborted) {
     const error = new Error("Operation aborted") as AbortError;
     error.name = "AbortError";
-    return Promise.resolve({ ok: false as const, error: error as E });
+    return new AsyncResult(Promise.resolve({ ok: false as const, error: error as E }));
   }
 
-  return new Promise((resolve) => {
-    if (signal) {
-      const abortHandler = () => {
-        const error = new Error("Operation aborted") as AbortError;
-        error.name = "AbortError";
-        resolve({ ok: false as const, error: error as E });
-      };
+  return new AsyncResult(
+    new Promise((resolve) => {
+      if (signal) {
+        const abortHandler = () => {
+          const error = new Error("Operation aborted") as AbortError;
+          error.name = "AbortError";
+          resolve({ ok: false as const, error: error as E });
+        };
 
-      signal.addEventListener("abort", abortHandler, { once: true });
-    }
+        signal.addEventListener("abort", abortHandler, { once: true });
+      }
 
-    promise
-      .then((value) => resolve({ ok: true as const, value }))
-      .catch((error) =>
-        resolve({
-          ok: false as const,
-          error: (error instanceof Error ? error : new Error(String(error))) as E,
-        })
-      );
-  });
+      promise
+        .then((value) => resolve({ ok: true as const, value }))
+        .catch((error) =>
+          resolve({
+            ok: false as const,
+            error: (error instanceof Error ? error : new Error(String(error))) as E,
+          })
+        );
+    })
+  );
 };
 
 /**
@@ -748,24 +752,26 @@ export const withSignal = <T, E = Error>(
   if (signal.aborted) {
     const error = new Error("Operation aborted") as AbortError;
     error.name = "AbortError";
-    return Promise.resolve({ ok: false as const, error });
+    return new AsyncResult(Promise.resolve({ ok: false as const, error }));
   }
 
-  return new Promise((resolve) => {
-    const abortHandler = () => {
-      const error = new Error("Operation aborted") as AbortError;
-      error.name = "AbortError";
-      resolve({ ok: false as const, error });
-    };
+  return new AsyncResult(
+    new Promise((resolve) => {
+      const abortHandler = () => {
+        const error = new Error("Operation aborted") as AbortError;
+        error.name = "AbortError";
+        resolve({ ok: false as const, error });
+      };
 
-    signal.addEventListener("abort", abortHandler, { once: true });
+      signal.addEventListener("abort", abortHandler, { once: true });
 
-    result.then((r) => {
-      // Remove the listener since the operation completed
-      signal.removeEventListener("abort", abortHandler);
-      resolve(r);
-    });
-  });
+      result.then((r) => {
+        // Remove the listener since the operation completed
+        signal.removeEventListener("abort", abortHandler);
+        resolve(r);
+      });
+    })
+  );
 };
 
 /**
