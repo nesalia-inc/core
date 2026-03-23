@@ -16,6 +16,7 @@ export type Error<T = unknown> = Readonly<{
   readonly args: T;
   readonly notes: readonly string[];
   readonly cause: Error | null;
+  readonly stack?: string;
 }>;
 
 /**
@@ -98,13 +99,23 @@ export const error = <T>(options: ErrorOptions<T> | ZodErrorOptions<T>): ErrorBu
   const name = options.name;
   const schema = isZod ? options.schema : null;
 
-  const createError = (args: T, notes: string[] = [], cause: Error | null = null): Error<T> =>
-    Object.freeze({
+  const createError = (args: T, notes: string[] = [], cause: Error | null = null): Error<T> => {
+    // Capture stack trace
+    let stack: string | undefined;
+    const err = new Error();
+    if (err.stack) {
+      // Extract just the stack trace lines, skipping the first few lines that are internal
+      stack = err.stack.split('\n').slice(3).join('\n');
+    }
+
+    return Object.freeze({
       name,
       args,
       notes: Object.freeze([...notes]),
       cause,
+      stack,
     });
+  };
 
   const createErrWithMethods = (args: T, notes: string[] = [], cause: Error | null = null): ErrWithMethods<T> => {
     const errorObj = createError(args, notes, cause);
@@ -163,11 +174,19 @@ export const error = <T>(options: ErrorOptions<T> | ZodErrorOptions<T>): ErrorBu
       const parsed = schema.safeParse(args);
       if (!parsed.success) {
         // Return error with validation issues as args
+        // Capture stack trace
+        let stack: string | undefined;
+        const err = new Error();
+        if (err.stack) {
+          stack = err.stack.split('\n').slice(3).join('\n');
+        }
+
         const validationError: Error<T> = Object.freeze({
           name: `${name}ValidationError`,
           args: parsed.error.issues as unknown as T,
           notes: Object.freeze([parsed.error.message]),
           cause: null,
+          stack,
         });
         const errResult: ErrWithMethods<T> = {
           ok: false as const,
