@@ -117,6 +117,7 @@ export {
   toResult,
   toMaybeFromResult,
   fromUndefinedable,
+  fromPredicate,
 } from "./conversions.js";
 export type { ToResultOptions } from "./conversions.js";
 
