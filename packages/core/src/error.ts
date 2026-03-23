@@ -16,6 +16,7 @@ export type Error<T = unknown> = Readonly<{
   readonly args: T;
   readonly notes: readonly string[];
   readonly cause: Error | null;
+  readonly message?: string;
 }>;
 
 /**
@@ -33,6 +34,7 @@ export type ErrorGroup = Readonly<{
 export type ErrorOptions<T> = {
   readonly name: string;
   readonly args: T;
+  readonly message?: (args: T) => string;
   readonly defaultDescription?: string;
 };
 
@@ -43,6 +45,7 @@ export type ErrorOptions<T> = {
 export type ZodErrorOptions<T> = {
   readonly name: string;
   readonly schema: ZodSchema<T>;
+  readonly message?: (args: T) => string;
   readonly defaultDescription?: string;
 };
 
@@ -66,7 +69,7 @@ type ErrorBuilder<T> = {
 /**
  * Type guard to check if options has a Zod schema
  */
-const hasSchema = (options: ErrorOptions<unknown> | ZodErrorOptions<unknown>): options is ZodErrorOptions<unknown> =>
+const hasSchema = <T>(options: ErrorOptions<T> | ZodErrorOptions<T>): options is ZodErrorOptions<T> =>
   "schema" in options && options.schema instanceof ZodType;
 
 /**
@@ -97,14 +100,18 @@ export const error = <T>(options: ErrorOptions<T> | ZodErrorOptions<T>): ErrorBu
   const isZod = hasSchema(options);
   const name = options.name;
   const schema = isZod ? options.schema : null;
+  const messageFn = "message" in options ? (options.message as (args: T) => string) : null;
 
-  const createError = (args: T, notes: string[] = [], cause: Error | null = null): Error<T> =>
-    Object.freeze({
+  const createError = (args: T, notes: string[] = [], cause: Error | null = null): Error<T> => {
+    const message = messageFn ? messageFn(args) : undefined;
+    return Object.freeze({
       name,
       args,
       notes: Object.freeze([...notes]),
       cause,
+      ...(message !== undefined && { message }),
     });
+  };
 
   const createErrWithMethods = (args: T, notes: string[] = [], cause: Error | null = null): ErrWithMethods<T> => {
     const errorObj = createError(args, notes, cause);
@@ -288,6 +295,11 @@ export const getErrorMessage = (e: Error | ErrorGroup): string => {
   if (isErrorGroup(e)) {
     return `${e.name}: ${e.exceptions.length} error(s)`;
   }
+  // Use custom message if provided
+  if (e.message) {
+    return `${e.name}: ${e.message}`;
+  }
+  // Fall back to JSON args
   return e.args
     ? `${e.name}: ${JSON.stringify(e.args)}`
     : e.name;
