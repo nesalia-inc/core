@@ -29,11 +29,3 @@ export const toResult = <T, E>(maybe: Maybe<T>, onNone: () => E): Result<T, E> =
  */
 export const toMaybeFromResult = <T, E>(result: Result<T, E>): Maybe<T> =>
   isOk(result) ? some(result.value as NonNullable<T>) : none();
-
-/**
- * Converts undefined to None, otherwise to Some
- * @param value - The value to convert
- * @returns Maybe<T>
- */
-export const fromUndefinedable = <T>(value: T | undefined): Maybe<T> =>
-  value === undefined ? none() : some(value as NonNullable<T>);

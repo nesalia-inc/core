@@ -116,7 +116,6 @@ export type { RetryOptions, RetryAbortedError } from "./retry.js";
 export {
   toResult,
   toMaybeFromResult,
-  fromUndefinedable,
 } from "./conversions.js";
 export type { ToResultOptions } from "./conversions.js";
 
