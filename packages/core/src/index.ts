@@ -118,7 +118,6 @@ export {
   fromMaybe,
   toMaybeFromResult,
   fromResult,
-  fromUndefinedable,
   resultFromNullable,
   resultFromThrowable,
 } from "./conversions.js";
