@@ -76,36 +76,3 @@ export const resultFromThrowable = <T>(fn: () => T): Result<T, Error> => {
     return err(e instanceof Error ? e : new Error(String(e)));
   }
 };
-
-/**
- * Converts a value to Result based on a predicate.
- * Returns Ok if predicate passes, Err with onFalse() otherwise.
- *
- * @param value - The value to test
- * @param predicate - The predicate function
- * @param onFalse - Error factory (called with value if predicate returns false)
- * @returns Ok<T> if predicate passes, Err<E> otherwise
- *
- * @example
- * import { fromPredicate } from '@deessejs/core';
- *
- * // Simple error
- * const result = fromPredicate(
- *   user,
- *   (u) => u.age >= 18,
- *   () => 'TOO_YOUNG'
- * );
- *
- * // With error from value
- * const result = fromPredicate(
- *   age,
- *   (a) => a >= 0 && a <= 150,
- *   (a) => `Invalid age: ${a}`
- * );
- */
-export const fromPredicate = <T, E>(
-  value: T,
-  predicate: (value: T) => boolean,
-  onFalse: (value: T) => E
-): Result<T, E> =>
-  predicate(value) ? ok(value) : err(onFalse(value));
