@@ -117,6 +117,8 @@ export {
   toResult,
   toMaybeFromResult,
   fromUndefinedable,
+  resultFromNullable,
+  resultFromThrowable,
 } from "./conversions.js";
 export type { ToResultOptions } from "./conversions.js";
 
