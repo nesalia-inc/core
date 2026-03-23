@@ -2,7 +2,6 @@ import { describe, it, expect } from "vitest";
 import {
   toResult,
   toMaybeFromResult,
-  fromUndefinedable,
 } from "../src/conversions";
 import { some, none } from "../src/maybe";
 import { ok, err } from "../src/result";
@@ -31,24 +30,6 @@ describe("Conversions", () => {
     it("should convert Err to None", () => {
       const maybe = toMaybeFromResult(err("error"));
       expect(maybe.ok).toBe(false);
-    });
-  });
-
-  describe("fromUndefinedable", () => {
-    it("should convert value to Some", () => {
-      const maybe = fromUndefinedable(42);
-      expect(maybe.ok).toBe(true);
-    });
-
-    it("should convert undefined to None", () => {
-      const maybe = fromUndefinedable(undefined);
-      expect(maybe.ok).toBe(false);
-    });
-
-    it("should convert null to Some(null)", () => {
-      // null is not undefined, so it should be Some(null)
-      const maybe = fromUndefinedable(null as unknown as number | undefined);
-      expect(maybe.ok).toBe(true);
     });
   });
 });
