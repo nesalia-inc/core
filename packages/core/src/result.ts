@@ -1,7 +1,44 @@
 /**
  * Result type - represents success or failure
  * Used for simple error handling without domain richness
- */
+ *
+ * ## API Design Decision: Static + Instance Methods
+ *
+ * This library provides BOTH static functions AND instance methods:
+ *
+ * ### Why Both?
+ *
+ * 1. **Static functions**: Better for tree-shaking, functional composition, pipe()
+ * 2. **Instance methods**: More readable for simple chains, familiar to fp-ts users
+ *
+ * ### When to use which?
+ *
+ * Use static functions when:
+ * - Building pipelines with pipe()
+ * - Using with pipe/flow utilities
+ * - Bundle size is critical
+ *
+ * Use instance methods when:
+ * - Simple one-off chains: ok(5).map(x => x * 2)
+ * - Readability is more important than tree-shaking
+ *
+ * ### Example
+ *
+ * ```typescript
+ * // Static - better for pipelines
+ * const result = pipe(
+ *   userId,
+ *   findUser,
+ *   map(u => u.email),
+ *   getOrElse(() => 'unknown')
+ * );
+ *
+ * // Instance - simple chains
+ * const email = ok(userId)
+ *   .flatMap(findUser)
+ *   .map(u => u.email)
+ *   .getOrElse(() => 'unknown');
+ * ```
 
 /**
  * Ok type - represents a successful result with methods

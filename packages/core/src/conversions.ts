@@ -29,3 +29,50 @@ export const toResult = <T, E>(maybe: Maybe<T>, onNone: () => E): Result<T, E> =
  */
 export const toMaybeFromResult = <T, E>(result: Result<T, E>): Maybe<T> =>
   isOk(result) ? some(result.value as NonNullable<T>) : none();
+
+/**
+ * Converts undefined to None, otherwise to Some
+ * @param value - The value to convert
+ * @returns Maybe<T>
+ */
+export const fromUndefinedable = <T>(value: T | undefined): Maybe<T> =>
+  value === undefined ? none() : some(value as NonNullable<T>);
+
+/**
+ * Converts a nullable value directly to Result in one step.
+ * Shorthand for combining fromNullable and toResult.
+ *
+ * @param value - The value that may be null or undefined
+ * @param onNull - Error factory to call when value is null/undefined
+ * @returns Ok<NonNullable<T>> if value is not null/undefined, Err<E> otherwise
+ *
+ * @example
+ * import { resultFromNullable } from '@deessejs/core';
+ *
+ * const user = resultFromNullable(db.find(id), () => 'NOT_FOUND');
+ * const port = resultFromNullable(parseInt(env.PORT), () => 'INVALID_PORT');
+ */
+export const resultFromNullable = <T, E>(
+  value: T | null | undefined,
+  onNull: () => E
+): Result<NonNullable<T>, E> =>
+  value == null ? err(onNull()) : ok(value as NonNullable<T>);
+
+/**
+ * Wraps a throwing function in a Result.
+ *
+ * @param fn - The function that may throw
+ * @returns Ok<T> with the return value, Err<Error> if the function throws
+ *
+ * @example
+ * import { resultFromThrowable } from '@deessejs/core';
+ *
+ * const data = resultFromThrowable(() => JSON.parse(jsonString));
+ */
+export const resultFromThrowable = <T>(fn: () => T): Result<T, Error> => {
+  try {
+    return ok(fn());
+  } catch (e) {
+    return err(e instanceof Error ? e : new Error(String(e)));
+  }
+};

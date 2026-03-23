@@ -1,6 +1,55 @@
 /**
  * Error system - Inspired by Python's exception handling
  * Provides structured errors with enrichment, chaining, and grouping
+ *
+ * ## Error vs Result Semantics
+ *
+ * The Error system and Result type serve different purposes:
+ *
+ * ### Result<T, E>
+ * - Represents a computation that may fail
+ * - Use for: Expected failures, validation, fallible operations
+ * - Fluent API with map(), flatMap(), getOrElse(), etc.
+ * - Best for: Railway-oriented programming
+ *
+ * ### Error<T>
+ * - Represents a structured error with rich metadata
+ * - Use for: Domain errors, error enrichment, error chains
+ * - Features: name, args, notes, cause, message, stack
+ * - Best for: Logging, error tracking, debugging
+ *
+ * ### When to use which?
+ *
+ * Use Result when:
+ * - You need to chain operations that may fail
+ * - You want to propagate failures without detailed context
+ * - You're building a pipeline of fallible operations
+ *
+ * Use Error when:
+ * - You need rich error context for debugging
+ * - You're building domain-specific errors
+ * - You need error chaining (cause)
+ * - You're integrating with error tracking tools
+ *
+ * ### Converting between them
+ *
+ * The error() factory returns an Err<Error<T>> - a Result containing your Error:
+ *
+ * ```typescript
+ * const SizeError = error({ name: 'SizeError', ... });
+ * const result = SizeError({ current: 3, wanted: 5 });
+ *
+ * // result is Err<Error<{current: number, wanted: number}>>
+ * result.ok === false; // true
+ * result.error.name === 'SizeError'; // true
+ *
+ * // Access the raw Error object if needed
+ * const err = result.error;
+ * ```
+ *
+ * This design allows Error to be used both as:
+ * 1. A standalone error object (via result.error)
+ * 2. A Result for chaining (the full result)
  */
 
 import { Err, Result } from "./result.js";
@@ -16,6 +65,7 @@ export type Error<T = unknown> = Readonly<{
   readonly args: T;
   readonly notes: readonly string[];
   readonly cause: Error | null;
+  readonly stack?: string;
 }>;
 
 /**
@@ -98,13 +148,23 @@ export const error = <T>(options: ErrorOptions<T> | ZodErrorOptions<T>): ErrorBu
   const name = options.name;
   const schema = isZod ? options.schema : null;
 
-  const createError = (args: T, notes: string[] = [], cause: Error | null = null): Error<T> =>
-    Object.freeze({
+  const createError = (args: T, notes: string[] = [], cause: Error | null = null): Error<T> => {
+    // Capture stack trace
+    let stack: string | undefined;
+    const err = new Error();
+    if (err.stack) {
+      // Extract just the stack trace lines, skipping the first few lines that are internal
+      stack = err.stack.split('\n').slice(3).join('\n');
+    }
+
+    return Object.freeze({
       name,
       args,
       notes: Object.freeze([...notes]),
       cause,
+      stack,
     });
+  };
 
   const createErrWithMethods = (args: T, notes: string[] = [], cause: Error | null = null): ErrWithMethods<T> => {
     const errorObj = createError(args, notes, cause);
@@ -163,11 +223,19 @@ export const error = <T>(options: ErrorOptions<T> | ZodErrorOptions<T>): ErrorBu
       const parsed = schema.safeParse(args);
       if (!parsed.success) {
         // Return error with validation issues as args
+        // Capture stack trace
+        let stack: string | undefined;
+        const err = new Error();
+        if (err.stack) {
+          stack = err.stack.split('\n').slice(3).join('\n');
+        }
+
         const validationError: Error<T> = Object.freeze({
           name: `${name}ValidationError`,
           args: parsed.error.issues as unknown as T,
           notes: Object.freeze([parsed.error.message]),
           cause: null,
+          stack,
         });
         const errResult: ErrWithMethods<T> = {
           ok: false as const,
