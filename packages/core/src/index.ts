@@ -114,20 +114,18 @@ export type { RetryOptions, RetryAbortedError } from "./retry.js";
 
 // Conversions
 export {
-  // New "fromX" naming (recommended)
+  toResult,
   fromMaybe,
+  toMaybeFromResult,
   fromResult,
-  fromPredicate,
+  fromUndefinedable,
   resultFromNullable,
   resultFromThrowable,
-  fromTry,
-  tryFromResult,
-  maybeFromTry,
-  // Legacy "toX" naming (backwards compatible)
-  toResult,
-  toMaybeFromResult,
 } from "./conversions.js";
 export type { ToResultOptions } from "./conversions.js";
+
+// Pipe & Flow
+export { pipe, flow } from "./pipe.js";
 
 // Error System
 export type { Error, ErrorGroup, ErrorOptions } from "./error.js";
