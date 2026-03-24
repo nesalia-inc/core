@@ -1,250 +1,452 @@
 ---
-title: Error Type
-description: Deep dive into structured errors with name, args, notes, and cause
+title: Error System
+description: Structured errors with name, args, notes, and cause
 ---
 
-# Error Type
+The Error system provides structured error handling inspired by Python's exception handling. It enables rich errors with validation, enrichment, chaining, and grouping.
 
-The `Error` type provides structured error handling inspired by Python's exception system. Unlike plain errors, Error types are composable, enrichable, and groupable.
+## Why a Custom Error System?
 
-## Overview
+JavaScript's built-in `Error` class is too limited for production applications:
 
 ```typescript
-type Error<T = unknown> = {
-  readonly name: string;        // Error type identifier
-  readonly args: T;            // Error-specific data
-  readonly notes: readonly string[];  // Context/debug info
-  readonly cause: Error | null; // Chained error (like Python's __cause__)
-};
+// Problem: Errors lose context as they propagate
+throw new Error('Failed');  // What failed? Why?
+
+// Solution: Structured errors with context
+import { error } from '@deessejs/core';
+const SizeError = error({
+  name: 'SizeError',
+  schema: z.object({ current: z.number(), wanted: z.number() })
+});
+throw SizeError({ current: 3, wanted: 5 });
+// Contains: name, args, notes[], cause
 ```
 
-## Creating Errors
+---
 
-### Basic Error
+## Quick Start
 
 ```typescript
-import { error } from "@deessejs/core";
+import { error, exceptionGroup, ok, err, isErr } from '@deessejs/core';
+import { z } from 'zod';
+
+// Define error types (with optional Zod validation)
+const SizeError = error({
+  name: 'SizeError',
+  schema: z.object({
+    current: z.number(),
+    wanted: z.number()
+  })
+});
 
 const ValidationError = error({
-  name: "ValidationError",
+  name: 'ValidationError',
   args: {} as { field: string }
 });
 
-const err = ValidationError({ field: "email" });
-// Error { name: "ValidationError", args: { field: "email" }, notes: [], cause: null }
-```
+// Create errors
+const e = SizeError({ current: 3, wanted: 5 });
+// Err { error: Error { name: 'SizeError', args: { current: 3, wanted: 5 }, notes: [], cause: null } }
 
-### With Default Description
-
-```typescript
-const ValidationError = error({
-  name: "ValidationError",
-  args: {} as { field: string },
-  defaultDescription: "Validation failed"
+// Use in Result
+const result = ok(10).flatMap(n => {
+  if (n > 5) return SizeError({ current: n, wanted: 5 });
+  return ok(n);
 });
 ```
 
-## Error Properties
+---
 
-### name
+## API Reference
 
-The error type identifier - used for filtering and type guards:
+### `error(options)` - Create an Error type
+
+#### With Zod schema (recommended)
 
 ```typescript
-console.log(err.name); // "ValidationError"
+import { error } from '@deessejs/core';
+import { z } from 'zod';
+
+const SizeError = error({
+  name: 'SizeError',
+  schema: z.object({
+    current: z.number(),
+    wanted: z.number()
+  })
+});
+
+// Args are validated
+const e = SizeError({ current: 3, wanted: 5 });
+// Ok { ok: false, error: Error { ... } }
+
+// Invalid args throw a validation error
+const invalid = SizeError({ current: 'not a number', wanted: 5 });
+// Err with ErrorValidation
 ```
 
-### args
-
-Error-specific data - typed for type safety:
+#### Without validation
 
 ```typescript
+import { error } from '@deessejs/core';
+
+const ValidationError = error({
+  name: 'ValidationError',
+  args: {} as { field: string }
+});
+
+const e = ValidationError({ field: 'email' });
+```
+
+#### Error structure
+
+```typescript
+interface Error<T = unknown> {
+  readonly name: string;       // Error type name
+  readonly args: T;             // Structured error data
+  readonly notes: readonly string[];  // Contextual notes
+  readonly cause: Error | null; // Chained error
+}
+```
+
+---
+
+### Error Methods
+
+#### `addNotes(...notes)` - Add context
+
+```typescript
+import { error } from '@deessejs/core';
+
+const ValidationError = error({
+  name: 'ValidationError',
+  args: {} as { field: string }
+});
+
+const e = ValidationError({ field: 'email' })
+  .addNotes('Form submission failed', 'User input was invalid');
+// error.notes = ['Form submission failed', 'User input was invalid']
+```
+
+#### `from(cause)` - Chain errors
+
+```typescript
+import { error } from '@deessejs/core';
+
+const NetworkError = error({
+  name: 'NetworkError',
+  args: {} as { host: string }
+});
+
 const SizeError = error({
-  name: "SizeError",
+  name: 'SizeError',
   args: {} as { current: number; wanted: number }
 });
 
-const err = SizeError({ current: 3, wanted: 5 });
-console.log(err.args.current);  // 3
-console.log(err.args.wanted);   // 5
+const cause = NetworkError({ host: 'api.example.com' });
+const e = SizeError({ current: 3, wanted: 5 }).from(cause.error);
+// e.error.cause = NetworkError { host: 'api.example.com' }
 ```
 
-### notes
+#### Builder methods
 
-Array of contextual information - useful for debugging:
-
-```typescript
-const err = ValidationError({ field: "email" })
-  .addNotes("Form submitted at /register")
-  .addNotes("IP: 192.168.1.1");
-
-console.log(err.notes);
-// ["Form submitted at /register", "IP: 192.168.1.1"]
-```
-
-### cause
-
-Chained error - preserves the error chain:
+You can also add notes and causes before creating the error:
 
 ```typescript
-const NetworkError = error({
-  name: "NetworkError",
-  args: {} as { url: string }
-});
+import { error } from '@deessejs/core';
 
 const ValidationError = error({
-  name: "ValidationError",
+  name: 'ValidationError',
   args: {} as { field: string }
 });
 
-const networkErr = NetworkError({ url: "/api/users" });
-const validationErr = ValidationError({ field: "email" }).from(networkErr);
+// Add notes to builder
+const ErrorWithNotes = ValidationError.addNotes('Operation: save');
+const e = ErrorWithNotes({ field: 'email' });
 
-console.log(validationErr.cause?.name); // "NetworkError"
-console.log(validationErr.cause?.args); // { url: "/api/users" }
+// Add cause to builder
+const ErrorWithCause = ValidationError.from(causeError);
+const e2 = ErrorWithCause({ field: 'email' });
+
+// Chain
+const e3 = ValidationError.addNotes('Context').from(causeError)({ field: 'email' });
 ```
 
-## Building Errors
+---
 
-### Fluent API
-
-Errors use a fluent builder pattern:
+### `exceptionGroup(exceptions)` - Group multiple errors
 
 ```typescript
-const err = ValidationError({ field: "email" })
-  .addNotes("User action: submit_form")
-  .addNotes("Source: checkout_page");
-```
+import { error, exceptionGroup } from '@deessejs/core';
 
-### Adding Cause
-
-Chain errors with `.from()`:
-
-```typescript
-const err = ValidationError({ field: "email" })
-  .from(previousError);
-```
-
-### Combining Notes and Cause
-
-```typescript
-const err = ValidationError({ field: "email" })
-  .addNotes("Processing order #12345")
-  .from(networkError);
-```
-
-## ErrorGroup
-
-Group multiple errors together:
-
-```typescript
-import { error, exceptionGroup, isErrorGroup } from "@deessejs/core";
+const SizeError = error({
+  name: 'SizeError',
+  args: {} as { value: number }
+});
 
 const ValidationError = error({
-  name: "ValidationError",
+  name: 'ValidationError',
+  args: {} as { field: string }
+});
+
+const group = exceptionGroup([
+  SizeError({ value: 10 }),
+  ValidationError({ field: 'email' }),
+  SizeError({ value: 20 })
+]);
+
+// group.name = 'ExceptionGroup'
+// group.exceptions = [SizeError, ValidationError, SizeError]
+```
+
+---
+
+### `raise(error)` - Return error in transformations
+
+```typescript
+import { error, raise, ok } from '@deessejs/core';
+
+const SizeError = error({
+  name: 'SizeError',
+  args: {} as { current: number; wanted: number }
+});
+
+// Use in flatMap chain
+const result = ok(10).flatMap(n => {
+  if (n > 5) {
+    return raise(SizeError({ current: n, wanted: 5 }));
+  }
+  return ok(n);
+});
+```
+
+---
+
+### Type Guards
+
+#### `isError(value)` - Check if value is Error
+
+```typescript
+import { isError } from '@deessejs/core';
+
+const e = SizeError({ value: 10 });
+isError(e.error); // true
+isError('string'); // false
+```
+
+#### `isErrorGroup(value)` - Check if value is ErrorGroup
+
+```typescript
+import { isErrorGroup } from '@deessejs/core';
+
+const group = exceptionGroup([SizeError({ value: 10 })]);
+isErrorGroup(group); // true
+```
+
+#### `isErrWithError(result)` - Check if Result contains Error
+
+```typescript
+import { isErrWithError } from '@deessejs/core';
+
+const e = SizeError({ value: 10 });
+const result = err(e.error);
+
+isErrWithError(result); // true
+isErrWithError(ok(42)); // false
+```
+
+---
+
+### Utility Functions
+
+#### `getErrorMessage(error)` - Get human-readable message
+
+```typescript
+import { getErrorMessage } from '@deessejs/core';
+
+const e = SizeError({ current: 3, wanted: 5 });
+getErrorMessage(e.error);
+// 'SizeError: {"current":3,"wanted":5}'
+
+const group = exceptionGroup([e.error, e.error]);
+getErrorMessage(group);
+// 'ExceptionGroup: 2 error(s)'
+```
+
+#### `flattenErrorGroup(group)` - Flatten nested groups
+
+```typescript
+import { flattenErrorGroup } from '@deessejs/core';
+
+const inner = exceptionGroup([SizeError({ value: 10 })]);
+const outer = exceptionGroup([inner, ValidationError({ field: 'x' })]);
+
+flattenErrorGroup(outer);
+// [SizeError { value: 10 }, ValidationError { field: 'x' }]
+```
+
+#### `filterErrorsByName(group, name)` - Filter errors by type
+
+```typescript
+import { filterErrorsByName } from '@deessejs/core';
+
+const group = exceptionGroup([
+  SizeError({ value: 10 }),
+  ValidationError({ field: 'email' }),
+  SizeError({ value: 20 })
+]);
+
+filterErrorsByName(group, 'SizeError');
+// [SizeError { value: 10 }, SizeError { value: 20 }]
+```
+
+---
+
+## Real-World Examples
+
+### Validation with Zod
+
+```typescript
+import { error } from '@deessejs/core';
+import { z } from 'zod';
+
+const ValidationError = error({
+  name: 'ValidationError',
+  schema: z.object({
+    field: z.string().min(1),
+    message: z.string()
+  })
+});
+
+// This will fail validation
+const e = ValidationError({ field: 123 }); // field must be string
+// Error: 'ValidationErrorValidationError'
+// notes: ['Expected string, received number']
+```
+
+### API Error Handling
+
+```typescript
+import { error, ok, err, isErr } from '@deessejs/core';
+
+const NetworkError = error({
+  name: 'NetworkError',
+  args: {} as { url: string; status?: number }
+});
+
+const NotFoundError = error({
+  name: 'NotFoundError',
+  args: {} as { resource: string }
+});
+
+const fetchUser = (id: number) => ok({ id, name: 'John' })
+  .flatMap(user => {
+    if (id < 0) {
+      return NetworkError({ url: `/users/${id}` }).addNotes('Invalid ID');
+    }
+    return ok(user);
+  });
+
+// Usage
+const result = fetchUser(-1);
+if (isErr(result)) {
+  console.log(result.error.name); // 'NetworkError'
+  console.log(result.error.notes); // ['Invalid ID']
+}
+```
+
+### Error Grouping
+
+```typescript
+import { error, exceptionGroup, flattenErrorGroup } from '@deessejs/core';
+
+const ValidationError = error({
+  name: 'ValidationError',
   args: {} as { field: string }
 });
 
 const errors = [
-  ValidationError({ field: "email" }),
-  ValidationError({ field: "name" }),
-  ValidationError({ field: "age" })
+  ValidationError({ field: 'email' }),
+  ValidationError({ field: 'name' }),
+  ValidationError({ field: 'age' })
 ];
 
 const group = exceptionGroup(errors);
-// ErrorGroup { name: "ValidationError", exceptions: [...] }
+const allErrors = flattenErrorGroup(group);
+
+// Process each error
+allErrors.forEach(e => {
+  console.log(`${e.name}: ${e.args.field}`);
+});
 ```
 
-### Nested Groups
+---
 
-ErrorGroups can contain other ErrorGroups:
+## Comparison
+
+| Feature | @deessejs/core | Standard Error | fp-ts |
+|---------|---------------|---------------|-------|
+| Structured args | Yes | No | No |
+| Zod validation | Yes | No | No |
+| Notes/context | Yes | No | No |
+| Error chaining | Yes | Limited | No |
+| Error grouping | Yes | No | No |
+| Bundle size | ~2KB | 0 | ~40KB |
+
+---
+
+## Best Practices
+
+### 1. Define errors at module level
 
 ```typescript
-const group1 = exceptionGroup([err1, err2]);
-const group2 = exceptionGroup([group1, err3]);
+// errors.ts
+export const ValidationError = error({
+  name: 'ValidationError',
+  schema: z.object({ field: z.string(), message: z.string() })
+});
+
+export const NetworkError = error({
+  name: 'NetworkError',
+  schema: z.object({ url: z.string(), status: z.number().optional() })
+});
 ```
 
-## Helper Functions
-
-### isError
-
-Type guard for Error:
+### 2. Add notes for debugging
 
 ```typescript
-import { isError } from "@deessejs/core";
-
-if (isError(value)) {
-  console.log(value.name); // TypeScript knows it's Error
-}
+const result = validateUser(input)
+  .addNotes('Input validation failed')
+  .addNotes(`Received: ${JSON.stringify(input)}`);
 ```
 
-### isErrorGroup
-
-Type guard for ErrorGroup:
+### 3. Chain errors for traceability
 
 ```typescript
-import { isErrorGroup } from "@deessejs/core";
-
-if (isErrorGroup(value)) {
-  console.log(value.exceptions.length);
-}
+const result = db.save(data).flatMap(saved =>
+  api.notify(saved.id).mapErr(apiError =>
+    apiError.from(dbError) // Chain the original error
+  )
+);
 ```
 
-### flattenErrorGroup
-
-Flatten nested groups into a single array:
+### 4. Use discriminated unions for error handling
 
 ```typescript
-import { flattenErrorGroup } from "@deessejs/core";
-
-const flat = flattenErrorGroup(nestedGroup);
+const handleError = (error: Error) => {
+  switch (error.name) {
+    case 'ValidationError':
+      return formatValidation(error.args);
+    case 'NetworkError':
+      return formatNetwork(error.args);
+  }
+};
 ```
 
-### filterErrorsByName
+---
 
-Filter by error name:
+## Related
 
-```typescript
-import { filterErrorsByName } from "@deessejs/core";
-
-const networkErrors = filterErrorsByName(group, "NetworkError");
-```
-
-### getErrorMessage
-
-Get formatted error message:
-
-```typescript
-import { getErrorMessage } from "@deessejs/core";
-
-const message = getErrorMessage(error);
-```
-
-## Integration with Result
-
-### isErrWithError
-
-Check if a Result contains an Error:
-
-```typescript
-import { isErrWithError, err } from "@deessejs/core";
-
-const result: Result<string, Error> = err(someError);
-
-if (isErrWithError(result)) {
-  console.log(result.error.name); // Works!
-}
-```
-
-### isErrTryWithError
-
-Check if a Try contains an Error:
-
-```typescript
-import { isErrTryWithError, attempt } from "@deessejs/core";
-
-const t = attempt(() => mightThrow());
-
-if (isErrTryWithError(t)) {
-  console.log(t.error.name);
-}
+- [Result](./result.mdx) - Works with structured errors
+- [Try](./try.mdx) - Wrap throwing functions
+- [AsyncResult](./async-result.mdx) - Async operations with error handling

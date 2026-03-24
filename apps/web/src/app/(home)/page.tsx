@@ -195,7 +195,7 @@ export default function HomePage() {
       </div>
       <footer className="">
         <div className="w-full max-w-5xl border-x mx-auto py-8 px-6">
-          <div className=></div>
+          <div></div>
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-4">
               <span className="text-sm text-muted-foreground">© 2026 @deessejs/core</span>
