@@ -2,9 +2,13 @@
  * @deessejs/core - Functional programming patterns for TypeScript
  *
  * Types: Result, Maybe
- * Constructs: Unit (used internally)
+ * Constructs: Unit
  * Utilities: retry, sleep, try, conversions
  */
+
+// Unit
+export type { Unit } from "./unit.js";
+export { unit, isUnit } from "./unit.js";
 
 // Re-export all types
 export type { Maybe, Some, None } from "./maybe.js";
