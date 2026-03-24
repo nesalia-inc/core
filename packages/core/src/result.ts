@@ -103,6 +103,23 @@ export type Result<T, E> = Ok<T> | Err<E>;
 export type Success<T> = Result<T, never>;
 
 /**
+ * ExtractError - extracts the error type from a function that returns Result
+ *
+ * Usage:
+ *   type MyError = ExtractError<typeof myFunction>; // string
+ *   type ApiError = ExtractError<() => Result<User, ApiError>>; // ApiError
+ *
+ * @typeParam T - The function type to extract the error from
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type ExtractError<T> = T extends () => Result<unknown, infer E>
+  ? E
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  : T extends (args: any) => Result<unknown, infer E>
+    ? E
+    : never;
+
+/**
  * Creates an Ok with methods
  * @typeParam T - The type of the value
  * @param value - The success value
