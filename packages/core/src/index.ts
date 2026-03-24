@@ -12,7 +12,7 @@ export { unit, isUnit } from "./unit.js";
 
 // Re-export all types
 export type { Maybe, Some, None } from "./maybe.js";
-export type { Result, Ok, Err } from "./result.js";
+export type { Result, Ok, Err, Success } from "./result.js";
 
 // Maybe
 export {

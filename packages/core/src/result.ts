@@ -96,6 +96,13 @@ export type Err<E> = {
 export type Result<T, E> = Ok<T> | Err<E>;
 
 /**
+ * Success type - a Result that always succeeds (alias for Result<T, never>)
+ * Use this when you want to explicitly indicate that a function cannot fail
+ * @typeParam T - The type of the success value
+ */
+export type Success<T> = Result<T, never>;
+
+/**
  * Creates an Ok with methods
  * @typeParam T - The type of the value
  * @param value - The success value
