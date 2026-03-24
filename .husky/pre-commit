@@ -1,3 +1,4 @@
-pnpm turbo lint
-pnpm turbo typecheck
-pnpm turbo test
+# Run lint and typecheck in parallel (tests are run in CI)
+pnpm turbo lint &
+pnpm turbo typecheck &
+wait
