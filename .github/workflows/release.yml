@@ -31,7 +31,7 @@ jobs:
         run: |
           cd packages/core
           echo '//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}' > .npmrc
-          npm publish --access public
+          npm publish --include-dist --access public
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
