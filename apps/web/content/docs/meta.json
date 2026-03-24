@@ -16,6 +16,7 @@
     "concepts/result",
     "concepts/maybe",
     "concepts/try",
+    "concepts/async-result",
     "concepts/choosing-type",
     "concepts/error",
     "---Reference---",

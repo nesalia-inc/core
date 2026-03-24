@@ -1,21 +1,92 @@
 # Result
 
-The Result type represents a value that can be either a success (`Ok`) or a failure (`Err`). It's the cornerstone of explicit error handling in @deessejs/core.
+The Result type represents a value that can be either a success (`Ok`) or a failure (`Err`). It's the cornerstone of explicit error handling.
 
 ## Why Result?
 
-TypeScript promises type safety, but traditional error handling breaks that promise:
+TypeScript promises type safety, but traditional error handling breaks that promise. When a function can throw, the type system can't help you handle errors - they're invisible until runtime.
+
+### The Problem with Exceptions
+
+In traditional JavaScript/TypeScript, errors are handled via exceptions:
 
 ```typescript
-// Problem: This can throw, but the type says it returns User
+// This function CAN throw, but the type says it returns User
 const user = JSON.parse(data); // Type: User
 
-// Solution: Errors are explicit in the type
-import { attempt } from '@deessejs/core';
-const user = attempt(() => JSON.parse(data)); // Type: Result<User, Error>
+// Callers have no idea this can fail
+function processUser(data: string): User {
+  return JSON.parse(data); // No error in the type!
+}
+
+// You MUST remember to wrap in try/catch
+try {
+  const user = processUser(data);
+} catch (e) {
+  // But what if you forget?
+}
 ```
 
-With Result, **errors become impossible to ignore**. TypeScript forces you to handle both success and failure cases at compile time.
+**Problems with this approach:**
+1. Errors are **invisible in the type signature** - callers don't know a function can fail
+2. TypeScript can't enforce error handling at compile time
+3. It's easy to forget try/catch, leading to unhandled exceptions
+4. Error handling is asynchronous (control flow jumps elsewhere)
+
+### The Result Solution
+
+With Result, **errors become explicit in the type**:
+
+```typescript
+import { ok, err, isOk, isErr } from '@deessejs/core';
+
+// The type signature tells you this can fail
+function parseUser(data: string): Result<User, ParseError> {
+  try {
+    return ok(JSON.parse(data));
+  } catch (e) {
+    return err({ type: 'parse', message: e.message });
+  }
+}
+
+// TypeScript FORCES you to handle both cases
+const result = parseUser(data);
+
+if (isOk(result)) {
+  // TypeScript knows result.value exists here
+  console.log(result.value.name);
+} else {
+  // TypeScript knows result.error exists here
+  console.error('Failed to parse:', result.error);
+}
+```
+
+Key concepts:
+
+- **`Result<User, ParseError>`** - Two generic types: success value (`User`) and error type (`ParseError`)
+- **`ok(value)`** - Wraps success: `{ ok: true, value: T }`
+- **`err(error)`** - Wraps failure: `{ ok: false, error: E }`
+- **`isOk()`** - Type guard that narrows to the success branch
+- TypeScript forces you to handle both cases - errors become impossible to ignore
+
+### Comparison
+
+| Aspect | Exceptions | Result |
+|--------|-----------|--------|
+| Error in type signature | No | Yes |
+| Compile-time safety | No | Yes |
+| Forced handling | No | Yes |
+| Composable | No | Yes |
+| Testable | Hard | Easy |
+
+### When to Use Result
+
+- **Parsing** - Validate and transform data (JSON, user input, config files)
+- **API calls** - Network errors are expected, not exceptional
+- **File operations** - Files may not exist, permissions may be denied
+- **Business logic** - Validation errors, not bugs
+
+Use exceptions for **truly unexpected** errors (programmer mistakes, out-of-memory, etc.).
 
 ---
 
@@ -315,6 +386,15 @@ toUndefined(ok(42));   // 42
 toUndefined(err('x')); // undefined
 ```
 
+#### `toMaybeFromResult(result)` / `fromResult(result)` - Convert to Maybe
+
+```typescript
+import { ok, err, toMaybeFromResult, fromResult } from '@deessejs/core';
+
+toMaybeFromResult(ok(42)); // Some(42)
+fromResult(err('x'));     // None
+```
+
 ---
 
 ## Method Chaining
@@ -485,88 +565,68 @@ const user = getOrElse(fetchUser(id), { id: 0, name: 'Guest' }); // Explicit fal
 
 ---
 
-## Known Limitations & Future Improvements
+## Composition
 
-### 1. No `Result.all()` for composition
+### `all(...results)` - Combine multiple Results
 
-**Current behavior:** Chaining multiple operations requires nested `flatMap`, which leads to "callback hell".
-
-**Workaround:** Use sequential chaining:
+Combines multiple Results into a single Result. Returns Ok with array of all values if all are Ok, or the first Err (fail-fast):
 
 ```typescript
-import { ok, err, flatMap, Result } from '@deessejs/core';
+import { ok, err, all } from '@deessejs/core';
 
-const result = flatMap(validateName(input), name =>
-  flatMap(validateEmail(input), email =>
-    flatMap(validateAge(input), age =>
-      ok({ name, email, age })
-    )
-  )
-);
+const result = all(ok(1), ok(2), ok(3));
+// Ok([1, 2, 3])
+
+const result2 = all(ok(1), err('error'), ok(3));
+// Err('error')
 ```
 
-> **Note:** `Result.all()` method may be added in future versions to support parallel composition.
+### `swap(result)` - Swap Ok and Err
 
-### 2. No `toMaybe()` conversion
-
-**Current behavior:** No built-in way to convert a `Result` to a `Maybe`.
-
-**Workaround:**
+Swaps the success and error types:
 
 ```typescript
-import { isOk, Maybe, some, none } from '@deessejs/core';
+import { ok, err, swap } from '@deessejs/core';
 
-const toMaybe = <T, E>(result: Result<T, E>): Maybe<T> =>
-  isOk(result) ? some(result.value) : none();
+const result: Result<string, number> = ok('hello');
+const swapped = swap(result);
+// Err<string>('hello')
+
+const result2: Result<string, number> = err(42);
+const swapped2 = swap(result2);
+// Ok<number>(42)
 ```
 
-> **Note:** A `toMaybe()` method may be added in future versions.
-
-### 3. No `unwrap()` / `getOrThrow()`
-
-**Current behavior:** No way to get the value or throw if error.
-
-**Workaround:**
+Also available as a method:
 
 ```typescript
-const unwrap = <T, E>(result: Result<T, E>): T => {
-  if (result.ok) return result.value;
-  throw result.error;
-};
-
-// Usage in tests
-expect(unwrap(ok(42))).toBe(42);
-expect(() => unwrap(err('oops'))).toThrow();
+ok('hello').swap(); // Err('hello')
+err(42).swap();     // Ok(42)
 ```
 
-> **Note:** An `unwrap()` method may be added for DX improvement.
+### `unwrap(result)` - Get value or throw
 
-### 4. No `swap()` method
-
-**Current behavior:** No way to swap success and error types.
-
-**Workaround:**
+Extracts the value if Ok, throws the error if Err:
 
 ```typescript
-import { ok, err, Result } from '@deessejs/core';
+import { ok, err, unwrap } from '@deessejs/core';
 
-const swap = <T, E>(result: Result<T, E>): Result<E, T> =>
-  result.ok ? err(result.value) : ok(result.error);
-
-// Result<string, number> -> Result<number, string>
+unwrap(ok(42));    // 42
+unwrap(err('oops')); // throws 'oops'
 ```
 
-> **Note:** A `swap()` method may be added in future versions.
+Also available as a method:
 
-### 5. Static vs Instance API
+```typescript
+ok(42).unwrap();    // 42
+err('oops').unwrap(); // throws 'oops'
+```
 
-**Current behavior:** Both static functions (`map(result, fn)`) and instance methods (`result.map(fn)`) are available.
+---
 
-**Trade-off:** As noted for Maybe, having both increases bundle size. Consider using only static functions with pipe pattern for smaller bundles.
+## Error Type Unions
 
-### 6. Error type unions in `flatMap`
-
-**Current behavior:** When chaining `flatMap`, error types are properly unioned.
+When chaining `flatMap`, error types are properly unioned:
 
 ```typescript
 const step1 = (): Result<string, 'ERR_A'> => ok('a');
@@ -576,24 +636,11 @@ const step2 = (): Result<number, 'ERR_B'> => ok(1);
 const result = flatMap(step1(), () => step2());
 ```
 
-This is handled correctly by the current implementation.
+---
 
-### 7. `attempt` is in Try, not Result
+## Error Discrimination
 
-**Note:** For wrapping synchronous functions that might throw, see [Try](./try.md). The `attempt()` function returns a `Try` type, which can be converted to `Result` if needed:
-
-```typescript
-import { attempt, ok, err } from '@deessejs/core';
-
-const toResult = <T>(result: Try<T, Error>): Result<T, Error> =>
-  result.ok ? ok(result.value) : err(result.error);
-```
-
-### 8. Error discrimination
-
-**Current behavior:** Error type `E` can be anything - strings, objects, or custom types.
-
-**Recommendation:** Use discriminated unions for better error handling:
+Error type `E` can be anything - strings, objects, or custom types. For better error handling, use discriminated unions:
 
 ```typescript
 type AppError =
