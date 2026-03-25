@@ -2,8 +2,7 @@
  * Error builder factory
  */
 
-import type { ErrorOptions, ErrorBuilder, ErrWithMethods, Error, ErrorGroup } from "./types";
-import type { NativeError } from "../result";
+import type { ErrorOptions, ErrorBuilder, ErrWithMethods, Error, ErrorGroup, NativeError } from "./types";
 import { isError, isErrorGroup, isErrWithError } from "./guards";
 import type { Err } from "../result";
 import { some, none, type Maybe } from "../maybe";

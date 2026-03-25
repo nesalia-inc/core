@@ -3,11 +3,7 @@
  * Used for simple error handling without domain richness
  */
 
-/**
- * Native JavaScript Error type alias
- * Uses globalThis.Error to avoid conflict with the library's own Error type
- */
-export type NativeError = globalThis.Error;
+import type { NativeError } from "../error/types";
 
 /**
  * Ok type - represents a successful result with methods

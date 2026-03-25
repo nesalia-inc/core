@@ -3,7 +3,8 @@
  * Used for values that may or may not be present
  */
 
-import type { Result, NativeError } from "../result";
+import type { Result } from "../result";
+import type { NativeError } from "../error/types";
 
 /**
  * Maybe type - union of Some and None

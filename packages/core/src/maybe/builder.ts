@@ -2,7 +2,8 @@
  * Maybe builder functions
  */
 
-import { ok, err, type Result, type NativeError } from "../result";
+import { ok, err, type Result } from "../result";
+import type { NativeError } from "../error/types";
 import type { Some, None, Maybe } from "./types";
 
 /**

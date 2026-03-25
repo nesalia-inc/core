@@ -10,7 +10,7 @@ import type { ZodSchema } from "zod";
  * Native JavaScript Error type alias
  * Uses globalThis.Error to avoid conflict with the library's own Error type
  */
-type NativeError = globalThis.Error;
+export type NativeError = globalThis.Error;
 
 /**
  * Base Error type with enrichment and chaining

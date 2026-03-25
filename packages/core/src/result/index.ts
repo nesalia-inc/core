@@ -4,7 +4,6 @@
 
 // Types
 export type {
-  NativeError,
   Ok,
   Err,
   Result,

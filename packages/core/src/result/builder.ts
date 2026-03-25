@@ -2,7 +2,8 @@
  * Result builder functions
  */
 
-import type { Ok, Err, Result, NativeError } from "./types";
+import type { Ok, Err, Result } from "./types";
+import type { NativeError } from "../error/types";
 
 /**
  * Creates an Ok with methods
