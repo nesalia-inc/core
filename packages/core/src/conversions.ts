@@ -2,7 +2,7 @@
  * Conversion helpers - convert between Result, Maybe, Try and other types
  */
 
-import { ok, err, Result, isOk } from "./result.js";
+import { ok, err, Result, isOk } from "./result";
 import { some, none, Maybe, isSome } from "./maybe";
 
 /**

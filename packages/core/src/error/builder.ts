@@ -2,10 +2,10 @@
  * Error builder factory
  */
 
-import type { ErrorOptions, ErrorBuilder, ErrWithMethods, Error, ErrorGroup } from "./types.js";
-import type { NativeError } from "../result.js";
-import { isError, isErrorGroup, isErrWithError } from "./guards.js";
-import type { Err } from "../result.js";
+import type { ErrorOptions, ErrorBuilder, ErrWithMethods, Error, ErrorGroup } from "./types";
+import type { NativeError } from "../result";
+import { isError, isErrorGroup, isErrWithError } from "./guards";
+import type { Err } from "../result";
 import { some, none, type Maybe } from "../maybe";
 
 /**

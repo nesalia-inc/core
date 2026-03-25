@@ -2,8 +2,8 @@
  * Maybe builder functions
  */
 
-import { ok, err, type Result } from "../result.js";
-import type { Some, None, Maybe } from "./types.js";
+import { ok, err, type Result } from "../result";
+import type { Some, None, Maybe } from "./types";
 
 /**
  * Creates a Some (present value)

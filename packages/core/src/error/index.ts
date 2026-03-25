@@ -59,16 +59,16 @@ export type {
   ErrorOptions,
   ErrWithMethods,
   ErrorBuilder,
-} from "./types.js";
+} from "./types";
 
 // Guards
-export { isError, isErrorGroup, isErrWithError, isErrTryWithError, assertIsError, assertIsErrorGroup } from "./guards.js";
+export { isError, isErrorGroup, isErrWithError, isErrTryWithError, assertIsError, assertIsErrorGroup } from "./guards";
 
 // Utilities
-export { getErrorMessage, flattenErrorGroup, filterErrorsByName } from "./utils.js";
+export { getErrorMessage, flattenErrorGroup, filterErrorsByName } from "./utils";
 
 // Builder
-export { error, exceptionGroup } from "./builder.js";
+export { error, exceptionGroup } from "./builder";
 
 // Functional throw
-export { raise } from "./raise.js";
+export { raise } from "./raise";

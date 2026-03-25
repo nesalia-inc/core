@@ -3,7 +3,7 @@
  * Used for values that may or may not be present
  */
 
-import type { Result } from "../result.js";
+import type { Result } from "../result";
 
 /**
  * Maybe type - union of Some and None

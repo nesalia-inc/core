@@ -2,7 +2,7 @@
  * Error types - Base Error type with enrichment and chaining
  */
 
-import type { Err } from "../result.js";
+import type { Err } from "../result";
 import type { Maybe } from "../maybe";
 import type { ZodSchema } from "zod";
 

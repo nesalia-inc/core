@@ -3,22 +3,22 @@
  */
 
 // Types
-export type { Maybe, Some, None } from "./types.js";
+export type { Maybe, Some, None } from "./types";
 
 // Builder functions
-export { some, none, fromNullable } from "./builder.js";
+export { some, none, fromNullable } from "./builder";
 
 // Type guards
-export { isSome, isNone } from "./builder.js";
+export { isSome, isNone } from "./builder";
 
 // Chainable functions
-export { map, flatMap, flatten, tap, match } from "./builder.js";
+export { map, flatMap, flatten, tap, match } from "./builder";
 
 // Conversion functions
-export { toNullable, toUndefined, getOrElse, getOrCompute } from "./builder.js";
+export { toNullable, toUndefined, getOrElse, getOrCompute } from "./builder";
 
 // Comparison
-export { equals, equalsWith } from "./builder.js";
+export { equals, equalsWith } from "./builder";
 
 // Combinators
-export { all, filter } from "./builder.js";
+export { all, filter } from "./builder";

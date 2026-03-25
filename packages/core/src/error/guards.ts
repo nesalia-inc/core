@@ -5,9 +5,9 @@
  * These guards verify both structure AND primitive types for robustness.
  */
 
-import type { Error, ErrorGroup } from "./types.js";
-import type { Err, Result } from "../result.js";
-import type { Try, TryFailure } from "../try.js";
+import type { Error, ErrorGroup } from "./types";
+import type { Err, Result } from "../result";
+import type { Try, TryFailure } from "../try";
 
 /**
  * Helper for safe object narrowing
