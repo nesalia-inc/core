@@ -2,8 +2,7 @@
  * Error builder factory
  */
 
-import { ZodType } from "zod";
-import type { ErrorOptions, ZodErrorOptions, ErrorBuilder, ErrWithMethods, Error, ErrorGroup } from "./types.js";
+import type { ErrorOptions, ErrorBuilder, ErrWithMethods, Error, ErrorGroup } from "./types.js";
 import { isError, isErrorGroup } from "./guards.js";
 import type { Err } from "../result.js";
 
@@ -13,11 +12,10 @@ import type { Err } from "../result.js";
 type NativeError = globalThis.Error;
 
 /**
- * Creates an Error type builder
+ * Creates an Error type builder with Zod validation
  * Use like Python exception classes
  *
  * @example
- * // With Zod schema (recommended for validation)
  * const SizeError = error({
  *   name: "SizeError",
  *   schema: z.object({ current: z.number(), wanted: z.number() })
@@ -25,22 +23,11 @@ type NativeError = globalThis.Error;
  *
  * // Use as Err - args will be validated
  * const e = SizeError({ current: 3, wanted: 5 });
- *
- * @example
- * // Without Zod (plain type)
- * const SizeError = error({
- *   name: "SizeError",
- *   args: {} as { current: number; wanted: number }
- * });
- *
- * // Use as Err
- * const e = SizeError({ current: 3, wanted: 5 });
  */
-export const error = <T>(options: ErrorOptions<T> | ZodErrorOptions<T>): ErrorBuilder<T> => {
-  const isZod = "schema" in options && options.schema instanceof ZodType;
+export const error = <T>(options: ErrorOptions<T>): ErrorBuilder<T> => {
   const name = options.name;
-  const schema = isZod ? (options as ZodErrorOptions<T>).schema : null;
-  const messageFn = "message" in options ? (options as ErrorOptions<T>).message : undefined;
+  const schema = options.schema;
+  const messageFn = options.message;
 
   const createError = (args: T, notes: string[] = [], cause: NativeError | null = null): Error<T> => {
     // Capture stack trace
@@ -115,50 +102,48 @@ export const error = <T>(options: ErrorOptions<T> | ZodErrorOptions<T>): ErrorBu
     });
   };
 
-  // Main builder function that validates args if schema is provided
+  // Main builder function that validates args with Zod schema
   const validateAndCreate = (args: T): ErrWithMethods<T> => {
-    if (schema) {
-      const parsed = schema.safeParse(args);
-      if (!parsed.success) {
-        // Return error with validation issues as args
-        // Capture stack trace
-        let stack: string | undefined;
-        const err = new Error();
-        if (err.stack) {
-          stack = err.stack.split('\n').slice(3).join('\n');
-        }
-
-        const validationError: Error<T> = Object.freeze({
-          name: `${name}ValidationError`,
-          args: parsed.error.issues as unknown as T,
-          notes: Object.freeze([parsed.error.message]),
-          cause: null,
-          stack,
-          message: `${name}ValidationError: ${parsed.error.message}`,
-        });
-        const errResult: ErrWithMethods<T> = {
-          ok: false as const,
-          error: validationError,
-          isOk(): false { return false; },
-          isErr(): true { return true; },
-          // @ts-expect-error - simplified for validation error
-          map(): unknown { return this; },
-          // @ts-expect-error - simplified for validation error
-          flatMap(): unknown { return this; },
-          // @ts-expect-error - simplified for validation error
-          mapErr(): unknown { return this; },
-          getOrElse<T2>(defaultValue: T2): T2 { return defaultValue; },
-          getOrCompute<T2>(fn: () => T2): T2 { return fn(); },
-          tap(): ErrWithMethods<T> { return errResult; },
-          tapErr(): ErrWithMethods<T> { return errResult; },
-          match<T2>(_: unknown, errFn: (e: Error<T>) => T2): T2 { return errFn(validationError); },
-          addNotes: (): ErrWithMethods<T> => errResult,
-          from: (): ErrWithMethods<T> => errResult,
-        };
-        return Object.freeze(errResult);
+    const parsed = schema.safeParse(args);
+    if (!parsed.success) {
+      // Return error with validation issues as args
+      // Capture stack trace
+      let stack: string | undefined;
+      const err = new Error();
+      if (err.stack) {
+        stack = err.stack.split('\n').slice(3).join('\n');
       }
+
+      const validationError: Error<T> = Object.freeze({
+        name: `${name}ValidationError`,
+        args: parsed.error.issues as unknown as T,
+        notes: Object.freeze([parsed.error.message]),
+        cause: null,
+        stack,
+        message: `${name}ValidationError: ${parsed.error.message}`,
+      });
+      const errResult: ErrWithMethods<T> = {
+        ok: false as const,
+        error: validationError,
+        isOk(): false { return false; },
+        isErr(): true { return true; },
+        // @ts-expect-error - simplified for validation error
+        map(): unknown { return this; },
+        // @ts-expect-error - simplified for validation error
+        flatMap(): unknown { return this; },
+        // @ts-expect-error - simplified for validation error
+        mapErr(): unknown { return this; },
+        getOrElse<T2>(defaultValue: T2): T2 { return defaultValue; },
+        getOrCompute<T2>(fn: () => T2): T2 { return fn(); },
+        tap(): ErrWithMethods<T> { return errResult; },
+        tapErr(): ErrWithMethods<T> { return errResult; },
+        match<T2>(_: unknown, errFn: (e: Error<T>) => T2): T2 { return errFn(validationError); },
+        addNotes: (): ErrWithMethods<T> => errResult,
+        from: (): ErrWithMethods<T> => errResult,
+      };
+      return Object.freeze(errResult);
     }
-    return createErrWithMethods(args);
+    return createErrWithMethods(parsed.data, [], null);
   };
 
   const builder: ErrorBuilder<T> = Object.assign(

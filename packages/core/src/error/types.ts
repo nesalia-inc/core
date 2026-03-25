@@ -36,21 +36,10 @@ export type ErrorGroup = Readonly<{
 }>;
 
 /**
- * Options for creating an Error
- * @typeParam T - The type of error arguments
+ * Options for creating an Error with Zod schema validation
+ * @typeParam T - The type of error arguments (validated by the schema)
  */
 export type ErrorOptions<T> = {
-  readonly name: string;
-  readonly args: T;
-  readonly defaultDescription?: string;
-  readonly message?: (args: T) => string;
-};
-
-/**
- * Zod schema wrapper for error arguments validation
- * @typeParam T - The type of error arguments
- */
-export type ZodErrorOptions<T> = {
   readonly name: string;
   readonly schema: ZodSchema<T>;
   readonly defaultDescription?: string;

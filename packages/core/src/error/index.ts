@@ -57,7 +57,6 @@ export type {
   Error,
   ErrorGroup,
   ErrorOptions,
-  ZodErrorOptions,
   ErrWithMethods,
   ErrorBuilder,
 } from "./types.js";
