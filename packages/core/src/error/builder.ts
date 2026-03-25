@@ -6,7 +6,7 @@ import type { ErrorOptions, ErrorBuilder, ErrWithMethods, Error, ErrorGroup } fr
 import type { NativeError } from "../result.js";
 import { isError, isErrorGroup, isErrWithError } from "./guards.js";
 import type { Err } from "../result.js";
-import { some, none, type Maybe } from "../maybe.js";
+import { some, none, type Maybe } from "../maybe";
 
 /**
  * Creates an Error type builder with Zod validation

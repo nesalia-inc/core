@@ -11,7 +11,7 @@ export type { Unit } from "./unit.js";
 export { unit, isUnit } from "./unit.js";
 
 // Re-export all types
-export type { Maybe, Some, None } from "./maybe.js";
+export type { Maybe, Some, None } from "./maybe";
 export type { Result, Ok, Err, Success, ExtractError } from "./result.js";
 
 // Maybe
@@ -34,7 +34,7 @@ export {
   equalsWith as equalsWithMaybe,
   all as allMaybe,
   filter as filterMaybe,
-} from "./maybe.js";
+} from "./maybe";
 
 // Result
 export {

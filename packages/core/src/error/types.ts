@@ -3,7 +3,7 @@
  */
 
 import type { Err } from "../result.js";
-import type { Maybe } from "../maybe.js";
+import type { Maybe } from "../maybe";
 import type { ZodSchema } from "zod";
 
 /**

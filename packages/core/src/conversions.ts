@@ -3,7 +3,7 @@
  */
 
 import { ok, err, Result, isOk } from "./result.js";
-import { some, none, Maybe, isSome } from "./maybe.js";
+import { some, none, Maybe, isSome } from "./maybe";
 
 /**
  * Options for converting Maybe to Result
