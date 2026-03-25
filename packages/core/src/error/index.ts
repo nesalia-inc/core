@@ -62,7 +62,7 @@ export type {
 } from "./types.js";
 
 // Guards
-export { isError, isErrorGroup, isErrWithError, isErrTryWithError } from "./guards.js";
+export { isError, isErrorGroup, isErrWithError, isErrTryWithError, assertIsError, assertIsErrorGroup } from "./guards.js";
 
 // Utilities
 export { getErrorMessage, flattenErrorGroup, filterErrorsByName } from "./utils.js";
