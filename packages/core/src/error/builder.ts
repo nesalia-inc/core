@@ -3,13 +3,9 @@
  */
 
 import type { ErrorOptions, ErrorBuilder, ErrWithMethods, Error, ErrorGroup } from "./types.js";
+import type { NativeError } from "../result.js";
 import { isError, isErrorGroup } from "./guards.js";
 import type { Err } from "../result.js";
-
-/**
- * Native JavaScript Error type alias
- */
-type NativeError = globalThis.Error;
 
 /**
  * Creates an Error type builder with Zod validation
@@ -29,58 +25,84 @@ export const error = <T>(options: ErrorOptions<T>): ErrorBuilder<T> => {
   const schema = options.schema;
   const messageFn = options.message;
 
-  const createError = (args: T, notes: string[] = [], cause: NativeError | null = null): Error<T> => {
+  /**
+   * Creates an ErrWithMethods from args
+   */
+  const createErr = (args: T, notes: string[] = [], cause: Error | null = null): ErrWithMethods<T> => {
     // Capture stack trace
     let stack: string | undefined;
     const err = new Error();
     if (err.stack) {
-      // Extract just the stack trace lines, skipping the first few lines that are internal
       stack = err.stack.split('\n').slice(3).join('\n');
     }
 
     // Generate custom message if provided, otherwise use default
     const customMessage = messageFn ? messageFn(args) : `${name}: ${JSON.stringify(args)}`;
 
-    return Object.freeze({
+    const errorObj: Error<T> = Object.freeze({
       name,
       args,
       notes: Object.freeze([...notes]),
       cause,
       stack,
       message: customMessage,
-    }) as Error<T>;
-  };
+    });
 
-  const createErrWithMethods = (args: T, notes: string[] = [], cause: Error | null = null): ErrWithMethods<T> => {
-    const errorObj = createError(args, notes, cause);
-    // Create a plain object that's compatible with Err but extensible so we can add methods
-    const result: ErrWithMethods<T> = {
+    return Object.freeze({
       ok: false as const,
       error: errorObj,
       isOk(): false { return false; },
       isErr(): true { return true; },
-      // @ts-expect-error - simplified for ErrWithMethods
-      map(): unknown { return this; },
-      // @ts-expect-error - simplified for ErrWithMethods
-      flatMap(): unknown { return this; },
-      // @ts-expect-error - simplified for ErrWithMethods
-      mapErr(): unknown { return this; },
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      map<_U>(): Err<Error<T>> { return this as Err<Error<T>>; },
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      flatMap<_U>(): Err<Error<T>> { return this as Err<Error<T>>; },
+      mapErr<F extends NativeError>(_fn: (error: Error<T>) => F): Err<F> { return this as unknown as Err<F>; },
       getOrElse<T2>(defaultValue: T2): T2 { return defaultValue; },
       getOrCompute<T2>(fn: () => T2): T2 { return fn(); },
-      tap(): ErrWithMethods<T> { return this as ErrWithMethods<T>; },
-      tapErr(): ErrWithMethods<T> { return this as ErrWithMethods<T>; },
+      tap(): ErrWithMethods<T> { return this; },
+      tapErr(): ErrWithMethods<T> { return this; },
       match<T2>(_: unknown, errFn: (e: Error<T>) => T2): T2 { return errFn(errorObj); },
+      unwrap(): never { throw errorObj; },
       addNotes: (...moreNotes: string[]): ErrWithMethods<T> =>
-        createErrWithMethods(args, [...notes, ...moreNotes], cause),
+        createErr(args, [...notes, ...moreNotes], cause),
       from: (newCause: Error | Err<Error>): ErrWithMethods<T> =>
-        createErrWithMethods(args, notes, isError(newCause) ? newCause : newCause.error),
-    };
-    // Freeze only the outer object, not the methods (they create new instances)
-    return Object.freeze(result);
+        createErr(args, notes, isError(newCause) ? newCause : newCause.error),
+    });
   };
 
+  /**
+   * Wraps an existing Error object in ErrWithMethods
+   */
+  const wrapError = (errorObj: Error<T>): ErrWithMethods<T> =>
+    Object.freeze({
+      ok: false as const,
+      error: errorObj,
+      isOk(): false { return false; },
+      isErr(): true { return true; },
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      map<_U>(): Err<Error<T>> { return this as Err<Error<T>>; },
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      flatMap<_U>(): Err<Error<T>> { return this as Err<Error<T>>; },
+      mapErr<F extends NativeError>(_fn: (error: Error<T>) => F): Err<F> { return this as unknown as Err<F>; },
+      getOrElse<T2>(defaultValue: T2): T2 { return defaultValue; },
+      getOrCompute<T2>(fn: () => T2): T2 { return fn(); },
+      tap(): ErrWithMethods<T> { return this; },
+      tapErr(): ErrWithMethods<T> { return this; },
+      match<T2>(_: unknown, errFn: (e: Error<T>) => T2): T2 { return errFn(errorObj); },
+      unwrap(): never { throw errorObj; },
+      addNotes: (): ErrWithMethods<T> => wrapError({
+        ...errorObj,
+        notes: [...errorObj.notes, "Cannot add notes to validation error"],
+      }),
+      from: (): ErrWithMethods<T> => wrapError({
+        ...errorObj,
+        notes: [...errorObj.notes, "Cannot chain cause on validation error"],
+      }),
+    });
+
   const createBuilderWithNotes = (initialNotes: string[]): ErrorBuilder<T> => {
-    const builderFn = (args: T): ErrWithMethods<T> => createErrWithMethods(args, initialNotes);
+    const builderFn = (args: T): ErrWithMethods<T> => createErr(args, initialNotes);
     return Object.assign(builderFn, {
       addNotes: (...notes: string[]): ErrorBuilder<T> =>
         createBuilderWithNotes([...initialNotes, ...notes]),
@@ -93,7 +115,7 @@ export const error = <T>(options: ErrorOptions<T>): ErrorBuilder<T> => {
 
   const createBuilderWithCause = (cause: Error, initialNotes: string[]): ErrorBuilder<T> => {
     const builderFn = (args: T): ErrWithMethods<T> =>
-      createErrWithMethods(args, initialNotes, cause);
+      createErr(args, initialNotes, cause);
     return Object.assign(builderFn, {
       addNotes: (...notes: string[]): ErrorBuilder<T> =>
         createBuilderWithCause(cause, [...initialNotes, ...notes]),
@@ -106,7 +128,6 @@ export const error = <T>(options: ErrorOptions<T>): ErrorBuilder<T> => {
   const validateAndCreate = (args: T): ErrWithMethods<T> => {
     const parsed = schema.safeParse(args);
     if (!parsed.success) {
-      // Return error with validation issues as args
       // Capture stack trace
       let stack: string | undefined;
       const err = new Error();
@@ -122,28 +143,9 @@ export const error = <T>(options: ErrorOptions<T>): ErrorBuilder<T> => {
         stack,
         message: `${name}ValidationError: ${parsed.error.message}`,
       });
-      const errResult: ErrWithMethods<T> = {
-        ok: false as const,
-        error: validationError,
-        isOk(): false { return false; },
-        isErr(): true { return true; },
-        // @ts-expect-error - simplified for validation error
-        map(): unknown { return this; },
-        // @ts-expect-error - simplified for validation error
-        flatMap(): unknown { return this; },
-        // @ts-expect-error - simplified for validation error
-        mapErr(): unknown { return this; },
-        getOrElse<T2>(defaultValue: T2): T2 { return defaultValue; },
-        getOrCompute<T2>(fn: () => T2): T2 { return fn(); },
-        tap(): ErrWithMethods<T> { return errResult; },
-        tapErr(): ErrWithMethods<T> { return errResult; },
-        match<T2>(_: unknown, errFn: (e: Error<T>) => T2): T2 { return errFn(validationError); },
-        addNotes: (): ErrWithMethods<T> => errResult,
-        from: (): ErrWithMethods<T> => errResult,
-      };
-      return Object.freeze(errResult);
+      return wrapError(validationError);
     }
-    return createErrWithMethods(parsed.data, [], null);
+    return createErr(parsed.data, [], null);
   };
 
   const builder: ErrorBuilder<T> = Object.assign(
