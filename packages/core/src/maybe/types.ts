@@ -22,12 +22,13 @@ export interface Some<T> {
   isNone(): false;
   equals(other: Maybe<T>): boolean;
   equals(other: Maybe<T>, comparator: (a: T, b: T) => boolean): boolean;
-  filter<E extends NativeError>(predicate: (value: T) => boolean, onNone?: () => E): Maybe<T> | Result<T, E>;
+  filter(predicate: (value: T) => boolean): Maybe<T>;
   map<U>(fn: (value: T) => U): Maybe<U>;
   flatMap<U>(fn: (value: T) => Maybe<U>): Maybe<U>;
   getOrElse(defaultValue: T): T;
   getOrCompute(fn: () => T): T;
   tap(fn: (value: T) => void): Maybe<T>;
+  toResult<E extends NativeError>(onNone: () => E): Result<T, E>;
 }
 
 /**
@@ -39,10 +40,11 @@ export interface None {
   isNone(): true;
   equals(other: Maybe<unknown>): boolean;
   equals(other: Maybe<unknown>, comparator: (a: unknown, b: unknown) => boolean): boolean;
-  filter<T, E extends NativeError>(predicate: (value: T) => boolean, onNone?: () => E): None | Result<T, E>;
+  filter(predicate: (value: unknown) => boolean): None;
   map<U>(fn: (value: never) => U): None;
   flatMap<U>(fn: (value: never) => Maybe<U>): None;
   getOrElse<T>(defaultValue: T): T;
   getOrCompute<T>(fn: () => T): T;
   tap(fn: (value: never) => void): None;
+  toResult<E extends NativeError>(onNone: () => E): Result<never, E>;
 }

@@ -34,6 +34,7 @@ export {
   equalsWith as equalsWithMaybe,
   all as allMaybe,
   filter as filterMaybe,
+  toResult as toResultMaybe,
 } from "./maybe";
 
 // Result

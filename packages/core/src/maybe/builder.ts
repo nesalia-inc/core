@@ -29,14 +29,11 @@ export const some = <T,>(value: NonNullable<T>): Some<NonNullable<T>> => {
       }
       return false;
     },
-    filter<E extends NativeError>(
-      predicate: (value: NonNullable<T>) => boolean,
-      onNone?: () => E
-    ): Maybe<NonNullable<T>> | Result<NonNullable<T>, E> {
-      if (predicate(this.value)) {
-        return onNone !== undefined ? ok(this.value) : this;
+    filter(predicate: (value: NonNullable<T>) => boolean): Maybe<NonNullable<T>> {
+      if (!predicate(this.value)) {
+        return none();
       }
-      return onNone !== undefined ? err(onNone()) : none();
+      return this;
     },
     map<U>(fn: (value: NonNullable<T>) => U): Maybe<U> {
       return some(fn(this.value) as NonNullable<U>);
@@ -53,6 +50,9 @@ export const some = <T,>(value: NonNullable<T>): Some<NonNullable<T>> => {
     tap(fn: (value: NonNullable<T>) => void): Maybe<NonNullable<T>> {
       fn(this.value);
       return this;
+    },
+    toResult<E extends NativeError>(_onNone: () => E): Result<NonNullable<T>, E> {
+      return ok(this.value);
     },
   };
   return Object.freeze(someValue);
@@ -73,10 +73,7 @@ const NONE: None = Object.freeze({
   equals(_other: Maybe<unknown>, _comparator?: (a: unknown, b: unknown) => boolean): boolean {
     return isNone(_other);
   },
-  filter<T, E extends NativeError>(_predicate: (value: T) => boolean, onNone?: () => E): None | Result<T, E> {
-    if (onNone !== undefined) {
-      return err(onNone());
-    }
+  filter(_predicate: (value: unknown) => boolean): None {
     return NONE;
   },
   map<U>(_fn: (value: never) => U): None {
@@ -93,6 +90,9 @@ const NONE: None = Object.freeze({
   },
   tap(_fn: (value: never) => void): None {
     return NONE;
+  },
+  toResult<E extends NativeError>(onNone: () => E): Result<never, E> {
+    return err(onNone());
   },
 });
 
@@ -267,22 +267,33 @@ export function all<T>(first: Maybe<T> | readonly Maybe<T>[], ...rest: Maybe<T>[
  * @typeParam E - The type of the error when onNone is provided
  * @param maybe - The Maybe to filter
  * @param predicate - The predicate function
- * @param onNone - Optional callback when filter fails
- * @returns Some<T> if predicate passes, None otherwise (or Result<T, E> if onNone provided)
+ /**
+ * Filters a Maybe based on a predicate
+ * @typeParam T - The type of the value
+ * @param maybe - The Maybe to filter
+ * @param predicate - The predicate function
+ * @returns Some<T> if predicate passes and maybe is Some, None otherwise
  */
-export const filter = <T, E extends NativeError>(
+export const filter = <T>(
   maybe: Maybe<T>,
-  predicate: (value: T) => boolean,
-  onNone?: () => E
-): Maybe<T> | Result<T, E> =>
-  isSome(maybe)
-    ? predicate(maybe.value)
-      ? onNone !== undefined
-        ? ok(maybe.value)
-        : maybe
-      : onNone !== undefined
-        ? err(onNone())
-        : none()
-    : onNone !== undefined
-      ? err(onNone())
-      : none();
+  predicate: (value: T) => boolean
+): Maybe<T> => {
+  if (isSome(maybe) && !predicate(maybe.value)) {
+    return none();
+  }
+  return maybe;
+};
+
+/**
+ * Converts a Maybe to a Result
+ * @typeParam T - The type of the value
+ * @typeParam E - The type of the error
+ * @param maybe - The Maybe to convert
+ * @param onNone - Function to create the error when maybe is None
+ * @returns Ok<T> if Some, Err<E> if None
+ */
+export const toResult = <T, E extends NativeError>(
+  maybe: Maybe<T>,
+  onNone: () => E
+): Result<T, E> =>
+  isSome(maybe) ? ok(maybe.value) : err(onNone());

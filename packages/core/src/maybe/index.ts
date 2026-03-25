@@ -15,7 +15,7 @@ export { isSome, isNone } from "./builder";
 export { map, flatMap, flatten, tap, match } from "./builder";
 
 // Conversion functions
-export { toNullable, toUndefined, getOrElse, getOrCompute } from "./builder";
+export { toNullable, toUndefined, getOrElse, getOrCompute, toResult } from "./builder";
 
 // Comparison
 export { equals, equalsWith } from "./builder";

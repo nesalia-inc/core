@@ -19,6 +19,7 @@ import {
   Maybe,
   all,
   filter,
+  toResult,
 } from "../src/maybe";
 
 describe("Maybe", () => {
@@ -629,9 +630,9 @@ describe("Maybe", () => {
       });
     });
 
-    describe("filter with onNone on Some", () => {
+    describe("filter with toResult on Some", () => {
       it("should return Ok if predicate passes", () => {
-        const result = some(25).filter((age) => age >= 18, () => "TOO_YOUNG");
+        const result = some(25).filter((age) => age >= 18).toResult(() => "TOO_YOUNG");
         expect(result.ok).toBe(true);
         if (result.ok) {
           expect(result.value).toBe(25);
@@ -639,27 +640,18 @@ describe("Maybe", () => {
       });
 
       it("should return Err if predicate fails", () => {
-        const result = some(15).filter((age) => age >= 18, () => "TOO_YOUNG");
+        const result = some(15).filter((age) => age >= 18).toResult(() => "TOO_YOUNG");
         expect(result.ok).toBe(false);
         if (!result.ok) {
           expect(result.error).toBe("TOO_YOUNG");
         }
       });
 
-      it("should call onNone function only when predicate fails", () => {
+      it("should not call toResult function when predicate passes", () => {
         let called = false;
-        some(15).filter((age) => age >= 18, () => {
+        some(25).filter((age) => age >= 18).toResult(() => {
           called = true;
-          return "TOO_YOUNG";
-        });
-        expect(called).toBe(true);
-      });
-
-      it("should not call onNone function when predicate passes", () => {
-        let called = false;
-        some(25).filter((age) => age >= 18, () => {
-          called = true;
-          return "TOO_YOUNG";
+          return "TOO_YOUNG" as const;
         });
         expect(called).toBe(false);
       });
@@ -672,22 +664,13 @@ describe("Maybe", () => {
       });
     });
 
-    describe("filter with onNone on None", () => {
-      it("should return Err with onNone result", () => {
-        const result = none().filter((age) => age >= 18, () => "NO_AGE");
+    describe("filter with toResult on None", () => {
+      it("should return Err with toResult result", () => {
+        const result = none().filter((age) => age >= 18).toResult(() => "NO_AGE");
         expect(result.ok).toBe(false);
         if (!result.ok) {
           expect(result.error).toBe("NO_AGE");
         }
-      });
-
-      it("should call onNone when None", () => {
-        let called = false;
-        none().filter((_age) => true, () => {
-          called = true;
-          return "NO_AGE";
-        });
-        expect(called).toBe(true);
       });
     });
   });
@@ -712,31 +695,26 @@ describe("Maybe", () => {
       });
     });
 
-    describe("filter with onNone callback", () => {
+    describe("filter then toResult", () => {
       it("should return Ok when predicate passes", () => {
-        const result = filter(some(25), (age) => age >= 18, () => "TOO_YOUNG");
+        const result = toResult(filter(some(25), (age) => age >= 18), () => "TOO_YOUNG");
         expect(result.ok).toBe(true);
       });
 
       it("should return Err when predicate fails", () => {
-        const result = filter(some(15), (age) => age >= 18, () => "TOO_YOUNG");
+        const result = toResult(filter(some(15), (age) => age >= 18), () => "TOO_YOUNG");
         expect(result.ok).toBe(false);
         if (!result.ok) {
           expect(result.error).toBe("TOO_YOUNG");
         }
       });
 
-      it("should call onNone when Maybe is None", () => {
-        const result = filter(none(), (age) => age >= 18, () => "NO_AGE");
+      it("should return Err when Maybe is None", () => {
+        const result = toResult(filter(none(), (age) => age >= 18), () => "NO_AGE");
         expect(result.ok).toBe(false);
         if (!result.ok) {
           expect(result.error).toBe("NO_AGE");
         }
-      });
-
-      it("should return None when Maybe is None and no onNone", () => {
-        const result = filter(none(), (age) => age >= 18);
-        expect(isNone(result)).toBe(true);
       });
     });
   });
