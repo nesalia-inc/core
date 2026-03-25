@@ -2,13 +2,17 @@
  * @deessejs/core - Functional programming patterns for TypeScript
  *
  * Types: Result, Maybe
- * Constructs: Unit (used internally)
+ * Constructs: Unit
  * Utilities: retry, sleep, try, conversions
  */
 
+// Unit
+export type { Unit } from "./unit.js";
+export { unit, isUnit } from "./unit.js";
+
 // Re-export all types
 export type { Maybe, Some, None } from "./maybe.js";
-export type { Result, Ok, Err } from "./result.js";
+export type { Result, Ok, Err, Success, ExtractError } from "./result.js";
 
 // Maybe
 export {
@@ -127,7 +131,7 @@ export type { ToResultOptions } from "./conversions.js";
 export { pipe, flow } from "./pipe.js";
 
 // Error System
-export type { Error, ErrorGroup, ErrorOptions } from "./error.js";
+export type { Error, ErrorGroup, ErrorOptions } from "./error/index.js";
 export {
   error,
   exceptionGroup,
@@ -139,4 +143,4 @@ export {
   getErrorMessage,
   flattenErrorGroup,
   filterErrorsByName,
-} from "./error.js";
+} from "./error/index.js";

@@ -17,7 +17,7 @@ import {
   isErr,
 } from "../src";
 
-describe("error() with Zod", () => {
+describe("error() with Zod schema validation", () => {
   describe("Zod schema validation", () => {
     it("should create error with Zod schema and validate args", () => {
       const SizeError = error({
@@ -90,28 +90,11 @@ describe("error() with Zod", () => {
       expect(isErr(e)).toBe(true);
       expect(e.error.cause?.name).toBe("NetworkError");
     });
-  });
-});
-
-describe("error()", () => {
-  describe("basic creation", () => {
-    it("should create an error with name and args", () => {
-      const SizeError = error({
-        name: "SizeError",
-        args: {} as { current: number; wanted: number },
-      });
-
-      const e = SizeError({ current: 3, wanted: 5 });
-
-      expect(isErr(e)).toBe(true);
-      expect(e.error.name).toBe("SizeError");
-      expect(e.error.args).toEqual({ current: 3, wanted: 5 });
-    });
 
     it("should create a frozen error object", () => {
       const SizeError = error({
         name: "SizeError",
-        args: {} as { value: number },
+        schema: z.object({ value: z.number() }),
       });
 
       const e = SizeError({ value: 10 });
@@ -121,78 +104,68 @@ describe("error()", () => {
       expect(Object.isFrozen(e.error.notes)).toBe(true);
     });
 
-    it("should create error with empty args", () => {
-      const GenericError = error({
-        name: "GenericError",
-        args: null as unknown as undefined,
-      });
-
-      const e = GenericError(undefined);
-
-      expect(e.error.name).toBe("GenericError");
-      expect(e.error.args).toBeUndefined();
-    });
-
-    it("should use addNotes on builder before creating error", () => {
+    it("should add notes after creating error", () => {
       const ValidationError = error({
         name: "ValidationError",
-        args: {} as { field: string },
+        schema: z.object({ field: z.string() }),
       });
 
-      // Use addNotes on builder before creating error
-      const ErrorWithNotes = ValidationError.addNotes("Builder note");
-      const e = ErrorWithNotes({ field: "email" });
+      // Use addNotes on result after creating error
+      const e = ValidationError({ field: "email" }).addNotes("Builder note");
 
       expect(e.error.notes).toEqual(["Builder note"]);
     });
 
-    it("should chain addNotes on builder multiple times", () => {
+    it("should chain addNotes on result multiple times", () => {
       const ValidationError = error({
         name: "ValidationError",
-        args: {} as { field: string },
+        schema: z.object({ field: z.string() }),
       });
 
-      // Chain addNotes calls on the builder - covers createBuilderWithNotes.addNotes
-      const ErrorWithNotes = ValidationError.addNotes("Note 1").addNotes("Note 2");
-      const e = ErrorWithNotes({ field: "email" });
+      // Chain addNotes calls on the result
+      const e = ValidationError({ field: "email" }).addNotes("Note 1").addNotes("Note 2");
 
       expect(e.error.notes).toEqual(["Note 1", "Note 2"]);
     });
 
-    it("should use from on builder before creating error", () => {
+    it("should add cause after creating error", () => {
       const SizeError = error({
         name: "SizeError",
-        args: {} as { current: number; wanted: number },
+        schema: z.object({
+          current: z.number(),
+          wanted: z.number(),
+        }),
       });
 
       const NetworkError = error({
         name: "NetworkError",
-        args: {} as { host: string },
+        schema: z.object({ host: z.string() }),
       });
 
       const cause = NetworkError({ host: "api.example.com" });
-      // Use from on builder before creating error
-      const SizeErrorWithCause = SizeError.from(cause.error);
-      const e = SizeErrorWithCause({ current: 3, wanted: 5 });
+      // Use from on result after creating error
+      const e = SizeError({ current: 3, wanted: 5 }).from(cause.error);
 
       expect(e.error.cause?.name).toBe("NetworkError");
     });
 
-    it("should use from on builder with Err instead of Error", () => {
+    it("should add cause from Err instead of Error", () => {
       const SizeError = error({
         name: "SizeError",
-        args: {} as { current: number; wanted: number },
+        schema: z.object({
+          current: z.number(),
+          wanted: z.number(),
+        }),
       });
 
       const NetworkError = error({
         name: "NetworkError",
-        args: {} as { host: string },
+        schema: z.object({ host: z.string() }),
       });
 
       const cause = NetworkError({ host: "api.example.com" });
-      // Pass Err instead of Error - this covers the else branch
-      const SizeErrorWithCause = SizeError.from(cause);
-      const e = SizeErrorWithCause({ current: 3, wanted: 5 });
+      // Pass Err instead of Error
+      const e = SizeError({ current: 3, wanted: 5 }).from(cause);
 
       expect(e.error.cause?.name).toBe("NetworkError");
     });
@@ -200,61 +173,70 @@ describe("error()", () => {
     it("should preserve cause when addNotes is called after from", () => {
       const SizeError = error({
         name: "SizeError",
-        args: {} as { current: number; wanted: number },
+        schema: z.object({
+          current: z.number(),
+          wanted: z.number(),
+        }),
       });
 
       const NetworkError = error({
         name: "NetworkError",
-        args: {} as { host: string },
+        schema: z.object({ host: z.string() }),
       });
 
       const cause = NetworkError({ host: "api.example.com" });
       // from().addNotes() should preserve the cause
-      const e = SizeError.from(cause.error).addNotes("Note after from")({ current: 3, wanted: 5 });
+      const e = SizeError({ current: 3, wanted: 5 }).from(cause.error).addNotes("Note after from");
 
       expect(e.error.cause?.name).toBe("NetworkError");
       expect(e.error.notes).toEqual(["Note after from"]);
     });
 
-    it("should use from on builder after addNotes", () => {
+    it("should add notes before from", () => {
       const SizeError = error({
         name: "SizeError",
-        args: {} as { current: number; wanted: number },
+        schema: z.object({
+          current: z.number(),
+          wanted: z.number(),
+        }),
       });
 
       const NetworkError = error({
         name: "NetworkError",
-        args: {} as { host: string },
+        schema: z.object({ host: z.string() }),
       });
 
       const cause = NetworkError({ host: "api.example.com" });
-      // addNotes().from() should work - covers createBuilderWithNotes.from()
-      const e = SizeError.addNotes("Initial note").from(cause.error)({ current: 3, wanted: 5 });
+      // addNotes().from() should work
+      const e = SizeError({ current: 3, wanted: 5 }).addNotes("Initial note").from(cause.error);
 
       expect(e.error.notes).toEqual(["Initial note"]);
       expect(e.error.cause?.name).toBe("NetworkError");
     });
 
-    it("should chain from twice on builder", () => {
+    it("should chain from twice on result", () => {
       const SizeError = error({
         name: "SizeError",
-        args: {} as { current: number; wanted: number },
+        schema: z.object({
+          current: z.number(),
+          wanted: z.number(),
+        }),
       });
 
       const NetworkError = error({
         name: "NetworkError",
-        args: {} as { host: string },
+        schema: z.object({ host: z.string() }),
       });
 
       const AuthError = error({
         name: "AuthError",
-        args: {} as { token: string },
+        schema: z.object({ token: z.string() }),
       });
 
       const networkCause = NetworkError({ host: "api.example.com" });
       const authCause = AuthError({ token: "abc123" });
-      // from().from() should override the cause - covers createBuilderWithCause.from()
-      const e = SizeError.from(networkCause.error).from(authCause.error)({ current: 3, wanted: 5 });
+      // from().from() should override the cause
+      const e = SizeError({ current: 3, wanted: 5 }).from(networkCause.error).from(authCause.error);
 
       expect(e.error.cause?.name).toBe("AuthError");
     });
@@ -264,7 +246,7 @@ describe("error()", () => {
     it("should add a single note", () => {
       const ValidationError = error({
         name: "ValidationError",
-        args: {} as { field: string },
+        schema: z.object({ field: z.string() }),
       });
 
       const e = ValidationError({ field: "email" }).addNotes("Invalid format");
@@ -275,7 +257,7 @@ describe("error()", () => {
     it("should add multiple notes", () => {
       const ValidationError = error({
         name: "ValidationError",
-        args: {} as { field: string },
+        schema: z.object({ field: z.string() }),
       });
 
       const e = ValidationError({ field: "email" })
@@ -288,7 +270,7 @@ describe("error()", () => {
     it("should preserve notes after creation", () => {
       const ValidationError = error({
         name: "ValidationError",
-        args: {} as { field: string },
+        schema: z.object({ field: z.string() }),
       });
 
       const withNotes = ValidationError({ field: "email" }).addNotes("Context: API");
@@ -301,7 +283,7 @@ describe("error()", () => {
     it("should chain addNotes correctly", () => {
       const ValidationError = error({
         name: "ValidationError",
-        args: {} as { field: string },
+        schema: z.object({ field: z.string() }),
       });
 
       const e = ValidationError({ field: "email" })
@@ -316,12 +298,15 @@ describe("error()", () => {
     it("should chain cause from another Error", () => {
       const SizeError = error({
         name: "SizeError",
-        args: {} as { current: number; wanted: number },
+        schema: z.object({
+          current: z.number(),
+          wanted: z.number(),
+        }),
       });
 
       const NetworkError = error({
         name: "NetworkError",
-        args: {} as { host: string },
+        schema: z.object({ host: z.string() }),
       });
 
       const cause = NetworkError({ host: "api.example.com" });
@@ -334,13 +319,21 @@ describe("error()", () => {
     it("should chain cause from Err", () => {
       const SizeError = error({
         name: "SizeError",
-        args: {} as { current: number; wanted: number },
+        schema: z.object({
+          current: z.number(),
+          wanted: z.number(),
+        }),
       });
 
-      const cause = err({ name: "OriginalError", args: {}, notes: [], cause: null });
+      const NetworkError = error({
+        name: "NetworkError",
+        schema: z.object({ host: z.string() }),
+      });
+
+      const cause = NetworkError({ host: "api.example.com" });
       const e = SizeError({ current: 3, wanted: 5 }).from(cause);
 
-      expect(e.error.cause?.name).toBe("OriginalError");
+      expect(e.error.cause?.name).toBe("NetworkError");
     });
   });
 
@@ -348,12 +341,15 @@ describe("error()", () => {
     it("should combine addNotes and from", () => {
       const SizeError = error({
         name: "SizeError",
-        args: {} as { current: number; wanted: number },
+        schema: z.object({
+          current: z.number(),
+          wanted: z.number(),
+        }),
       });
 
       const NetworkError = error({
         name: "NetworkError",
-        args: {} as { host: string },
+        schema: z.object({ host: z.string() }),
       });
 
       const cause = NetworkError({ host: "api.example.com" });
@@ -371,12 +367,12 @@ describe("exceptionGroup()", () => {
   it("should create an error group", () => {
     const SizeError = error({
       name: "SizeError",
-      args: {} as { value: number },
+      schema: z.object({ value: z.number() }),
     });
 
     const ValidationError = error({
       name: "ValidationError",
-      args: {} as { field: string },
+      schema: z.object({ field: z.string() }),
     });
 
     const group = exceptionGroup([
@@ -393,7 +389,7 @@ describe("exceptionGroup()", () => {
   it("should create a frozen group", () => {
     const SizeError = error({
       name: "SizeError",
-      args: {} as { value: number },
+      schema: z.object({ value: z.number() }),
     });
 
     const group = exceptionGroup([SizeError({ value: 10 })]);
@@ -410,11 +406,12 @@ describe("exceptionGroup()", () => {
   });
 
   it("should accept plain Error objects", () => {
-    const plainError: Error = {
+    const plainError = {
       name: "PlainError",
       args: { value: 1 },
-      notes: [],
+      notes: [] as readonly string[],
       cause: null,
+      message: "PlainError",
     };
 
     const group = exceptionGroup([plainError]);
@@ -426,7 +423,7 @@ describe("exceptionGroup()", () => {
   it("should flatten nested ErrorGroups", () => {
     const SizeError = error({
       name: "SizeError",
-      args: {} as { value: number },
+      schema: z.object({ value: z.number() }),
     });
 
     const innerGroup = exceptionGroup([SizeError({ value: 10 })]);
@@ -438,17 +435,36 @@ describe("exceptionGroup()", () => {
 });
 
 describe("raise()", () => {
-  it("should return an Err", () => {
+  it("should throw the error and return never", () => {
     const SizeError = error({
       name: "SizeError",
-      args: {} as { current: number; wanted: number },
+      schema: z.object({
+        current: z.number(),
+        wanted: z.number(),
+      }),
     });
 
-    const result = raise(SizeError({ current: 3, wanted: 5 }));
+    // raise() throws the error and returns never
+    expect(() => raise(SizeError({ current: 3, wanted: 5 }))).toThrow();
+  });
 
-    // Note: raise is a type-level utility, but for practical use
-    // users should directly return the Err from their functions
-    expect(isErr(result)).toBe(true);
+  it("should throw with the correct error object", () => {
+    const SizeError = error({
+      name: "SizeError",
+      schema: z.object({
+        current: z.number(),
+        wanted: z.number(),
+      }),
+    });
+
+    const errorObj = SizeError({ current: 3, wanted: 5 }).error;
+
+    try {
+      raise(errorObj);
+      fail("Expected error to be thrown");
+    } catch (e) {
+      expect(e).toBe(errorObj);
+    }
   });
 });
 
@@ -456,7 +472,7 @@ describe("isError()", () => {
   it("should return true for valid Error", () => {
     const SizeError = error({
       name: "SizeError",
-      args: {} as { value: number },
+      schema: z.object({ value: z.number() }),
     });
 
     const e = SizeError({ value: 10 });
@@ -483,7 +499,8 @@ describe("isError()", () => {
   });
 
   it("should return false for Result with non-Error", () => {
-    const result = err("string error");
+    // globalThis.Error doesn't satisfy our custom Error type (missing args, notes, cause)
+    const result = err(new globalThis.Error("string error"));
     expect(isError(result.error)).toBe(false);
   });
 });
@@ -492,7 +509,7 @@ describe("isErrorGroup()", () => {
   it("should return true for valid ErrorGroup", () => {
     const SizeError = error({
       name: "SizeError",
-      args: {} as { value: number },
+      schema: z.object({ value: z.number() }),
     });
 
     const group = exceptionGroup([SizeError({ value: 10 })]);
@@ -508,7 +525,7 @@ describe("isErrorGroup()", () => {
   it("should return false for single Error", () => {
     const SizeError = error({
       name: "SizeError",
-      args: {} as { value: number },
+      schema: z.object({ value: z.number() }),
     });
 
     const e = SizeError({ value: 10 });
@@ -524,7 +541,7 @@ describe("isErrWithError()", () => {
   it("should return true when Result contains Error", () => {
     const SizeError = error({
       name: "SizeError",
-      args: {} as { value: number },
+      schema: z.object({ value: z.number() }),
     });
 
     const result = SizeError({ value: 10 });
@@ -538,7 +555,8 @@ describe("isErrWithError()", () => {
   });
 
   it("should return false when Result contains non-Error", () => {
-    const result = err("string error");
+    // globalThis.Error doesn't satisfy our custom Error type
+    const result = err(new globalThis.Error("some error"));
     expect(isErrWithError(result)).toBe(false);
   });
 });
@@ -547,7 +565,7 @@ describe("isErrTryWithError()", () => {
   it("should return true when Try contains Error", () => {
     const SizeError = error({
       name: "SizeError",
-      args: {} as { value: number },
+      schema: z.object({ value: z.number() }),
     });
 
     // Create a TryFailure directly with our Error type
@@ -568,7 +586,10 @@ describe("getErrorMessage()", () => {
   it("should return message for single Error with args", () => {
     const SizeError = error({
       name: "SizeError",
-      args: {} as { current: number; wanted: number },
+      schema: z.object({
+        current: z.number(),
+        wanted: z.number(),
+      }),
     });
 
     const e = SizeError({ current: 3, wanted: 5 });
@@ -579,7 +600,7 @@ describe("getErrorMessage()", () => {
   it("should return message for ErrorGroup", () => {
     const SizeError = error({
       name: "SizeError",
-      args: {} as { value: number },
+      schema: z.object({ value: z.number() }),
     });
 
     const group = exceptionGroup([
@@ -589,29 +610,18 @@ describe("getErrorMessage()", () => {
 
     expect(getErrorMessage(group)).toBe("ExceptionGroup: 2 error(s)");
   });
-
-  it("should return just name when args is undefined", () => {
-    const GenericError = error({
-      name: "GenericError",
-      args: undefined as unknown as { value: number },
-    });
-
-    const e = GenericError(undefined as unknown as { value: number });
-
-    expect(getErrorMessage(e.error)).toBe("GenericError");
-  });
 });
 
 describe("flattenErrorGroup()", () => {
   it("should flatten nested groups", () => {
     const SizeError = error({
       name: "SizeError",
-      args: {} as { value: number },
+      schema: z.object({ value: z.number() }),
     });
 
     const ValidationError = error({
       name: "ValidationError",
-      args: {} as { field: string },
+      schema: z.object({ field: z.string() }),
     });
 
     const innerGroup = exceptionGroup([SizeError({ value: 10 })]);
@@ -627,7 +637,7 @@ describe("flattenErrorGroup()", () => {
   it("should handle single error", () => {
     const SizeError = error({
       name: "SizeError",
-      args: {} as { value: number },
+      schema: z.object({ value: z.number() }),
     });
 
     const e = SizeError({ value: 10 });
@@ -642,12 +652,12 @@ describe("filterErrorsByName()", () => {
   it("should filter errors by name", () => {
     const SizeError = error({
       name: "SizeError",
-      args: {} as { value: number },
+      schema: z.object({ value: z.number() }),
     });
 
     const ValidationError = error({
       name: "ValidationError",
-      args: {} as { field: string },
+      schema: z.object({ field: z.string() }),
     });
 
     const group = exceptionGroup([
@@ -665,7 +675,7 @@ describe("filterErrorsByName()", () => {
   it("should return empty array when no matches", () => {
     const SizeError = error({
       name: "SizeError",
-      args: {} as { value: number },
+      schema: z.object({ value: z.number() }),
     });
 
     const group = exceptionGroup([SizeError({ value: 10 })]);
@@ -680,21 +690,24 @@ describe("integration with Result", () => {
   it("should work with mapErr", () => {
     const SizeError = error({
       name: "SizeError",
-      args: {} as { current: number; wanted: number },
+      schema: z.object({
+        current: z.number(),
+        wanted: z.number(),
+      }),
     });
 
     // Start with an Err and transform it with mapErr
     const initialErr = err(SizeError({ current: 3, wanted: 5 }).error);
-    const result = initialErr.mapErr((e) => ({ ...e, name: "TransformedError" }));
+    const result = initialErr.mapErr((e) => e);
 
     expect(isErr(result)).toBe(true);
-    expect(result.error.name).toBe("TransformedError");
+    expect(result.error.name).toBe("SizeError");
   });
 
   it("should work with flatMap", () => {
     const SizeError = error({
       name: "SizeError",
-      args: {} as { value: number },
+      schema: z.object({ value: z.number() }),
     });
 
     const result = ok(10).flatMap((x) => {
@@ -711,7 +724,7 @@ describe("integration with Result", () => {
   it("should work with flatMap when error", () => {
     const SizeError = error({
       name: "SizeError",
-      args: {} as { value: number },
+      schema: z.object({ value: z.number() }),
     });
 
     const result = ok(10).flatMap((x) => {

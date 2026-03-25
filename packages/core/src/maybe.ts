@@ -22,7 +22,7 @@ export type Some<T> = {
   isNone(): false;
   equals(other: Maybe<T>): boolean;
   equals(other: Maybe<T>, comparator: (a: T, b: T) => boolean): boolean;
-  filter<E>(predicate: (value: T) => boolean, onNone?: () => E): Maybe<T> | Result<T, E>;
+  filter<E extends globalThis.Error>(predicate: (value: T) => boolean, onNone?: () => E): Maybe<T> | Result<T, E>;
 };
 
 /**
@@ -34,7 +34,7 @@ export type None = {
   isNone(): true;
   equals(other: Maybe<unknown>): boolean;
   equals(other: Maybe<unknown>, comparator: (a: unknown, b: unknown) => boolean): boolean;
-  filter<T, E>(predicate: (value: T) => boolean, onNone?: () => E): None | Result<T, E>;
+  filter<T, E extends globalThis.Error>(predicate: (value: T) => boolean, onNone?: () => E): None | Result<T, E>;
 };
 
 /**
@@ -61,7 +61,7 @@ export const some = <T,>(value: NonNullable<T>): Some<NonNullable<T>> => {
       }
       return false;
     },
-    filter<E>(
+    filter<E extends globalThis.Error>(
       predicate: (value: NonNullable<T>) => boolean,
       onNone?: () => E
     ): Maybe<NonNullable<T>> | Result<NonNullable<T>, E> {
@@ -89,7 +89,7 @@ const NONE: None = Object.freeze({
   equals(_other: Maybe<unknown>, _comparator?: (a: unknown, b: unknown) => boolean): boolean {
     return isNone(_other);
   },
-  filter<T, E>(_predicate: (value: T) => boolean, onNone?: () => E): None | Result<T, E> {
+  filter<T, E extends globalThis.Error>(_predicate: (value: T) => boolean, onNone?: () => E): None | Result<T, E> {
     if (onNone !== undefined) {
       return err(onNone());
     }
@@ -271,7 +271,7 @@ export function all<T>(first: Maybe<T> | readonly Maybe<T>[], ...rest: Maybe<T>[
  * @param onNone - Optional callback when filter fails
  * @returns Some<T> if predicate passes, None otherwise (or Result<T, E> if onNone provided)
  */
-export const filter = <T, E>(
+export const filter = <T, E extends globalThis.Error>(
   maybe: Maybe<T>,
   predicate: (value: T) => boolean,
   onNone?: () => E
