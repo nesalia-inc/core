@@ -58,16 +58,19 @@ import { ZodType, ZodSchema } from "zod";
 
 /**
  * Base Error type with enrichment and chaining
+ * Compatible with JavaScript's Error type through structural typing
  * @typeParam T - The type of error arguments
  */
-export type Error<T = unknown> = Readonly<{
+export type Error<T = unknown> = Readonly<ErrorBase<T>> & globalThis.Error;
+
+interface ErrorBase<T> {
   readonly name: string;
   readonly args: T;
   readonly notes: readonly string[];
-  readonly cause: Error | null;
+  readonly cause: globalThis.Error | null;
   readonly stack?: string;
-  readonly message?: string;
-}>;
+  readonly message: string;
+}
 
 /**
  * ErrorGroup - wraps multiple errors
@@ -147,7 +150,7 @@ export const error = <T>(options: ErrorOptions<T> | ZodErrorOptions<T>): ErrorBu
   const schema = isZod ? (options as ZodErrorOptions<T>).schema : null;
   const messageFn = "message" in options ? (options as ErrorOptions<T>).message : undefined;
 
-  const createError = (args: T, notes: string[] = [], cause: Error | null = null): Error<T> => {
+  const createError = (args: T, notes: string[] = [], cause: globalThis.Error | null = null): Error<T> => {
     // Capture stack trace
     let stack: string | undefined;
     const err = new Error();
@@ -156,8 +159,8 @@ export const error = <T>(options: ErrorOptions<T> | ZodErrorOptions<T>): ErrorBu
       stack = err.stack.split('\n').slice(3).join('\n');
     }
 
-    // Generate custom message if provided
-    const customMessage = messageFn ? messageFn(args) : undefined;
+    // Generate custom message if provided, otherwise use default
+    const customMessage = messageFn ? messageFn(args) : `${name}: ${JSON.stringify(args)}`;
 
     return Object.freeze({
       name,
@@ -166,7 +169,7 @@ export const error = <T>(options: ErrorOptions<T> | ZodErrorOptions<T>): ErrorBu
       cause,
       stack,
       message: customMessage,
-    });
+    }) as Error<T>;
   };
 
   const createErrWithMethods = (args: T, notes: string[] = [], cause: Error | null = null): ErrWithMethods<T> => {
@@ -239,6 +242,7 @@ export const error = <T>(options: ErrorOptions<T> | ZodErrorOptions<T>): ErrorBu
           notes: Object.freeze([parsed.error.message]),
           cause: null,
           stack,
+          message: `${name}ValidationError: ${parsed.error.message}`,
         });
         const errResult: ErrWithMethods<T> = {
           ok: false as const,
@@ -306,16 +310,17 @@ export const exceptionGroup = (exceptions: readonly (Error | Err<Error> | ErrorG
 };
 
 /**
- * Functional throw - converts a value to Err for use in transformations
+ * Functional throw - throws the error and returns never
+ * Use for early exit in Result-returning functions
  *
  * @example
- * const result = ok(value).map(x => {
- *   if (!x) return raise(SizeError({ current: 0, wanted: 1 }));
- *   return ok(x);
- * });
+ * const decimal = (p: number, s: number): Result<Column, Error<...>> => {
+ *   if (p < s) raise(DecimalError({ precision: p, scale: s }));
+ *   return ok({ name: 'decimal', precision: p, scale: s });
+ * };
  */
-export const raise = <E>(error: Err<E>): Err<E> => {
-  return error;
+export const raise = <E extends globalThis.Error>(error: E): never => {
+  throw error;
 };
 
 /**
@@ -343,14 +348,14 @@ export const isErrorGroup = (value: unknown): value is ErrorGroup =>
 /**
  * Check if Result is Err with Error type
  */
-export const isErrWithError = (result: Result<unknown, unknown>): result is Err<Error> =>
-  result.ok === false && isError(result.error as Error);
+export const isErrWithError = (result: Result<unknown, globalThis.Error>): result is Err<Error> =>
+  result.ok === false && isError(result.error);
 
 /**
  * Check if Try is TryFailure with Error type
  */
-export const isErrTryWithError = (t: Try<unknown, unknown>): t is TryFailure<Error> =>
-  t.ok === false && isError(t.error as Error);
+export const isErrTryWithError = (t: Try<unknown, globalThis.Error>): t is TryFailure<Error> =>
+  t.ok === false && isError(t.error);
 
 /**
  * Get the message from an Error or ErrorGroup
@@ -359,13 +364,11 @@ export const getErrorMessage = (e: Error | ErrorGroup): string => {
   if (isErrorGroup(e)) {
     return `${e.name}: ${e.exceptions.length} error(s)`;
   }
-  // Use custom message if provided
-  if (e.message) {
-    return e.message;
+  // If args is undefined/null, return just the name
+  if (e.args === undefined || e.args === null) {
+    return e.name;
   }
-  return e.args
-    ? `${e.name}: ${JSON.stringify(e.args)}`
-    : e.name;
+  return e.message;
 };
 
 /**

@@ -438,17 +438,30 @@ describe("exceptionGroup()", () => {
 });
 
 describe("raise()", () => {
-  it("should return an Err", () => {
+  it("should throw the error and return never", () => {
     const SizeError = error({
       name: "SizeError",
       args: {} as { current: number; wanted: number },
     });
 
-    const result = raise(SizeError({ current: 3, wanted: 5 }));
+    // raise() throws the error and returns never
+    expect(() => raise(SizeError({ current: 3, wanted: 5 }))).toThrow();
+  });
 
-    // Note: raise is a type-level utility, but for practical use
-    // users should directly return the Err from their functions
-    expect(isErr(result)).toBe(true);
+  it("should throw with the correct error object", () => {
+    const SizeError = error({
+      name: "SizeError",
+      args: {} as { current: number; wanted: number },
+    });
+
+    const errorObj = SizeError({ current: 3, wanted: 5 }).error;
+
+    try {
+      raise(errorObj);
+      fail("Expected error to be thrown");
+    } catch (e) {
+      expect(e).toBe(errorObj);
+    }
   });
 });
 
