@@ -89,7 +89,7 @@ const NONE: None = Object.freeze({
     return defaultValue;
   },
   getOrCompute<T>(_fn: () => T): T {
-    return undefined as unknown as T;
+    return _fn();
   },
   tap(_fn: (value: never) => void): None {
     return NONE;
