@@ -158,11 +158,33 @@ const errors = exceptionGroup([
 
 ### Guards
 
-```typescript
-import { isError, isErrorGroup } from "@deessejs/core";
+Type guards for safe narrowing with exhaustive validation:
 
-isError(someValue);        // Type guard for Error
-isErrorGroup(someValue);   // Type guard for ErrorGroup
+```typescript
+import { isError, isErrorGroup, assertIsError } from "@deessejs/core";
+
+isError(someValue);        // Type guard for Error (validates primitive types)
+isErrorGroup(someValue);   // Type guard for ErrorGroup (uses .every())
+```
+
+#### Assertion Functions
+
+For control flow without conditional checks:
+
+```typescript
+import { assertIsError, assertIsErrorGroup } from "@deessejs/core";
+
+// Throws if value is not an Error
+assertIsError(value);
+// value is Error here, TypeScript knows the type
+
+// With try/catch for handling invalid input
+try {
+  assertIsError(userInput);
+  processError(userInput);
+} catch {
+  console.log("Not a valid error");
+}
 ```
 
 ### getErrorMessage()
@@ -230,6 +252,18 @@ Creates an ErrorGroup from an array of errors.
 ### raise(error)
 
 Throws the error and returns `never`.
+
+### assertIsError(value)
+
+Assertion function that throws if value is not an Error:
+
+```typescript
+assertIsError(value);  // Throws TypeError if not an Error
+```
+
+### assertIsErrorGroup(value)
+
+Assertion function that throws if value is not an ErrorGroup:
 
 ## Migration from Result\<T, E\>
 
