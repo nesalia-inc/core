@@ -73,6 +73,7 @@ export const error = <T>(options: ErrorOptions<T>): ErrorBuilder<T> => {
 
   /**
    * Wraps an existing Error object in ErrWithMethods
+   * Used for validation errors - addNotes and from return special error messages
    */
   const wrapError = (errorObj: Error<T>): ErrWithMethods<T> =>
     Object.freeze({
@@ -101,29 +102,6 @@ export const error = <T>(options: ErrorOptions<T>): ErrorBuilder<T> => {
       }),
     });
 
-  const createBuilderWithNotes = (initialNotes: string[]): ErrorBuilder<T> => {
-    const builderFn = (args: T): ErrWithMethods<T> => createErr(args, initialNotes);
-    return Object.assign(builderFn, {
-      addNotes: (...notes: string[]): ErrorBuilder<T> =>
-        createBuilderWithNotes([...initialNotes, ...notes]),
-      from: (cause: Error | Err<Error>): ErrorBuilder<T> => {
-        const newCause = isError(cause) ? cause : cause.error;
-        return createBuilderWithCause(newCause, initialNotes);
-      },
-    });
-  };
-
-  const createBuilderWithCause = (cause: Error, initialNotes: string[]): ErrorBuilder<T> => {
-    const builderFn = (args: T): ErrWithMethods<T> =>
-      createErr(args, initialNotes, cause);
-    return Object.assign(builderFn, {
-      addNotes: (...notes: string[]): ErrorBuilder<T> =>
-        createBuilderWithCause(cause, [...initialNotes, ...notes]),
-      from: (newCause: Error | Err<Error>): ErrorBuilder<T> =>
-        createBuilderWithCause(isError(newCause) ? newCause : newCause.error, initialNotes),
-    });
-  };
-
   // Main builder function that validates args with Zod schema
   const validateAndCreate = (args: T): ErrWithMethods<T> => {
     const parsed = schema.safeParse(args);
@@ -148,16 +126,7 @@ export const error = <T>(options: ErrorOptions<T>): ErrorBuilder<T> => {
     return createErr(parsed.data, [], null);
   };
 
-  const builder: ErrorBuilder<T> = Object.assign(
-    validateAndCreate,
-    {
-      addNotes: (...notes: string[]): ErrorBuilder<T> => createBuilderWithNotes(notes),
-      from: (cause: Error | Err<Error>): ErrorBuilder<T> =>
-        createBuilderWithCause(isError(cause) ? cause : cause.error, []),
-    }
-  );
-
-  return builder;
+  return validateAndCreate;
 };
 
 /**

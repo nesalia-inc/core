@@ -57,8 +57,4 @@ export interface ErrWithMethods<T> extends Err<Error<T>> {
 /**
  * Internal ErrorBuilder for fluent API
  */
-export type ErrorBuilder<T> = {
-  (args: T): ErrWithMethods<T>;
-  addNotes(...notes: string[]): ErrorBuilder<T>;
-  from(cause: Error | Err<Error>): ErrorBuilder<T>;
-};
+export type ErrorBuilder<T> = (args: T) => ErrWithMethods<T>;

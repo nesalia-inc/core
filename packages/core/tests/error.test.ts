@@ -104,33 +104,31 @@ describe("error() with Zod schema validation", () => {
       expect(Object.isFrozen(e.error.notes)).toBe(true);
     });
 
-    it("should use addNotes on builder before creating error", () => {
+    it("should add notes after creating error", () => {
       const ValidationError = error({
         name: "ValidationError",
         schema: z.object({ field: z.string() }),
       });
 
-      // Use addNotes on builder before creating error
-      const ErrorWithNotes = ValidationError.addNotes("Builder note");
-      const e = ErrorWithNotes({ field: "email" });
+      // Use addNotes on result after creating error
+      const e = ValidationError({ field: "email" }).addNotes("Builder note");
 
       expect(e.error.notes).toEqual(["Builder note"]);
     });
 
-    it("should chain addNotes on builder multiple times", () => {
+    it("should chain addNotes on result multiple times", () => {
       const ValidationError = error({
         name: "ValidationError",
         schema: z.object({ field: z.string() }),
       });
 
-      // Chain addNotes calls on the builder
-      const ErrorWithNotes = ValidationError.addNotes("Note 1").addNotes("Note 2");
-      const e = ErrorWithNotes({ field: "email" });
+      // Chain addNotes calls on the result
+      const e = ValidationError({ field: "email" }).addNotes("Note 1").addNotes("Note 2");
 
       expect(e.error.notes).toEqual(["Note 1", "Note 2"]);
     });
 
-    it("should use from on builder before creating error", () => {
+    it("should add cause after creating error", () => {
       const SizeError = error({
         name: "SizeError",
         schema: z.object({
@@ -145,14 +143,13 @@ describe("error() with Zod schema validation", () => {
       });
 
       const cause = NetworkError({ host: "api.example.com" });
-      // Use from on builder before creating error
-      const SizeErrorWithCause = SizeError.from(cause.error);
-      const e = SizeErrorWithCause({ current: 3, wanted: 5 });
+      // Use from on result after creating error
+      const e = SizeError({ current: 3, wanted: 5 }).from(cause.error);
 
       expect(e.error.cause?.name).toBe("NetworkError");
     });
 
-    it("should use from on builder with Err instead of Error", () => {
+    it("should add cause from Err instead of Error", () => {
       const SizeError = error({
         name: "SizeError",
         schema: z.object({
@@ -168,8 +165,7 @@ describe("error() with Zod schema validation", () => {
 
       const cause = NetworkError({ host: "api.example.com" });
       // Pass Err instead of Error
-      const SizeErrorWithCause = SizeError.from(cause);
-      const e = SizeErrorWithCause({ current: 3, wanted: 5 });
+      const e = SizeError({ current: 3, wanted: 5 }).from(cause);
 
       expect(e.error.cause?.name).toBe("NetworkError");
     });
@@ -190,13 +186,13 @@ describe("error() with Zod schema validation", () => {
 
       const cause = NetworkError({ host: "api.example.com" });
       // from().addNotes() should preserve the cause
-      const e = SizeError.from(cause.error).addNotes("Note after from")({ current: 3, wanted: 5 });
+      const e = SizeError({ current: 3, wanted: 5 }).from(cause.error).addNotes("Note after from");
 
       expect(e.error.cause?.name).toBe("NetworkError");
       expect(e.error.notes).toEqual(["Note after from"]);
     });
 
-    it("should use from on builder after addNotes", () => {
+    it("should add notes before from", () => {
       const SizeError = error({
         name: "SizeError",
         schema: z.object({
@@ -212,13 +208,13 @@ describe("error() with Zod schema validation", () => {
 
       const cause = NetworkError({ host: "api.example.com" });
       // addNotes().from() should work
-      const e = SizeError.addNotes("Initial note").from(cause.error)({ current: 3, wanted: 5 });
+      const e = SizeError({ current: 3, wanted: 5 }).addNotes("Initial note").from(cause.error);
 
       expect(e.error.notes).toEqual(["Initial note"]);
       expect(e.error.cause?.name).toBe("NetworkError");
     });
 
-    it("should chain from twice on builder", () => {
+    it("should chain from twice on result", () => {
       const SizeError = error({
         name: "SizeError",
         schema: z.object({
@@ -240,7 +236,7 @@ describe("error() with Zod schema validation", () => {
       const networkCause = NetworkError({ host: "api.example.com" });
       const authCause = AuthError({ token: "abc123" });
       // from().from() should override the cause
-      const e = SizeError.from(networkCause.error).from(authCause.error)({ current: 3, wanted: 5 });
+      const e = SizeError({ current: 3, wanted: 5 }).from(networkCause.error).from(authCause.error);
 
       expect(e.error.cause?.name).toBe("AuthError");
     });
