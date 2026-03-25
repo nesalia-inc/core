@@ -33,11 +33,13 @@ interface ErrorBase<T> {
   readonly name: string;           // Error class name (e.g., "SizeError")
   readonly args: T;                 // Domain-specific error data
   readonly notes: readonly string[]; // Additional context
-  readonly cause: NativeError | null; // Original error that caused this one
+  readonly cause: Maybe<NativeError>; // Original error (Maybe<Error>)
   readonly stack?: string;          // Stack trace
   readonly message: string;         // Human-readable message
 }
 ```
+
+The `cause` field is `Maybe<Error>` - use the Maybe API to access the cause.
 
 ### ErrorBuilder\<T\>
 
@@ -54,8 +56,28 @@ The result of calling an ErrorBuilder, extending `Err<Error<T>>` with fluent met
 ```typescript
 interface ErrWithMethods<T> extends Err<Error<T>> {
   addNotes(...notes: string[]): ErrWithMethods<T>;
-  from(cause: Error | Err<Error>): ErrWithMethods<T>;
+  from(cause: Error | Err<Error> | Maybe<Error>): ErrWithMethods<T>;
 }
+```
+
+### Accessing cause
+
+The `cause` field is `Maybe<Error>`. Use the Maybe API to safely access it:
+
+```typescript
+// Access cause name with default
+error.cause.map(c => c.name).getOrElse('no cause');
+
+// Check if cause exists
+if (error.cause.isSome()) {
+  console.log(error.cause.value.name);
+}
+
+// Chain through nested causes
+error.cause
+  .flatMap(c => c.cause)
+  .map(c => c.name)
+  .getOrElse('no cause');
 ```
 
 ## Usage
@@ -124,12 +146,15 @@ const e = SizeError({ current: 3, wanted: 5 })
 
 ### from()
 
-Chain the cause of an error:
+Chain the cause of an error. Accepts `Error`, `Err<Error>`, or `Maybe<Error>`:
 
 ```typescript
 const networkError = NetworkError({ host: "api.example.com" });
 const e = SizeError({ current: 3, wanted: 5 })
-  .from(networkError);  // networkError is the cause
+  .from(networkError.error);  // Error object as cause
+// or
+const e = SizeError({ current: 3, wanted: 5 })
+  .from(networkError);  // Err<Error> as cause
 ```
 
 ### Combining enrichments
