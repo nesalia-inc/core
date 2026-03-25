@@ -1,124 +1,16 @@
 /**
- * Error system - Inspired by Python's exception handling
- * Provides structured errors with enrichment, chaining, and grouping
- *
- * ## Error vs Result Semantics
- *
- * The Error system and Result type serve different purposes:
- *
- * ### Result<T, E>
- * - Represents a computation that may fail
- * - Use for: Expected failures, validation, fallible operations
- * - Fluent API with map(), flatMap(), getOrElse(), etc.
- * - Best for: Railway-oriented programming
- *
- * ### Error<T>
- * - Represents a structured error with rich metadata
- * - Use for: Domain errors, error enrichment, error chains
- * - Features: name, args, notes, cause, message, stack
- * - Best for: Logging, error tracking, debugging
- *
- * ### When to use which?
- *
- * Use Result when:
- * - You need to chain operations that may fail
- * - You want to propagate failures without detailed context
- * - You're building a pipeline of fallible operations
- *
- * Use Error when:
- * - You need rich error context for debugging
- * - You're building domain-specific errors
- * - You need error chaining (cause)
- * - You're integrating with error tracking tools
- *
- * ### Converting between them
- *
- * The error() factory returns an Err<Error<T>> - a Result containing your Error:
- *
- * ```typescript
- * const SizeError = error({ name: 'SizeError', ... });
- * const result = SizeError({ current: 3, wanted: 5 });
- *
- * // result is Err<Error<{current: number, wanted: number}>>
- * result.ok === false; // true
- * result.error.name === 'SizeError'; // true
- *
- * // Access the raw Error object if needed
- * const err = result.error;
- * ```
- *
- * This design allows Error to be used both as:
- * 1. A standalone error object (via result.error)
- * 2. A Result for chaining (the full result)
+ * Error builder factory
  */
 
-import { Err, Result } from "./result.js";
-import { Try, TryFailure } from "./try.js";
-import { ZodType, ZodSchema } from "zod";
+import { ZodType } from "zod";
+import type { ErrorOptions, ZodErrorOptions, ErrorBuilder, ErrWithMethods, Error, ErrorGroup } from "./types.js";
+import { isError, isErrorGroup } from "./guards.js";
+import type { Err } from "../result.js";
 
 /**
- * Base Error type with enrichment and chaining
- * Compatible with JavaScript's Error type through structural typing
- * @typeParam T - The type of error arguments
+ * Native JavaScript Error type alias
  */
-export type Error<T = unknown> = Readonly<ErrorBase<T>> & globalThis.Error;
-
-interface ErrorBase<T> {
-  readonly name: string;
-  readonly args: T;
-  readonly notes: readonly string[];
-  readonly cause: globalThis.Error | null;
-  readonly stack?: string;
-  readonly message: string;
-}
-
-/**
- * ErrorGroup - wraps multiple errors
- */
-export type ErrorGroup = Readonly<{
-  readonly name: string;
-  readonly exceptions: readonly Error[];
-}>;
-
-/**
- * Options for creating an Error
- * @typeParam T - The type of error arguments
- */
-export type ErrorOptions<T> = {
-  readonly name: string;
-  readonly args: T;
-  readonly defaultDescription?: string;
-  readonly message?: (args: T) => string;
-};
-
-/**
- * Zod schema wrapper for error arguments validation
- * @typeParam T - The type of error arguments
- */
-export type ZodErrorOptions<T> = {
-  readonly name: string;
-  readonly schema: ZodSchema<T>;
-  readonly defaultDescription?: string;
-  readonly message?: (args: T) => string;
-};
-
-/**
- * Err with error methods for fluent API
- */
-interface ErrWithMethods<T> extends Err<Error<T>> {
-  addNotes(...notes: string[]): ErrWithMethods<T>;
-  from(cause: Error | Err<Error>): ErrWithMethods<T>;
-}
-
-/**
- * Internal ErrorBuilder for fluent API
- */
-type ErrorBuilder<T> = {
-  (args: T): ErrWithMethods<T>;
-  addNotes(...notes: string[]): ErrorBuilder<T>;
-  from(cause: Error | Err<Error>): ErrorBuilder<T>;
-};
-
+type NativeError = globalThis.Error;
 
 /**
  * Creates an Error type builder
@@ -150,7 +42,7 @@ export const error = <T>(options: ErrorOptions<T> | ZodErrorOptions<T>): ErrorBu
   const schema = isZod ? (options as ZodErrorOptions<T>).schema : null;
   const messageFn = "message" in options ? (options as ErrorOptions<T>).message : undefined;
 
-  const createError = (args: T, notes: string[] = [], cause: globalThis.Error | null = null): Error<T> => {
+  const createError = (args: T, notes: string[] = [], cause: NativeError | null = null): Error<T> => {
     // Capture stack trace
     let stack: string | undefined;
     const err = new Error();
@@ -308,81 +200,3 @@ export const exceptionGroup = (exceptions: readonly (Error | Err<Error> | ErrorG
     exceptions: Object.freeze(extractedErrors),
   });
 };
-
-/**
- * Functional throw - throws the error and returns never
- * Use for early exit in Result-returning functions
- *
- * @example
- * const decimal = (p: number, s: number): Result<Column, Error<...>> => {
- *   if (p < s) raise(DecimalError({ precision: p, scale: s }));
- *   return ok({ name: 'decimal', precision: p, scale: s });
- * };
- */
-export const raise = <E extends globalThis.Error>(error: E): never => {
-  throw error;
-};
-
-/**
- * Type guard to check if a value is an Error
- */
-export const isError = (value: unknown): value is Error =>
-  value !== null &&
-  typeof value === "object" &&
-  "name" in value &&
-  "args" in value &&
-  "notes" in value &&
-  "cause" in value;
-
-/**
- * Type guard to check if a value is an ErrorGroup
- */
-export const isErrorGroup = (value: unknown): value is ErrorGroup =>
-  value !== null &&
-  typeof value === "object" &&
-  "name" in value &&
-  "exceptions" in value &&
-  Array.isArray((value as ErrorGroup).exceptions) &&
-  ((value as ErrorGroup).exceptions.length === 0 || isError((value as ErrorGroup).exceptions[0]));
-
-/**
- * Check if Result is Err with Error type
- */
-export const isErrWithError = (result: Result<unknown, globalThis.Error>): result is Err<Error> =>
-  result.ok === false && isError(result.error);
-
-/**
- * Check if Try is TryFailure with Error type
- */
-export const isErrTryWithError = (t: Try<unknown, globalThis.Error>): t is TryFailure<Error> =>
-  t.ok === false && isError(t.error);
-
-/**
- * Get the message from an Error or ErrorGroup
- */
-export const getErrorMessage = (e: Error | ErrorGroup): string => {
-  if (isErrorGroup(e)) {
-    return `${e.name}: ${e.exceptions.length} error(s)`;
-  }
-  // If args is undefined/null, return just the name
-  if (e.args === undefined || e.args === null) {
-    return e.name;
-  }
-  return e.message;
-};
-
-/**
- * Flatten ErrorGroup to array of Errors
- */
-export const flattenErrorGroup = (e: Error | ErrorGroup): Error[] => {
-  if (isError(e)) {
-    return [e];
-  }
-  return e.exceptions.flatMap(flattenErrorGroup);
-};
-
-/**
- * Filter errors in group by name
- */
-export const filterErrorsByName = (group: ErrorGroup, name: string): Error[] =>
-  flattenErrorGroup(group).filter((e) => e.name === name);

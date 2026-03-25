@@ -131,7 +131,7 @@ export type { ToResultOptions } from "./conversions.js";
 export { pipe, flow } from "./pipe.js";
 
 // Error System
-export type { Error, ErrorGroup, ErrorOptions } from "./error.js";
+export type { Error, ErrorGroup, ErrorOptions } from "./error/index.js";
 export {
   error,
   exceptionGroup,
@@ -143,4 +143,4 @@ export {
   getErrorMessage,
   flattenErrorGroup,
   filterErrorsByName,
-} from "./error.js";
+} from "./error/index.js";
