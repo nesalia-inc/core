@@ -3,6 +3,7 @@
  */
 
 import type { Err } from "../result.js";
+import type { Maybe } from "../maybe.js";
 import type { ZodSchema } from "zod";
 
 /**
@@ -22,7 +23,7 @@ interface ErrorBase<T> {
   readonly name: string;
   readonly args: T;
   readonly notes: readonly string[];
-  readonly cause: NativeError | null;
+  readonly cause: Maybe<NativeError>;
   readonly stack?: string;
   readonly message: string;
 }
@@ -51,7 +52,7 @@ export type ErrorOptions<T> = {
  */
 export interface ErrWithMethods<T> extends Err<Error<T>> {
   addNotes(...notes: string[]): ErrWithMethods<T>;
-  from(cause: Error | Err<Error>): ErrWithMethods<T>;
+  from(cause: Error | Err<Error> | Maybe<Error>): ErrWithMethods<T>;
 }
 
 /**

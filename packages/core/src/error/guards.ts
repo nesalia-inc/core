@@ -16,13 +16,48 @@ const isObject = (val: unknown): val is Record<string, unknown> =>
   val !== null && typeof val === "object";
 
 /**
+ * Check if a cause value is valid for Error type
+ * Valid if: null, Maybe<Error> (Some with Error, or None), or direct Error
+ */
+const isValidCause = (cause: unknown): boolean => {
+  // Legacy null cause
+  if (cause === null) return true;
+
+  // Maybe<Error> structure - check ok property
+  if (isObject(cause) && "ok" in cause) {
+    const maybe = cause as { ok: boolean; value?: unknown; error?: unknown };
+    if (maybe.ok === true && maybe.value !== undefined) {
+      // Some<Error> - validate the inner error (if it's an Error, not None)
+      // If value has ok property, it's a nested Maybe/Result - check recursively
+      if (isObject(maybe.value) && "ok" in (maybe.value as object)) {
+        return isValidCause(maybe.value);
+      }
+      // Otherwise it's an Error - validate it
+      return isError(maybe.value);
+    }
+    if (maybe.ok === false) {
+      // None or Err - both are valid (no cause or error cause)
+      return true;
+    }
+    return false;
+  }
+
+  // Direct Error object (native JS error)
+  if (isObject(cause) && "message" in cause && "name" in cause) {
+    return true;
+  }
+
+  return false;
+};
+
+/**
  * Type guard to check if a value is an Error
  *
  * Validates:
  * - Value is an object (not null, not primitive)
  * - name is a string
  * - notes is an array of strings
- * - cause is null or an object
+ * - cause is null, Maybe<Error>, or Error object
  * - args exists (any type)
  */
 export const isError = (value: unknown): value is Error => {
@@ -31,7 +66,7 @@ export const isError = (value: unknown): value is Error => {
   if (typeof value.name !== "string") return false;
   if (!Array.isArray(value.notes)) return false;
   if (value.notes.some((note) => typeof note !== "string")) return false;
-  if (value.cause !== null && !isObject(value.cause)) return false;
+  if (!isValidCause(value.cause)) return false;
 
   return (
     "args" in value &&

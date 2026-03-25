@@ -88,7 +88,7 @@ describe("error() with Zod schema validation", () => {
       const e = SizeError({ current: 3, wanted: 5 }).from(cause.error);
 
       expect(isErr(e)).toBe(true);
-      expect(e.error.cause?.name).toBe("NetworkError");
+      expect(e.error.cause.map(c => c.name).getOrElse(undefined)).toBe("NetworkError");
     });
 
     it("should create a frozen error object", () => {
@@ -146,7 +146,7 @@ describe("error() with Zod schema validation", () => {
       // Use from on result after creating error
       const e = SizeError({ current: 3, wanted: 5 }).from(cause.error);
 
-      expect(e.error.cause?.name).toBe("NetworkError");
+      expect(e.error.cause.map(c => c.name).getOrElse(undefined)).toBe("NetworkError");
     });
 
     it("should add cause from Err instead of Error", () => {
@@ -167,7 +167,7 @@ describe("error() with Zod schema validation", () => {
       // Pass Err instead of Error
       const e = SizeError({ current: 3, wanted: 5 }).from(cause);
 
-      expect(e.error.cause?.name).toBe("NetworkError");
+      expect(e.error.cause.map(c => c.name).getOrElse(undefined)).toBe("NetworkError");
     });
 
     it("should preserve cause when addNotes is called after from", () => {
@@ -188,7 +188,7 @@ describe("error() with Zod schema validation", () => {
       // from().addNotes() should preserve the cause
       const e = SizeError({ current: 3, wanted: 5 }).from(cause.error).addNotes("Note after from");
 
-      expect(e.error.cause?.name).toBe("NetworkError");
+      expect(e.error.cause.map(c => c.name).getOrElse(undefined)).toBe("NetworkError");
       expect(e.error.notes).toEqual(["Note after from"]);
     });
 
@@ -211,7 +211,7 @@ describe("error() with Zod schema validation", () => {
       const e = SizeError({ current: 3, wanted: 5 }).addNotes("Initial note").from(cause.error);
 
       expect(e.error.notes).toEqual(["Initial note"]);
-      expect(e.error.cause?.name).toBe("NetworkError");
+      expect(e.error.cause.map(c => c.name).getOrElse(undefined)).toBe("NetworkError");
     });
 
     it("should chain from twice on result", () => {
@@ -238,7 +238,7 @@ describe("error() with Zod schema validation", () => {
       // from().from() should override the cause
       const e = SizeError({ current: 3, wanted: 5 }).from(networkCause.error).from(authCause.error);
 
-      expect(e.error.cause?.name).toBe("AuthError");
+      expect(e.error.cause.map(c => c.name).getOrElse(undefined)).toBe("AuthError");
     });
   });
 
@@ -312,8 +312,8 @@ describe("error() with Zod schema validation", () => {
       const cause = NetworkError({ host: "api.example.com" });
       const e = SizeError({ current: 3, wanted: 5 }).from(cause.error);
 
-      expect(e.error.cause?.name).toBe("NetworkError");
-      expect(e.error.cause?.args).toEqual({ host: "api.example.com" });
+      expect(e.error.cause.map(c => c.name).getOrElse(undefined)).toBe("NetworkError");
+      expect(e.error.cause.map(c => c.args).getOrElse(undefined)).toEqual({ host: "api.example.com" });
     });
 
     it("should chain cause from Err", () => {
@@ -333,7 +333,7 @@ describe("error() with Zod schema validation", () => {
       const cause = NetworkError({ host: "api.example.com" });
       const e = SizeError({ current: 3, wanted: 5 }).from(cause);
 
-      expect(e.error.cause?.name).toBe("NetworkError");
+      expect(e.error.cause.map(c => c.name).getOrElse(undefined)).toBe("NetworkError");
     });
   });
 
@@ -358,7 +358,7 @@ describe("error() with Zod schema validation", () => {
         .from(cause.error);
 
       expect(e.error.notes).toEqual(["Operation: upload"]);
-      expect(e.error.cause?.name).toBe("NetworkError");
+      expect(e.error.cause.map(c => c.name).getOrElse(undefined)).toBe("NetworkError");
     });
   });
 });

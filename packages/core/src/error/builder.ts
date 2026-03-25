@@ -4,8 +4,9 @@
 
 import type { ErrorOptions, ErrorBuilder, ErrWithMethods, Error, ErrorGroup } from "./types.js";
 import type { NativeError } from "../result.js";
-import { isError, isErrorGroup } from "./guards.js";
+import { isError, isErrorGroup, isErrWithError } from "./guards.js";
 import type { Err } from "../result.js";
+import { some, none, type Maybe } from "../maybe.js";
 
 /**
  * Creates an Error type builder with Zod validation
@@ -28,7 +29,7 @@ export const error = <T>(options: ErrorOptions<T>): ErrorBuilder<T> => {
   /**
    * Creates an ErrWithMethods from args
    */
-  const createErr = (args: T, notes: string[] = [], cause: Error | null = null): ErrWithMethods<T> => {
+  const createErr = (args: T, notes: string[] = [], cause: Maybe<Error> = none()): ErrWithMethods<T> => {
     // Capture stack trace
     let stack: string | undefined;
     const err = new Error();
@@ -66,8 +67,34 @@ export const error = <T>(options: ErrorOptions<T>): ErrorBuilder<T> => {
       unwrap(): never { throw errorObj; },
       addNotes: (...moreNotes: string[]): ErrWithMethods<T> =>
         createErr(args, [...notes, ...moreNotes], cause),
-      from: (newCause: Error | Err<Error>): ErrWithMethods<T> =>
-        createErr(args, notes, isError(newCause) ? newCause : newCause.error),
+      from: (newCause: Error | Err<Error> | Maybe<Error>): ErrWithMethods<T> => {
+        // Helper to check if value is a plain object
+        const isObject = (val: unknown): val is Record<string, unknown> =>
+          val !== null && typeof val === "object";
+
+        // Check if it's Some<T> - has 'value' property (None and Err don't have this)
+        if (isObject(newCause) && "value" in newCause) {
+          const err = newCause.value;
+          if (isErrWithError(err as unknown as Err<Error>)) {
+            return createErr(args, notes, some((err as unknown as Err<Error>).error));
+          }
+          return createErr(args, notes, some(err as Error));
+        }
+
+        // Check if it's Err<Error> - has 'ok: false' and 'error' property
+        if (isObject(newCause) && newCause.ok === false && "error" in newCause) {
+          return createErr(args, notes, some((newCause as Err<Error>).error));
+        }
+
+        // Otherwise it's a plain Error (or something else)
+        // Wrap it in some if it's an Error
+        if (isError(newCause as unknown as Error)) {
+          return createErr(args, notes, some(newCause as Error));
+        }
+
+        // Fallback: no cause
+        return createErr(args, notes, none());
+      },
     });
   };
 
@@ -117,13 +144,13 @@ export const error = <T>(options: ErrorOptions<T>): ErrorBuilder<T> => {
         name: `${name}ValidationError`,
         args: parsed.error.issues as unknown as T,
         notes: Object.freeze([parsed.error.message]),
-        cause: null,
+        cause: none(),
         stack,
         message: `${name}ValidationError: ${parsed.error.message}`,
       });
       return wrapError(validationError);
     }
-    return createErr(parsed.data, [], null);
+    return createErr(parsed.data, [], none());
   };
 
   return validateAndCreate;

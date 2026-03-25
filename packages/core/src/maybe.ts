@@ -23,6 +23,11 @@ export type Some<T> = {
   equals(other: Maybe<T>): boolean;
   equals(other: Maybe<T>, comparator: (a: T, b: T) => boolean): boolean;
   filter<E extends globalThis.Error>(predicate: (value: T) => boolean, onNone?: () => E): Maybe<T> | Result<T, E>;
+  map<U>(fn: (value: T) => U): Maybe<U>;
+  flatMap<U>(fn: (value: T) => Maybe<U>): Maybe<U>;
+  getOrElse(defaultValue: T): T;
+  getOrCompute(fn: () => T): T;
+  tap(fn: (value: T) => void): Maybe<T>;
 };
 
 /**
@@ -35,6 +40,11 @@ export type None = {
   equals(other: Maybe<unknown>): boolean;
   equals(other: Maybe<unknown>, comparator: (a: unknown, b: unknown) => boolean): boolean;
   filter<T, E extends globalThis.Error>(predicate: (value: T) => boolean, onNone?: () => E): None | Result<T, E>;
+  map<U>(fn: (value: never) => U): None;
+  flatMap<U>(fn: (value: never) => Maybe<U>): None;
+  getOrElse<T>(defaultValue: T): T;
+  getOrCompute<T>(fn: () => T): T;
+  tap(fn: (value: never) => void): None;
 };
 
 /**
@@ -70,6 +80,22 @@ export const some = <T,>(value: NonNullable<T>): Some<NonNullable<T>> => {
       }
       return onNone !== undefined ? err(onNone()) : none();
     },
+    map<U>(fn: (value: NonNullable<T>) => U): Maybe<U> {
+      return some(fn(this.value) as NonNullable<U>);
+    },
+    flatMap<U>(fn: (value: NonNullable<T>) => Maybe<U>): Maybe<U> {
+      return fn(this.value);
+    },
+    getOrElse(_defaultValue: NonNullable<T>): NonNullable<T> {
+      return this.value;
+    },
+    getOrCompute(_fn: () => NonNullable<T>): NonNullable<T> {
+      return this.value;
+    },
+    tap(fn: (value: NonNullable<T>) => void): Maybe<NonNullable<T>> {
+      fn(this.value);
+      return this;
+    },
   };
   return Object.freeze(someValue);
 };
@@ -93,6 +119,21 @@ const NONE: None = Object.freeze({
     if (onNone !== undefined) {
       return err(onNone());
     }
+    return NONE;
+  },
+  map<U>(_fn: (value: never) => U): None {
+    return NONE;
+  },
+  flatMap<U>(_fn: (value: never) => Maybe<U>): None {
+    return NONE;
+  },
+  getOrElse<T>(defaultValue: T): T {
+    return defaultValue;
+  },
+  getOrCompute<T>(_fn: () => T): T {
+    return undefined as unknown as T;
+  },
+  tap(_fn: (value: never) => void): None {
     return NONE;
   },
 });
