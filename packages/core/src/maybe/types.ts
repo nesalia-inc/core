@@ -3,7 +3,7 @@
  * Used for values that may or may not be present
  */
 
-import type { Result } from "../result";
+import type { Result, NativeError } from "../result";
 
 /**
  * Maybe type - union of Some and None
@@ -22,7 +22,7 @@ export interface Some<T> {
   isNone(): false;
   equals(other: Maybe<T>): boolean;
   equals(other: Maybe<T>, comparator: (a: T, b: T) => boolean): boolean;
-  filter<E extends globalThis.Error>(predicate: (value: T) => boolean, onNone?: () => E): Maybe<T> | Result<T, E>;
+  filter<E extends NativeError>(predicate: (value: T) => boolean, onNone?: () => E): Maybe<T> | Result<T, E>;
   map<U>(fn: (value: T) => U): Maybe<U>;
   flatMap<U>(fn: (value: T) => Maybe<U>): Maybe<U>;
   getOrElse(defaultValue: T): T;
@@ -39,7 +39,7 @@ export interface None {
   isNone(): true;
   equals(other: Maybe<unknown>): boolean;
   equals(other: Maybe<unknown>, comparator: (a: unknown, b: unknown) => boolean): boolean;
-  filter<T, E extends globalThis.Error>(predicate: (value: T) => boolean, onNone?: () => E): None | Result<T, E>;
+  filter<T, E extends NativeError>(predicate: (value: T) => boolean, onNone?: () => E): None | Result<T, E>;
   map<U>(fn: (value: never) => U): None;
   flatMap<U>(fn: (value: never) => Maybe<U>): None;
   getOrElse<T>(defaultValue: T): T;

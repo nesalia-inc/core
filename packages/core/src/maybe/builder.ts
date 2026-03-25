@@ -2,7 +2,7 @@
  * Maybe builder functions
  */
 
-import { ok, err, type Result } from "../result";
+import { ok, err, type Result, type NativeError } from "../result";
 import type { Some, None, Maybe } from "./types";
 
 /**
@@ -29,7 +29,7 @@ export const some = <T,>(value: NonNullable<T>): Some<NonNullable<T>> => {
       }
       return false;
     },
-    filter<E extends globalThis.Error>(
+    filter<E extends NativeError>(
       predicate: (value: NonNullable<T>) => boolean,
       onNone?: () => E
     ): Maybe<NonNullable<T>> | Result<NonNullable<T>, E> {
@@ -73,7 +73,7 @@ const NONE: None = Object.freeze({
   equals(_other: Maybe<unknown>, _comparator?: (a: unknown, b: unknown) => boolean): boolean {
     return isNone(_other);
   },
-  filter<T, E extends globalThis.Error>(_predicate: (value: T) => boolean, onNone?: () => E): None | Result<T, E> {
+  filter<T, E extends NativeError>(_predicate: (value: T) => boolean, onNone?: () => E): None | Result<T, E> {
     if (onNone !== undefined) {
       return err(onNone());
     }
@@ -270,7 +270,7 @@ export function all<T>(first: Maybe<T> | readonly Maybe<T>[], ...rest: Maybe<T>[
  * @param onNone - Optional callback when filter fails
  * @returns Some<T> if predicate passes, None otherwise (or Result<T, E> if onNone provided)
  */
-export const filter = <T, E extends globalThis.Error>(
+export const filter = <T, E extends NativeError>(
   maybe: Maybe<T>,
   predicate: (value: T) => boolean,
   onNone?: () => E
