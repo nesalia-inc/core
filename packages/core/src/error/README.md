@@ -71,6 +71,23 @@ A function that creates `Error<T>` with Zod validation:
 type ErrorBuilder<T> = (args: T) => Error<T>;
 ```
 
+### ExtractError\<T\>
+
+Extract the `Error<T>` type from an `ErrorBuilder<T>`:
+
+```typescript
+const SizeError = error({
+  name: "SizeError",
+  schema: z.object({
+    current: z.number(),
+    wanted: z.number(),
+  }),
+});
+
+type SizeErrorType = ExtractError<typeof SizeError>;
+// Error<{ current: number, wanted: number }>
+```
+
 ### Self-Reference
 
 Error has a unique property: `e.error === e`. This allows the error to be used both as a standalone error object and as a Result for chaining.
