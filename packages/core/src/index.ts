@@ -12,7 +12,8 @@ export { unit, isUnit } from "./unit";
 
 // Re-export all types
 export type { Maybe, Some, None } from "./maybe";
-export type { Result, Ok, Err, Success, ExtractError } from "./result";
+export type { Result, Ok, Err, Success, ExtractResultError } from "./result";
+export type { ExtractError } from "./error";
 
 // Maybe
 export {

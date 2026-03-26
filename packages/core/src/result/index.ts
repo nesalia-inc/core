@@ -8,7 +8,7 @@ export type {
   Err,
   Result,
   Success,
-  ExtractError,
+  ExtractResultError,
 } from "./types";
 
 // Builder functions

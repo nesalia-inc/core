@@ -78,3 +78,15 @@ export type ErrorOptions<T> = {
  * ErrorBuilder - creates Error<T> directly
  */
 export type ErrorBuilder<T> = (args: T) => Error<T>;
+
+/**
+ * ExtractError - extracts Error<T> from an ErrorBuilder<T>
+ *
+ * Usage:
+ *   const SizeError = error({ name: "SizeError", schema: z.object({ current: z.number(), wanted: z.number() }) });
+ *   type SizeErrorType = ExtractError<typeof SizeError>; // Error<{ current: number, wanted: number }>
+ *
+ * @typeParam T - The ErrorBuilder type to extract the error from
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type ExtractError<T extends ErrorBuilder<any>> = T extends ErrorBuilder<infer E> ? Error<E> : never;

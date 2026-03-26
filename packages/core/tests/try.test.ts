@@ -15,6 +15,7 @@ import {
   toUndefined,
   Try,
 } from "../src/try";
+import { error } from "../src/error";
 
 describe("Try", () => {
   describe("attempt", () => {
@@ -65,6 +66,52 @@ describe("Try", () => {
       });
       expect(result.ok).toBe(false);
       expect(result.error).toBeInstanceOf(Error);
+    });
+  });
+
+  describe("attempt with custom error handler", () => {
+    it("should return success when no error", () => {
+      const DatabaseError = error({ name: "DatabaseError" });
+      const result = attempt(
+        () => 42,
+        (caught) => DatabaseError({ message: caught.message })
+      );
+      expect(result.ok).toBe(true);
+      expect(result.value).toBe(42);
+    });
+
+    it("should transform error with custom handler", () => {
+      const DatabaseError = error({ name: "DatabaseError" });
+      const result = attempt(
+        () => { throw new Error("connection failed"); },
+        (caught) => DatabaseError({ message: caught.message })
+      );
+      expect(result.ok).toBe(false);
+      expect(result.error.name).toBe("DatabaseError");
+      expect(result.error.args.message).toBe("connection failed");
+    });
+  });
+
+  describe("attemptAsync with custom error handler", () => {
+    it("should return success when no error", async () => {
+      const DatabaseError = error({ name: "DatabaseError" });
+      const result = await attemptAsync(
+        async () => 42,
+        (caught) => DatabaseError({ message: caught.message })
+      );
+      expect(result.ok).toBe(true);
+      expect(result.value).toBe(42);
+    });
+
+    it("should transform error with custom handler", async () => {
+      const DatabaseError = error({ name: "DatabaseError" });
+      const result = await attemptAsync(
+        async () => { throw new Error("async connection failed"); },
+        (caught) => DatabaseError({ message: caught.message })
+      );
+      expect(result.ok).toBe(false);
+      expect(result.error.name).toBe("DatabaseError");
+      expect(result.error.args.message).toBe("async connection failed");
     });
   });
 

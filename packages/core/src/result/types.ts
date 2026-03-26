@@ -6,6 +6,14 @@
 import type { Error } from "../error/types";
 
 /**
+ * Match handlers for Result - used with match({ onSuccess, onError })
+ */
+export interface ResultMatchHandlers<T, E, U> {
+  onSuccess: (value: T) => U;
+  onError: (error: E) => U;
+}
+
+/**
  * Ok type - represents a successful result with methods
  * @typeParam T - The type of the value
  * @typeParam E - The type of the error (constrained to Error)
@@ -24,7 +32,9 @@ export type Ok<T, E extends Error = Error> = {
   getOrCompute<U>(fn: () => U): T | U;
   tap(fn: (value: T) => void): Ok<T, E>;
   tapErr(fn: (error: E) => void): Ok<T, E>;
-  match<U>(ok: (value: T) => U, _err: (error: E) => U): U;
+  // match with object-based syntax for full type inference
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  match<U>(handlers: ((value: T) => U) | ({ onSuccess: (value: T) => U; onError: (error: E) => U })): U;
   unwrap(): T;
 };
 
@@ -46,7 +56,9 @@ export type Err<E extends Error = Error> = {
   getOrCompute<T, U>(fn: () => U): T | U;
   tap(_fn: (value: never) => void): Err<E>;
   tapErr(fn: (error: E) => void): Err<E>;
-  match<U>(_ok: (value: never) => U, err: (error: E) => U): U;
+  // match with object-based syntax for full type inference
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  match<U>(handlers: ((value: never) => U) | ({ onSuccess: (value: never) => U; onError: (error: E) => U })): U;
   unwrap(): never;
 };
 
@@ -65,16 +77,16 @@ export type Result<T, E extends Error = Error> = Ok<T, E> | Err<E>;
 export type Success<T> = Result<T, never>;
 
 /**
- * ExtractError - extracts the error type from a function that returns Result
+ * ExtractResultError - extracts the error type from a function that returns Result
  *
  * Usage:
- *   type MyError = ExtractError<typeof myFunction>; // Error type
- *   type ApiError = ExtractError<() => Result<User, ApiError>>; // ApiError
+ *   type MyError = ExtractResultError<typeof myFunction>; // Error type
+ *   type ApiError = ExtractResultError<() => Result<User, ApiError>>; // ApiError
  *
  * @typeParam T - The function type to extract the error from
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type ExtractError<T> = T extends () => Result<unknown, infer E>
+export type ExtractResultError<T> = T extends () => Result<unknown, infer E>
   ? E
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   : T extends (args: any) => Result<unknown, infer E>
