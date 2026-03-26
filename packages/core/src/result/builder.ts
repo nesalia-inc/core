@@ -32,7 +32,7 @@ const createOk = <T, E extends NativeError = NativeError>(value: T): Ok<T, E> =>
 
 /**
  * Creates an Err with methods
- * @typeParam E - The type of the error (must extend Error)
+ * @typeParam E - The type of the error (must extend NativeError)
  * @param error - The error value
  * @returns Err<E>
  */
@@ -69,7 +69,7 @@ export const ok = <T, E extends NativeError = NativeError>(value: T): Ok<T, E> =
 
 /**
  * Creates an Err (error result)
- * @typeParam E - The type of the error (must extend Error)
+ * @typeParam E - The type of the error (must extend NativeError)
  * @param error - The error value
  * @returns Err<E>
  */
@@ -223,7 +223,7 @@ export const match = <T, E extends NativeError, U>(
  * @typeParam E - The type of the error
  * @param result - The Result to swap
  * @returns Err if Ok, Ok if Err
- * @note This function has type limitations with E extends Error constraint
+ * @note This function has type limitations with E extends NativeError constraint
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const swap = (result: any): any =>

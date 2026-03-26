@@ -30,11 +30,11 @@ interface ErrorBase<T> {
 
 /**
  * ErrorGroup - wraps multiple errors
+ * Implements ErrorBase<readonly Error[]> to be compatible with Error interface
  */
-export type ErrorGroup = Readonly<{
-  readonly name: string;
+export type ErrorGroup = Readonly<ErrorBase<readonly Error[]> & NativeError> & {
   readonly exceptions: readonly Error[];
-}>;
+};
 
 /**
  * Options for creating an Error with Zod schema validation

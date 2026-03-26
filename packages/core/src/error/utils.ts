@@ -3,7 +3,7 @@
  */
 
 import type { Error, ErrorGroup } from "./types";
-import { isError, isErrorGroup } from "./guards";
+import { isErrorGroup } from "./guards";
 
 /**
  * Get the message from an Error or ErrorGroup
@@ -23,10 +23,10 @@ export const getErrorMessage = (e: Error | ErrorGroup): string => {
  * Flatten ErrorGroup to array of Errors
  */
 export const flattenErrorGroup = (e: Error | ErrorGroup): Error[] => {
-  if (isError(e)) {
-    return [e];
+  if (isErrorGroup(e)) {
+    return e.exceptions.flatMap(flattenErrorGroup);
   }
-  return e.exceptions.flatMap(flattenErrorGroup);
+  return [e];
 };
 
 /**

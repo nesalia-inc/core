@@ -3,7 +3,7 @@
  * Used for simple error handling without domain richness
  */
 
-import type { NativeError } from "../error/types";
+import type { Error, NativeError } from "../error/types";
 
 /**
  * Ok type - represents a successful result with methods
@@ -19,7 +19,7 @@ export type Ok<T, E extends NativeError = NativeError> = {
   // Methods for chaining - return the specific variant
   map<U>(fn: (value: T) => U): Ok<U, E>;
   flatMap<U>(fn: (value: T) => Result<U, E>): Result<U, E>;
-  mapErr<F extends NativeError>(fn: (error: never) => F): Ok<T, E>;
+  mapErr<F extends Error>(fn: (error: never) => F): Ok<T, E>;
   getOrElse(defaultValue: T): T;
   getOrCompute<U>(fn: () => U): T | U;
   tap(fn: (value: T) => void): Ok<T, E>;
@@ -41,7 +41,7 @@ export type Err<E extends NativeError = NativeError> = {
   // Methods for chaining - return the specific variant
   map<U>(_fn: (value: never) => U): Err<E>;
   flatMap<U>(_fn: (value: never) => Result<U, E>): Err<E>;
-  mapErr<F extends NativeError>(fn: (error: E) => F): Err<F>;
+  mapErr<F extends Error>(fn: (error: E) => F): Err<F>;
   getOrElse<T>(defaultValue: T): T;
   getOrCompute<T, U>(fn: () => U): T | U;
   tap(_fn: (value: never) => void): Err<E>;
