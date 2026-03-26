@@ -82,29 +82,68 @@ export const createTryFailure = <E>(error: E): TryFailure<E> => ({
 
 /**
  * Wraps a synchronous function in a try/catch
+ * @typeParam T - The type of the value
  * @param fn - The function to try
  * @returns Try<T, Error>
  */
-export const attempt = <T>(fn: () => T): Try<T, Error> => {
+export function attempt<T>(fn: () => T): Try<T, Error>;
+/**
+ * Wraps a synchronous function in a try/catch with custom error handler
+ * @typeParam T - The type of the value
+ * @typeParam E - The type of the error (must extend Error)
+ * @param fn - The function to try
+ * @param onError - Error handler to transform caught error into typed error
+ * @returns Try<T, E>
+ */
+export function attempt<T, E extends Error>(fn: () => T, onError: (caught: Error) => E): Try<T, E>;
+/**
+ * Implementation
+ */
+export function attempt<T, E extends Error>(
+  fn: () => T,
+  onError?: (caught: Error) => E
+): Try<T, Error | E> {
   try {
     return createTrySuccess(fn());
   } catch (e) {
-    return createTryFailure(e instanceof Error ? e : new Error(String(e)));
+    const err = e instanceof Error ? e : new Error(String(e));
+    return createTryFailure(onError ? onError(err) : err) as Try<T, Error | E>;
   }
-};
+}
 
 /**
  * Wraps an async function in a try/catch
+ * @typeParam T - The type of the value
  * @param fn - The async function to try
  * @returns Promise<Try<T, Error>>
  */
-export const attemptAsync = async <T>(fn: () => Promise<T>): Promise<Try<T, Error>> => {
+export function attemptAsync<T>(fn: () => Promise<T>): Promise<Try<T, Error>>;
+/**
+ * Wraps an async function in a try/catch with custom error handler
+ * @typeParam T - The type of the value
+ * @typeParam E - The type of the error (must extend Error)
+ * @param fn - The async function to try
+ * @param onError - Error handler to transform caught error into typed error
+ * @returns Promise<Try<T, E>>
+ */
+export function attemptAsync<T, E extends Error>(
+  fn: () => Promise<T>,
+  onError: (caught: Error) => E
+): Promise<Try<T, E>>;
+/**
+ * Implementation
+ */
+export async function attemptAsync<T, E extends Error>(
+  fn: () => Promise<T>,
+  onError?: (caught: Error) => E
+): Promise<Try<T, Error | E>> {
   try {
     return createTrySuccess(await fn());
   } catch (e) {
-    return createTryFailure(e instanceof Error ? e : new Error(String(e)));
+    const err = e instanceof Error ? e : new Error(String(e));
+    return createTryFailure(onError ? onError(err) : err) as Try<T, Error | E>;
   }
-};
+}
 
 /**
  * Type guard to check if Try is successful
