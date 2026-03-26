@@ -3,14 +3,14 @@
  * Used for simple error handling without domain richness
  */
 
-import type { Error, NativeError } from "../error/types";
+import type { Error } from "../error/types";
 
 /**
  * Ok type - represents a successful result with methods
  * @typeParam T - The type of the value
  * @typeParam E - The type of the error (constrained to Error)
  */
-export type Ok<T, E extends NativeError = NativeError> = {
+export type Ok<T, E extends Error = Error> = {
   readonly ok: true;
   readonly value: T;
   // Type guard methods
@@ -32,7 +32,7 @@ export type Ok<T, E extends NativeError = NativeError> = {
  * Err type - represents a failed result with methods
  * @typeParam E - The type of the error (constrained to Error)
  */
-export type Err<E extends NativeError = NativeError> = {
+export type Err<E extends Error = Error> = {
   readonly ok: false;
   readonly error: E;
   // Type guard methods
@@ -55,7 +55,7 @@ export type Err<E extends NativeError = NativeError> = {
  * @typeParam T - The type of the success value
  * @typeParam E - The type of the error (must extend Error)
  */
-export type Result<T, E extends NativeError = NativeError> = Ok<T, E> | Err<E>;
+export type Result<T, E extends Error = Error> = Ok<T, E> | Err<E>;
 
 /**
  * Success type - a Result that always succeeds (alias for Result<T, never>)

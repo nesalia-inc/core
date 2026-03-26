@@ -95,13 +95,13 @@ export const isErrorGroup = (value: unknown): value is ErrorGroup => {
 /**
  * Check if Result is Err with Error type
  */
-export const isErrWithError = (result: Result<unknown, globalThis.Error>): result is Err<Error> =>
+export const isErrWithError = (result: Result<unknown, Error>): result is Err<Error> =>
   result.ok === false && isError(result.error);
 
 /**
  * Check if Try is TryFailure with Error type
  */
-export const isErrTryWithError = (t: Try<unknown, globalThis.Error>): t is TryFailure<Error> =>
+export const isErrTryWithError = (t: Try<unknown, Error>): t is TryFailure<Error> =>
   t.ok === false && isError(t.error);
 
 /**

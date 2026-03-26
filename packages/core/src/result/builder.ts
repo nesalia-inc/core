@@ -3,7 +3,7 @@
  */
 
 import type { Ok, Err, Result } from "./types";
-import type { NativeError } from "../error/types";
+import type { Error } from "../error/types";
 
 /**
  * Creates an Ok with methods
@@ -12,7 +12,7 @@ import type { NativeError } from "../error/types";
  * @param value - The success value
  * @returns Ok<T, E>
  */
-const createOk = <T, E extends NativeError = NativeError>(value: T): Ok<T, E> =>
+const createOk = <T, E extends Error = Error>(value: T): Ok<T, E> =>
   Object.freeze({
     ok: true as const,
     value,
@@ -32,11 +32,11 @@ const createOk = <T, E extends NativeError = NativeError>(value: T): Ok<T, E> =>
 
 /**
  * Creates an Err with methods
- * @typeParam E - The type of the error (must extend NativeError)
+ * @typeParam E - The type of the error (must extend Error)
  * @param error - The error value
  * @returns Err<E>
  */
-const createErr = <E extends NativeError>(error: E): Err<E> => {
+const createErr = <E extends Error>(error: E): Err<E> => {
   const result: Err<E> = {
     ok: false as const,
     error,
@@ -46,7 +46,7 @@ const createErr = <E extends NativeError>(error: E): Err<E> => {
     map(_fn) { return result; },
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     flatMap(_fn) { return result; },
-    mapErr<F extends NativeError>(fn: (error: E) => F) { return createErr(fn(error)); },
+    mapErr<F extends Error>(fn: (error: E) => F) { return createErr(fn(error)); },
     getOrElse(defaultValue) { return defaultValue; },
     getOrCompute(fn) { return fn(); },
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -61,19 +61,19 @@ const createErr = <E extends NativeError>(error: E): Err<E> => {
 /**
  * Creates an Ok (success result)
  * @typeParam T - The type of the value
- * @typeParam E - The type of the error (defaults to NativeError)
+ * @typeParam E - The type of the error (defaults to Error)
  * @param value - The success value
  * @returns Ok<T, E>
  */
-export const ok = <T, E extends NativeError = NativeError>(value: T): Ok<T, E> => createOk(value);
+export const ok = <T, E extends Error = Error>(value: T): Ok<T, E> => createOk(value);
 
 /**
  * Creates an Err (error result)
- * @typeParam E - The type of the error (must extend NativeError)
+ * @typeParam E - The type of the error (must extend Error)
  * @param error - The error value
  * @returns Err<E>
  */
-export const err = <E extends NativeError>(error: E): Err<E> => createErr(error);
+export const err = <E extends Error>(error: E): Err<E> => createErr(error);
 
 /**
  * Type guard to check if Result is Ok
@@ -82,7 +82,7 @@ export const err = <E extends NativeError>(error: E): Err<E> => createErr(error)
  * @param result - The Result to check
  * @returns true if Result is Ok<T>
  */
-export const isOk = <T, E extends NativeError>(result: Result<T, E>): result is Ok<T, E> =>
+export const isOk = <T, E extends Error>(result: Result<T, E>): result is Ok<T, E> =>
   result.ok === true;
 
 /**
@@ -92,7 +92,7 @@ export const isOk = <T, E extends NativeError>(result: Result<T, E>): result is 
  * @param result - The Result to check
  * @returns true if Result is Err<E>
  */
-export const isErr = <T, E extends NativeError>(result: Result<T, E>): result is Err<E> =>
+export const isErr = <T, E extends Error>(result: Result<T, E>): result is Err<E> =>
   result.ok === false;
 
 /**
@@ -104,7 +104,7 @@ export const isErr = <T, E extends NativeError>(result: Result<T, E>): result is
  * @param fn - The mapping function
  * @returns Result<U, E>
  */
-export const map = <T, E extends NativeError, U>(
+export const map = <T, E extends Error, U>(
   result: Result<T, E>,
   fn: (value: T) => U
 ): Result<U, E> =>
@@ -119,7 +119,7 @@ export const map = <T, E extends NativeError, U>(
  * @param fn - The chaining function
  * @returns Result of the function if Ok, Err otherwise
  */
-export const flatMap = <T, E extends NativeError, U>(
+export const flatMap = <T, E extends Error, U>(
   result: Result<T, E>,
   fn: (value: T) => Result<U, E>
 ): Result<U, E> => (isOk(result) ? fn(result.value) : createErr(result.error));
@@ -133,7 +133,7 @@ export const flatMap = <T, E extends NativeError, U>(
  * @param fn - The mapping function for error
  * @returns Result<T, F>
  */
-export const mapErr = <T, E extends NativeError, F extends NativeError>(
+export const mapErr = <T, E extends Error, F extends Error>(
   result: Result<T, E>,
   fn: (error: E) => F
 ): Result<T, F> =>
@@ -147,7 +147,7 @@ export const mapErr = <T, E extends NativeError, F extends NativeError>(
  * @param defaultValue - The default value
  * @returns The value if Ok, default otherwise
  */
-export const getOrElse = <T, E extends NativeError>(result: Result<T, E>, defaultValue: T): T =>
+export const getOrElse = <T, E extends Error>(result: Result<T, E>, defaultValue: T): T =>
   isOk(result) ? result.value : defaultValue;
 
 /**
@@ -159,7 +159,7 @@ export const getOrElse = <T, E extends NativeError>(result: Result<T, E>, defaul
  * @param fn - The function to compute default
  * @returns The value if Ok, result of fn otherwise
  */
-export const getOrCompute = <T, E extends NativeError, U>(
+export const getOrCompute = <T, E extends Error, U>(
   result: Result<T, E>,
   fn: () => U
 ): T | U =>
@@ -173,7 +173,7 @@ export const getOrCompute = <T, E extends NativeError, U>(
  * @param fn - The side effect function
  * @returns The same Result
  */
-export const tap = <T, E extends NativeError>(
+export const tap = <T, E extends Error>(
   result: Result<T, E>,
   fn: (value: T) => void
 ): Result<T, E> => {
@@ -191,7 +191,7 @@ export const tap = <T, E extends NativeError>(
  * @param fn - The side effect function
  * @returns The same Result
  */
-export const tapErr = <T, E extends NativeError>(
+export const tapErr = <T, E extends Error>(
   result: Result<T, E>,
   fn: (error: E) => void
 ): Result<T, E> => {
@@ -211,7 +211,7 @@ export const tapErr = <T, E extends NativeError>(
  * @param err - Function to handle Err
  * @returns Result of the handler function
  */
-export const match = <T, E extends NativeError, U>(
+export const match = <T, E extends Error, U>(
   result: Result<T, E>,
   ok: (value: T) => U,
   err: (error: E) => U
@@ -223,7 +223,7 @@ export const match = <T, E extends NativeError, U>(
  * @typeParam E - The type of the error
  * @param result - The Result to swap
  * @returns Err if Ok, Ok if Err
- * @note This function has type limitations with E extends NativeError constraint
+ * @note This function has type limitations with E extends Error constraint
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const swap = (result: any): any =>
@@ -240,7 +240,7 @@ export const swap = (result: any): any =>
  * @param result - The Result to convert
  * @returns The value if Ok, null otherwise
  */
-export const toNullable = <T, E extends NativeError>(result: Result<T, E>): T | null =>
+export const toNullable = <T, E extends Error>(result: Result<T, E>): T | null =>
   isOk(result) ? result.value : null;
 
 /**
@@ -250,7 +250,7 @@ export const toNullable = <T, E extends NativeError>(result: Result<T, E>): T | 
  * @param result - The Result to convert
  * @returns The value if Ok, undefined otherwise
  */
-export const toUndefined = <T, E extends NativeError>(result: Result<T, E>): T | undefined =>
+export const toUndefined = <T, E extends Error>(result: Result<T, E>): T | undefined =>
   isOk(result) ? result.value : undefined;
 
 /**
@@ -262,7 +262,7 @@ export const toUndefined = <T, E extends NativeError>(result: Result<T, E>): T |
  * @param results - The Results to combine
  * @returns Result<T[], E>
  */
-export const all = <T, E extends NativeError>(...results: Array<Result<T, E>>): Result<T[], E> => {
+export const all = <T, E extends Error>(...results: Array<Result<T, E>>): Result<T[], E> => {
   const firstErr = results.find(isErr);
   if (firstErr) {
     return createErr(firstErr.error);
@@ -278,7 +278,7 @@ export const all = <T, E extends NativeError>(...results: Array<Result<T, E>>): 
  * @returns The value if Ok, throws the error if Err
  * @throws The error if Result is Err
  */
-export const unwrap = <T, E extends NativeError>(result: Result<T, E>): T => {
+export const unwrap = <T, E extends Error>(result: Result<T, E>): T => {
   if (isOk(result)) {
     return result.value;
   }
