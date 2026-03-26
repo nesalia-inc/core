@@ -69,7 +69,7 @@ export type ErrorGroup = Readonly<ErrorData<readonly Error[]> & ErrorResult<read
  */
 export type ErrorOptions<T> = {
   readonly name: string;
-  readonly schema: ZodSchema<T>;
+  readonly schema?: ZodSchema<T>;
   readonly defaultDescription?: string;
   readonly message?: (args: T) => string;
 };

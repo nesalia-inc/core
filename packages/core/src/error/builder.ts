@@ -122,12 +122,24 @@ const extractCause = (input: Error | Err<Error> | Maybe<Error>): Maybe<Error> =>
 };
 
 /**
- * Creates an Error type builder with Zod validation
+ * Creates an Error type builder with optional Zod validation
  */
 export const error = <T>(options: ErrorOptions<T>): ErrorBuilder<T> => {
   const { name, schema, message: messageFn } = options;
 
   return (args: T): Error<T> => {
+    // If no schema provided, skip validation and use args directly
+    if (!schema) {
+      const customMessage = messageFn ? messageFn(args) : `${name}: ${JSON.stringify(args)}`;
+      return createErrorObject<T>(
+        name, args,
+        Object.freeze([]),
+        none(),
+        customMessage,
+        captureStack()
+      );
+    }
+
     const parsed = schema.safeParse(args);
 
     if (!parsed.success) {

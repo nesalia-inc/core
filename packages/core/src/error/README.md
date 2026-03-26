@@ -105,6 +105,7 @@ Use the `error()` factory to create domain-specific error classes:
 import { z } from "zod";
 import { error } from "@deessejs/core";
 
+// With schema - validates arguments
 const SizeError = error({
   name: "SizeError",
   schema: z.object({
@@ -112,13 +113,19 @@ const SizeError = error({
     wanted: z.number(),
   }),
 });
+
+// Without schema - no validation
+const SimpleError = error({
+  name: "SimpleError",
+});
 ```
 
 ### Creating Errors
 
-Call the error builder with validated arguments:
+Call the error builder:
 
 ```typescript
+// With schema - validates arguments
 const err = SizeError({ current: 3, wanted: 5 });
 
 // err is Error<{ current: number, wanted: number }>
@@ -126,11 +133,15 @@ err.ok === false;              // true
 err.name === "SizeError";      // true
 err.args.current === 3;        // true
 err.error === err;             // true (self-reference)
+
+// Without schema - accepts any args
+const simple = SimpleError({ message: "something went wrong" });
+simple.args.message === "something went wrong";  // true
 ```
 
 ### Zod Validation
 
-Arguments are automatically validated. Invalid args return a validation error:
+When a schema is provided, arguments are automatically validated. Invalid args return a validation error:
 
 ```typescript
 SizeError({ current: "not a number" });
@@ -267,12 +278,12 @@ const decimal = (p: number, s: number): Result<Column, Error<...>> => {
 
 ### error(options)
 
-Creates an ErrorBuilder with Zod schema validation.
+Creates an ErrorBuilder. Schema is optional.
 
 | Option | Type | Description |
 |--------|------|-------------|
 | `name` | `string` | Error class name |
-| `schema` | `ZodSchema<T>` | Zod schema for args validation |
+| `schema?` | `ZodSchema<T>` | Zod schema for args validation (optional) |
 | `message?` | `(args: T) => string` | Custom message function |
 
 ### exceptionGroup(errors)
