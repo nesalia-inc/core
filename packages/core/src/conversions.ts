@@ -2,13 +2,14 @@
  * Conversion helpers - convert between Result, Maybe, Try and other types
  */
 
-import { ok, err, Result, isOk } from "./result.js";
-import { some, none, Maybe, isSome } from "./maybe.js";
+import { ok, err, Result, isOk } from "./result";
+import { some, none, Maybe, isSome } from "./maybe";
+import type { Error } from "./error/types";
 
 /**
  * Options for converting Maybe to Result
  */
-export interface ToResultOptions<E extends globalThis.Error> {
+export interface ToResultOptions<E extends Error> {
   /** Error to use when Maybe is None */
   onNone: () => E;
 }
@@ -19,7 +20,7 @@ export interface ToResultOptions<E extends globalThis.Error> {
  * @param onNone - Error to use when Maybe is None
  * @returns Result<T, E>
  */
-export const toResult = <T, E extends globalThis.Error>(maybe: Maybe<T>, onNone: () => E): Result<T, E> =>
+export const toResult = <T, E extends Error>(maybe: Maybe<T>, onNone: () => E): Result<T, E> =>
   isSome(maybe) ? ok(maybe.value) : err(onNone());
 
 /**
@@ -35,7 +36,7 @@ export const fromMaybe = toResult;
  * @param result - The Result to convert
  * @returns Maybe<T> (loses error info)
  */
-export const toMaybeFromResult = <T, E extends globalThis.Error>(result: Result<T, E>): Maybe<T> =>
+export const toMaybeFromResult = <T, E extends Error>(result: Result<T, E>): Maybe<T> =>
   isOk(result) ? some(result.value as NonNullable<T>) : none();
 
 /**
@@ -59,7 +60,7 @@ export const fromResult = toMaybeFromResult;
  * const user = resultFromNullable(db.find(id), () => new NotFoundError({ id }));
  * const port = resultFromNullable(parseInt(env.PORT), () => new InvalidPortError({ port: env.PORT }));
  */
-export const resultFromNullable = <T, E extends globalThis.Error>(
+export const resultFromNullable = <T, E extends Error>(
   value: T | null | undefined,
   onNull: () => E
 ): Result<NonNullable<T>, E> =>
@@ -76,10 +77,10 @@ export const resultFromNullable = <T, E extends globalThis.Error>(
  *
  * const data = resultFromThrowable(() => JSON.parse(jsonString));
  */
-export const resultFromThrowable = <T>(fn: () => T): Result<T, globalThis.Error> => {
+export const resultFromThrowable = <T, E extends Error = Error>(fn: () => T): Result<T, E> => {
   try {
     return ok(fn());
   } catch (e) {
-    return err(e instanceof globalThis.Error ? e : new globalThis.Error(String(e)));
+    return err((e instanceof Error ? e : new Error(String(e))) as E);
   }
 };

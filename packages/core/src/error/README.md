@@ -4,7 +4,7 @@ A structured error handling system inspired by Python's exception classes. Provi
 
 ## Overview
 
-The Error system complements the [Result type](../result.ts) by providing **rich error objects** with:
+The Error system complements the [Result type](../result/index.ts) by providing **rich error objects** with:
 - Structured `args` for domain-specific error data
 - `notes` for additional context
 - `cause` chaining for error provenance
@@ -24,38 +24,75 @@ The Error system complements the [Result type](../result.ts) by providing **rich
 
 ### Error\<T\>
 
-The base error type with structured metadata:
+The base error type with structured metadata and fluent methods:
 
 ```typescript
-type Error<T = unknown> = Readonly<ErrorBase<T>> & NativeError;
+type Error<T = unknown> = Readonly<ErrorData<T>> & ErrorResult<T> & NativeError;
+```
 
-interface ErrorBase<T> {
+**ErrorData** provides the core properties:
+```typescript
+interface ErrorData<T> {
   readonly name: string;           // Error class name (e.g., "SizeError")
-  readonly args: T;                 // Domain-specific error data
+  readonly args: T;                // Domain-specific error data
   readonly notes: readonly string[]; // Additional context
-  readonly cause: NativeError | null; // Original error that caused this one
-  readonly stack?: string;          // Stack trace
+  readonly cause: Maybe<Error>;   // Original error (Maybe<Error>)
+  readonly stack?: string;         // Stack trace
   readonly message: string;         // Human-readable message
+}
+```
+
+**ErrorResult** provides fluent methods for chaining and transformation:
+```typescript
+interface ErrorResult<T> {
+  readonly ok: false;
+  readonly error: Error<T>;       // Self-reference (e.error === e)
+  isOk(): false;
+  isErr(): true;
+  map<U>(fn: (value: never) => U): Error<T>;
+  flatMap<U>(fn: (value: never) => Error<U>): Error<T>;
+  mapErr<F extends NativeError>(fn: (error: Error<T>) => F): Error<T>;
+  getOrElse<T2>(defaultValue: T2): T2;
+  getOrCompute<T2>(fn: () => T2): T2;
+  tap(fn: (value: never) => void): Error<T>;
+  tapErr(fn: (error: Error<T>) => void): Error<T>;
+  match<U>(ok: (value: never) => U, err: (error: Error<T>) => U): U;
+  unwrap(): never;
+  addNotes(...notes: string[]): Error<T>;
+  from(cause: Error | Maybe<Error>): Error<T>;
 }
 ```
 
 ### ErrorBuilder\<T\>
 
-A function that creates `Err<Error<T>>` with Zod validation:
+A function that creates `Error<T>` with Zod validation:
 
 ```typescript
-type ErrorBuilder<T> = (args: T) => ErrWithMethods<T>;
+type ErrorBuilder<T> = (args: T) => Error<T>;
 ```
 
-### ErrWithMethods\<T\>
+### Self-Reference
 
-The result of calling an ErrorBuilder, extending `Err<Error<T>>` with fluent methods:
+Error has a unique property: `e.error === e`. This allows the error to be used both as a standalone error object and as a Result for chaining.
+
+## Accessing cause
+
+The `cause` field is `Maybe<Error>`. Use the Maybe API to safely access it:
 
 ```typescript
-interface ErrWithMethods<T> extends Err<Error<T>> {
-  addNotes(...notes: string[]): ErrWithMethods<T>;
-  from(cause: Error | Err<Error>): ErrWithMethods<T>;
+// Access cause name with default
+error.cause.map(c => c.name).getOrElse('no cause');
+
+// Check if cause exists
+if (error.cause.isSome()) {
+  console.log(error.cause.value.name);
 }
+
+// Chain through nested causes
+error.cause
+  .flatMap(c => c.cause)
+  .map(c => c.name)
+  .getOrElse('no cause');
 ```
 
 ## Usage
@@ -68,6 +105,7 @@ Use the `error()` factory to create domain-specific error classes:
 import { z } from "zod";
 import { error } from "@deessejs/core";
 
+// With schema - validates arguments
 const SizeError = error({
   name: "SizeError",
   schema: z.object({
@@ -75,28 +113,39 @@ const SizeError = error({
     wanted: z.number(),
   }),
 });
+
+// Without schema - no validation
+const SimpleError = error({
+  name: "SimpleError",
+});
 ```
 
 ### Creating Errors
 
-Call the error builder with validated arguments:
+Call the error builder:
 
 ```typescript
-const result = SizeError({ current: 3, wanted: 5 });
+// With schema - validates arguments
+const err = SizeError({ current: 3, wanted: 5 });
 
-// result is Err<Error<{ current: number, wanted: number }>>
-result.ok === false;           // true
-result.error.name === "SizeError";  // true
-result.error.args.current === 3;     // true
+// err is Error<{ current: number, wanted: number }>
+err.ok === false;              // true
+err.name === "SizeError";      // true
+err.args.current === 3;        // true
+err.error === err;             // true (self-reference)
+
+// Without schema - accepts any args
+const simple = SimpleError({ message: "something went wrong" });
+simple.args.message === "something went wrong";  // true
 ```
 
 ### Zod Validation
 
-Arguments are automatically validated. Invalid args return a validation error:
+When a schema is provided, arguments are automatically validated. Invalid args return a validation error:
 
 ```typescript
 SizeError({ current: "not a number" });
-// Returns ErrWithMethods with name "SizeErrorValidationError"
+// Returns Error with name "SizeErrorValidationError"
 ```
 
 ### Custom Messages
@@ -124,12 +173,12 @@ const e = SizeError({ current: 3, wanted: 5 })
 
 ### from()
 
-Chain the cause of an error:
+Chain the cause of an error. Accepts `Error`, `Err<Error>`, or `Maybe<Error>`:
 
 ```typescript
 const networkError = NetworkError({ host: "api.example.com" });
 const e = SizeError({ current: 3, wanted: 5 })
-  .from(networkError);  // networkError is the cause
+  .from(networkError);  // Error object as cause
 ```
 
 ### Combining enrichments
@@ -158,16 +207,16 @@ const errors = exceptionGroup([
 
 ### Guards
 
-Type guards for safe narrowing with exhaustive validation:
+Type guards for safe narrowing:
 
 ```typescript
 import { isError, isErrorGroup, assertIsError } from "@deessejs/core";
 
-isError(someValue);        // Type guard for Error (validates primitive types)
-isErrorGroup(someValue);   // Type guard for ErrorGroup (uses .every())
+isError(someValue);        // Type guard for Error
+isErrorGroup(someValue);   // Type guard for ErrorGroup
 ```
 
-#### Assertion Functions
+### Assertion Functions
 
 For control flow without conditional checks:
 
@@ -177,14 +226,6 @@ import { assertIsError, assertIsErrorGroup } from "@deessejs/core";
 // Throws if value is not an Error
 assertIsError(value);
 // value is Error here, TypeScript knows the type
-
-// With try/catch for handling invalid input
-try {
-  assertIsError(userInput);
-  processError(userInput);
-} catch {
-  console.log("Not a valid error");
-}
 ```
 
 ### getErrorMessage()
@@ -220,12 +261,12 @@ filterErrorsByName(group, "SizeError");  // SizeError[]
 
 ## raise() - Functional Throw
 
-Throw errors in a functional style:
+Throw errors in a functional style for early exit:
 
 ```typescript
 import { raise } from "@deessejs/core";
 
-const decimal = (p: number, s: number) => {
+const decimal = (p: number, s: number): Result<Column, Error<...>> => {
   if (p < s) raise(DecimalError({ precision: p, scale: s }));
   return ok({ precision: p, scale: s });
 };
@@ -237,12 +278,12 @@ const decimal = (p: number, s: number) => {
 
 ### error(options)
 
-Creates an ErrorBuilder with Zod schema validation.
+Creates an ErrorBuilder. Schema is optional.
 
 | Option | Type | Description |
 |--------|------|-------------|
 | `name` | `string` | Error class name |
-| `schema` | `ZodSchema<T>` | Zod schema for args validation |
+| `schema?` | `ZodSchema<T>` | Zod schema for args validation (optional) |
 | `message?` | `(args: T) => string` | Custom message function |
 
 ### exceptionGroup(errors)
@@ -255,35 +296,18 @@ Throws the error and returns `never`.
 
 ### assertIsError(value)
 
-Assertion function that throws if value is not an Error:
-
-```typescript
-assertIsError(value);  // Throws TypeError if not an Error
-```
+Assertion function that throws if value is not an Error.
 
 ### assertIsErrorGroup(value)
 
-Assertion function that throws if value is not an ErrorGroup:
-
-## Migration from Result\<T, E\>
-
-Previously, `Result<string, string>` was valid. Now `E extends Error`:
-
-```typescript
-// Before (no longer works)
-const result: Result<string, string> = err("error message");
-
-// After
-const result: Result<string, Error> = err(new Error("error message"));
-const result = err(customError({ reason: "validation" }).error);
-```
+Assertion function that throws if value is not an ErrorGroup.
 
 ## Type Compatibility
 
 The `Error<T>` type is compatible with JavaScript's native `Error`:
 
 ```typescript
-const e: Error = SizeError({ current: 3, wanted: 5 }).error;
+const e: Error = SizeError({ current: 3, wanted: 5 });
 // Error is compatible with globalThis.Error
 ```
 

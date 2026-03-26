@@ -7,12 +7,12 @@
  */
 
 // Unit
-export type { Unit } from "./unit.js";
-export { unit, isUnit } from "./unit.js";
+export type { Unit } from "./unit";
+export { unit, isUnit } from "./unit";
 
 // Re-export all types
-export type { Maybe, Some, None } from "./maybe.js";
-export type { Result, Ok, Err, Success, ExtractError } from "./result.js";
+export type { Maybe, Some, None } from "./maybe";
+export type { Result, Ok, Err, Success, ExtractError } from "./result";
 
 // Maybe
 export {
@@ -34,7 +34,8 @@ export {
   equalsWith as equalsWithMaybe,
   all as allMaybe,
   filter as filterMaybe,
-} from "./maybe.js";
+  toResult as toResultMaybe,
+} from "./maybe";
 
 // Result
 export {
@@ -54,10 +55,10 @@ export {
   toUndefined as toUndefinedResult,
   all as allResult,
   unwrap as unwrapResult,
-} from "./result.js";
+} from "./result";
 
 // Try
-export type { Try, TrySuccess, TryFailure } from "./try.js";
+export type { Try, TrySuccess, TryFailure } from "./try";
 export {
   attempt,
   attemptAsync,
@@ -71,11 +72,11 @@ export {
   match as matchTry,
   toNullable as toNullableTry,
   toUndefined as toUndefinedTry,
-} from "./try.js";
+} from "./try";
 
 // AsyncResult
-export type { AsyncResultInner, AsyncOk, AsyncErr, AbortError, FromPromiseOptions } from "./async-result.js";
-export { AsyncResult } from "./async-result.js";
+export type { AsyncResultInner, AsyncOk, AsyncErr, AbortError, FromPromiseOptions } from "./async-result";
+export { AsyncResult } from "./async-result";
 export {
   okAsync,
   errAsync,
@@ -103,18 +104,18 @@ export {
   toNullable as toNullableAsyncResult,
   toUndefined as toUndefinedAsyncResult,
   withSignal,
-} from "./async-result.js";
+} from "./async-result";
 
 // Sleep
-export { sleep, withTimeout, sleepWithSignal, addJitter } from "./sleep.js";
-export type { TimeoutOptions, TimeoutError, SleepOptions, TimeoutCleanup, TimeoutResult } from "./sleep.js";
+export { sleep, withTimeout, sleepWithSignal, addJitter } from "./sleep";
+export type { TimeoutOptions, TimeoutError, SleepOptions, TimeoutCleanup, TimeoutResult } from "./sleep";
 
 // Yield
-export { yieldControl as yield, immediate } from "./yield.js";
+export { yieldControl as yield, immediate } from "./yield";
 
 // Retry
-export { retry, retryAsync, exponentialBackoff, linearBackoff, constantBackoff } from "./retry.js";
-export type { RetryOptions, RetryAbortedError } from "./retry.js";
+export { retry, retryAsync, exponentialBackoff, linearBackoff, constantBackoff } from "./retry";
+export type { RetryOptions, RetryAbortedError } from "./retry";
 
 // Conversions
 export {
@@ -124,14 +125,14 @@ export {
   fromResult,
   resultFromNullable,
   resultFromThrowable,
-} from "./conversions.js";
-export type { ToResultOptions } from "./conversions.js";
+} from "./conversions";
+export type { ToResultOptions } from "./conversions";
 
 // Pipe & Flow
-export { pipe, flow } from "./pipe.js";
+export { pipe, flow } from "./pipe";
 
 // Error System
-export type { Error, ErrorGroup, ErrorOptions } from "./error/index.js";
+export type { Error, ErrorGroup, ErrorOptions } from "./error/index";
 export {
   error,
   exceptionGroup,
@@ -143,4 +144,4 @@ export {
   getErrorMessage,
   flattenErrorGroup,
   filterErrorsByName,
-} from "./error/index.js";
+} from "./error/index";
