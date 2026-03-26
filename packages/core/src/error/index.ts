@@ -58,6 +58,7 @@ export type {
   ErrorGroup,
   ErrorOptions,
   ErrorBuilder,
+  ExtractError,
 } from "./types";
 
 // Guards

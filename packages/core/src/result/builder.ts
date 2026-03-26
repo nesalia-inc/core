@@ -12,23 +12,31 @@ import type { Error } from "../error/types";
  * @param value - The success value
  * @returns Ok<T, E>
  */
-const createOk = <T, E extends Error = Error>(value: T): Ok<T, E> =>
-  Object.freeze({
+const createOk = <T, E extends Error = Error>(value: T): Ok<T, E> => {
+  const self: Ok<T, E> = {
     ok: true as const,
     value,
     isOk() { return true; },
     isErr() { return false; },
     map(fn) { return createOk(fn(value)); },
-    flatMap(fn) { return fn(value) as Result<T, E>; },
+    flatMap<U>(fn: (value: T) => Result<U, E>) { return fn(value) as Result<U, E>; },
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    mapErr(_fn) { return this as Ok<T, E>; },
+    mapErr(_fn) { return self; },
     getOrElse() { return value; },
     getOrCompute() { return value; },
-    tap(fn) { fn(value); return this; },
-    tapErr() { return this; },
-    match(ok) { return ok(value); },
+    tap(fn) { fn(value); return self; },
+    tapErr() { return self; },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    match(fn: any) {
+      if (typeof fn === 'object' && fn !== null && 'onSuccess' in fn) {
+        return fn.onSuccess(value);
+      }
+      return fn(value);
+    },
     unwrap() { return value; },
-  }) as Ok<T, E>;
+  };
+  return Object.freeze(self);
+};
 
 /**
  * Creates an Err with methods
@@ -37,25 +45,31 @@ const createOk = <T, E extends Error = Error>(value: T): Ok<T, E> =>
  * @returns Err<E>
  */
 const createErr = <E extends Error>(error: E): Err<E> => {
-  const result: Err<E> = {
+  const self: Err<E> = {
     ok: false as const,
     error,
     isOk() { return false; },
     isErr() { return true; },
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    map(_fn) { return result; },
+    map(_fn) { return self; },
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    flatMap(_fn) { return result; },
-    mapErr<F extends Error>(fn: (error: E) => F) { return createErr(fn(error)); },
+    flatMap(_fn) { return self; },
+    mapErr<F extends Error>(fn: (error: E) => F): Err<F> { return createErr(fn(error)); },
     getOrElse(defaultValue) { return defaultValue; },
     getOrCompute(fn) { return fn(); },
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    tap(_fn) { return result; },
-    tapErr(fn) { fn(error); return result; },
-    match(_, err) { return err(error); },
+    tap(_fn) { return self; },
+    tapErr(fn) { fn(error); return self; },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    match(fn: any) {
+      if (typeof fn === 'object' && fn !== null && 'onError' in fn) {
+        return fn.onError(error);
+      }
+      return fn(error);
+    },
     unwrap() { throw error; },
   };
-  return Object.freeze(result);
+  return Object.freeze(self);
 };
 
 /**
