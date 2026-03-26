@@ -4,7 +4,7 @@
  */
 
 import type { Result } from "../result";
-import type { NativeError } from "../error/types";
+import type { ErrWithMethods, Error } from "../error/types";
 
 /**
  * Maybe type - union of Some and None
@@ -29,7 +29,7 @@ export interface Some<T> {
   getOrElse(defaultValue: T): T;
   getOrCompute(fn: () => T): T;
   tap(fn: (value: T) => void): Maybe<T>;
-  toResult<E extends NativeError>(onNone: () => E): Result<T, E>;
+  toResult(onNone: () => ErrWithMethods<unknown>): Result<T, Error<unknown>>;
 }
 
 /**
@@ -47,5 +47,5 @@ export interface None {
   getOrElse<T>(defaultValue: T): T;
   getOrCompute<T>(fn: () => T): T;
   tap(fn: (value: never) => void): None;
-  toResult<E extends NativeError>(onNone: () => E): Result<never, E>;
+  toResult(onNone: () => ErrWithMethods<unknown>): Result<never, Error<unknown>>;
 }

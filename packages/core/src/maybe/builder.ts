@@ -3,7 +3,7 @@
  */
 
 import { ok, err, type Result } from "../result";
-import type { NativeError } from "../error/types";
+import type { ErrWithMethods, Error } from "../error/types";
 import type { Some, None, Maybe } from "./types";
 
 /**
@@ -52,7 +52,7 @@ export const some = <T,>(value: NonNullable<T>): Some<NonNullable<T>> => {
       fn(this.value);
       return this;
     },
-    toResult<E extends NativeError>(_onNone: () => E): Result<NonNullable<T>, E> {
+    toResult(_onNone: () => ErrWithMethods<unknown>): Result<NonNullable<T>, Error<unknown>> {
       return ok(this.value);
     },
   };
@@ -92,8 +92,8 @@ const NONE: None = Object.freeze({
   tap(_fn: (value: never) => void): None {
     return NONE;
   },
-  toResult<E extends NativeError>(onNone: () => E): Result<never, E> {
-    return err(onNone());
+  toResult(onNone: () => ErrWithMethods<unknown>): Result<never, Error<unknown>> {
+    return err(onNone().error);
   },
 });
 
@@ -293,8 +293,8 @@ export const filter = <T>(
  * @param onNone - Function to create the error when maybe is None
  * @returns Ok<T> if Some, Err<E> if None
  */
-export const toResult = <T, E extends NativeError>(
+export const toResult = <T>(
   maybe: Maybe<T>,
-  onNone: () => E
-): Result<T, E> =>
-  isSome(maybe) ? ok(maybe.value) : err(onNone());
+  onNone: () => ErrWithMethods<unknown>
+): Result<T, Error<unknown>> =>
+  isSome(maybe) ? ok(maybe.value) : err(onNone().error);
