@@ -10,7 +10,7 @@ import {
 } from "../src/conversions";
 import { some, none } from "../src/maybe";
 import { ok, err } from "../src/result";
-import { error } from "../src";
+import { error, exceptionGroup } from "../src";
 import { assertIsError, assertIsErrorGroup } from "../src/error/guards";
 
 describe("Conversions", () => {
@@ -134,7 +134,7 @@ describe("Conversions", () => {
   describe("assertIsErrorGroup", () => {
     it("should pass for valid ErrorGroup", () => {
       const TestError = error({ name: "TestError" });
-      const group = { name: "ExceptionGroup", exceptions: [TestError({})], notes: [], args: [], cause: null, message: "", ok: false as const, error: null as unknown as any, isOk: () => false, isErr: () => true, map: () => group, flatMap: () => group, mapErr: () => group, getOrElse: () => group, getOrCompute: () => group, tap: () => group, tapErr: () => group, match: () => group, unwrap: () => { throw group; } };
+      const group = exceptionGroup([TestError({})]);
       expect(() => assertIsErrorGroup(group)).not.toThrow();
     });
 
