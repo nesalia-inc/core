@@ -686,6 +686,54 @@ describe("filterErrorsByName()", () => {
   });
 });
 
+describe("error() without schema", () => {
+  it("should create error without schema", () => {
+    const SimpleError = error({
+      name: "SimpleError",
+    });
+
+    const e = SimpleError({ any: "args" });
+
+    expect(isErr(e)).toBe(true);
+    expect(e.error.name).toBe("SimpleError");
+    expect(e.error.args).toEqual({ any: "args" });
+  });
+
+  it("should create error without schema with message function", () => {
+    const SimpleError = error({
+      name: "SimpleError",
+      message: (args) => `Custom: ${JSON.stringify(args)}`,
+    });
+
+    const e = SimpleError({ key: "value" });
+
+    expect(e.error.message).toBe('Custom: {"key":"value"}');
+  });
+
+  it("should work with addNotes without schema", () => {
+    const SimpleError = error({
+      name: "SimpleError",
+    });
+
+    const e = SimpleError({ data: 42 }).addNotes("context");
+
+    expect(e.error.notes).toContain("context");
+  });
+
+  it("should work with from without schema", () => {
+    const CauseError = error({
+      name: "CauseError",
+    });
+    const SimpleError = error({
+      name: "SimpleError",
+    });
+
+    const e = SimpleError({ data: 42 }).from(CauseError({ reason: "bad" }));
+
+    expect(e.error.cause.isSome()).toBe(true);
+  });
+});
+
 describe("integration with Result", () => {
   it("should work with mapErr", () => {
     const SizeError = error({
