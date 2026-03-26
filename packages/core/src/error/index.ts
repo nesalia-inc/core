@@ -57,7 +57,6 @@ export type {
   Error,
   ErrorGroup,
   ErrorOptions,
-  ErrWithMethods,
   ErrorBuilder,
 } from "./types";
 

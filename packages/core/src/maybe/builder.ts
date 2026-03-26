@@ -2,8 +2,8 @@
  * Maybe builder functions
  */
 
-import { ok, err, type Result } from "../result";
-import type { ErrWithMethods, Error } from "../error/types";
+import { ok, type Result } from "../result";
+import type { Error } from "../error/types";
 import type { Some, None, Maybe } from "./types";
 
 /**
@@ -52,7 +52,7 @@ export const some = <T,>(value: NonNullable<T>): Some<NonNullable<T>> => {
       fn(this.value);
       return this;
     },
-    toResult(_onNone: () => ErrWithMethods<unknown>): Result<NonNullable<T>, Error<unknown>> {
+    toResult(_onNone: () => Error<unknown>): Result<NonNullable<T>, Error<unknown>> {
       return ok(this.value);
     },
   };
@@ -92,8 +92,9 @@ const NONE: None = Object.freeze({
   tap(_fn: (value: never) => void): None {
     return NONE;
   },
-  toResult(onNone: () => ErrWithMethods<unknown>): Result<never, Error<unknown>> {
-    return err(onNone().error);
+  toResult(onNone: () => Error<unknown>): Result<never, Error<unknown>> {
+    // Error IS the Result (with self-referential error property), return it directly
+    return onNone() as Result<never, Error<unknown>>;
   },
 });
 
@@ -295,6 +296,6 @@ export const filter = <T>(
  */
 export const toResult = <T>(
   maybe: Maybe<T>,
-  onNone: () => ErrWithMethods<unknown>
+  onNone: () => Error<unknown>
 ): Result<T, Error<unknown>> =>
-  isSome(maybe) ? ok(maybe.value) : err(onNone().error);
+  isSome(maybe) ? ok(maybe.value) : onNone() as Result<T, Error<unknown>>;
