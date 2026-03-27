@@ -6,8 +6,6 @@
  */
 
 import type { Error, ErrorGroup } from "./types";
-import type { Err, Result } from "../result";
-import type { Try, TryFailure } from "../try";
 
 /**
  * Helper for safe object narrowing
@@ -91,18 +89,6 @@ export const isErrorGroup = (value: unknown): value is ErrorGroup => {
   // Use every() for exhaustive validation instead of just checking first element
   return value.exceptions.every(isError);
 };
-
-/**
- * Check if Result is Err with Error type
- */
-export const isErrWithError = (result: Result<unknown, Error>): result is Err<Error> =>
-  result.ok === false && isError(result.error);
-
-/**
- * Check if Try is TryFailure with Error type
- */
-export const isErrTryWithError = (t: Try<unknown, Error>): t is TryFailure<Error> =>
-  t.ok === false && isError(t.error);
 
 /**
  * Assertion function for Error

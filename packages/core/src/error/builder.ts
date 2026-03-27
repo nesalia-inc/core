@@ -5,9 +5,8 @@
  * Inspired by Python's exception classes.
  */
 
-import type { ErrorOptions, ErrorBuilder, Error, ErrorGroup, NativeError } from "./types";
+import type { ErrorOptions, ErrorBuilder, Error, ErrorGroup } from "./types";
 import { isError, isErrorGroup } from "./guards";
-import type { Err } from "../result";
 import { some, none, type Maybe } from "../maybe";
 
 /**
@@ -21,6 +20,8 @@ const captureStack = (): string | undefined => {
 /**
  * Creates a base error object with all properties.
  * Uses simple object literal + Object.freeze pattern (no property descriptors).
+ *
+ * Error<T> is a plain error object - Result methods come from err() wrapper.
  */
 const createErrorObject = <T>(
   name: string,
@@ -29,59 +30,30 @@ const createErrorObject = <T>(
   cause: Maybe<Error>,
   message: string,
   stack: string | undefined,
-  isValidationError = false
+  isValidationError: boolean
 ): Error<T> => {
   const errName = isValidationError ? `${name}ValidationError` : name;
   const errMessage = isValidationError ? `${errName}: ${message}` : message;
 
-  const createNew = (
-    newArgs: T,
-    newNotes: readonly string[],
-    newCause: Maybe<Error>,
-    newIsValidationError: boolean
-  ): Error<T> =>
-    createErrorObject<T>(name, newArgs, newNotes, newCause, message, stack, newIsValidationError);
-
   const self: Error<T> = {
-    // ErrorData (required by NativeError interface)
     name: errName,
     args,
     notes,
     cause,
     stack,
     message: errMessage,
-
-    // ErrorResult
-    ok: false as const,
-    isOk(): false { return false; },
-    isErr(): true { return true; },
-    map(_fn: (value: never) => unknown): Error<T> { return self; },
-    flatMap(_fn: (value: never) => Error<T>): Error<T> { return self; },
-    mapErr<F extends NativeError>(_fn: (error: Error<T>) => F): Error<T> { return self; },
-    getOrElse<T2>(defaultValue: T2): T2 { return defaultValue; },
-    getOrCompute<T2>(_fn: () => T2): T2 { return _fn(); },
-    tap(): Error<T> { return self; },
-    tapErr(): Error<T> { return self; },
-    match<U>(_ok: (value: never) => U, err: (error: Error<T>) => U): U { return err(self); },
-    unwrap(): never { throw self; },
-
-    // Self-reference (e.error === e)
-    get error(): Error<T> { return self; },
-
-    // Error-specific methods
-    addNotes(...moreNotes: string[]): Error<T> {
+    addNotes(this: Error<T>, ...moreNotes: string[]): Error<T> {
       if (isValidationError) {
-        return createNew(args, Object.freeze([...notes, "Cannot add notes to validation error"]), cause, true);
+        return createErrorObject(name, args, Object.freeze([...notes, "Cannot add notes to validation error"]), cause, message, stack, true);
       }
-      return createNew(args, Object.freeze([...notes, ...moreNotes]), cause, false);
+      return createErrorObject(name, args, Object.freeze([...notes, ...moreNotes]), cause, message, stack, false);
     },
-
-    from(newCause: Error | Err<Error> | Maybe<Error>): Error<T> {
+    from(this: Error<T>, newCause: Error | Maybe<Error>): Error<T> {
       if (isValidationError) {
-        return createNew(args, Object.freeze([...notes, "Cannot chain cause on validation error"]), cause, true);
+        return createErrorObject(name, args, Object.freeze([...notes, "Cannot chain cause on validation error"]), cause, message, stack, true);
       }
       const extractedCause = extractCause(newCause);
-      return createErrorObject<T>(name, args, notes, extractedCause, message, stack, false);
+      return createErrorObject(name, args, notes, extractedCause, message, stack, false);
     },
   } as Error<T>;
 
@@ -91,15 +63,10 @@ const createErrorObject = <T>(
 /**
  * Extracts Error from Err<Error>, Some<Error>, or plain Error
  */
-const extractCause = (input: Error | Err<Error> | Maybe<Error>): Maybe<Error> => {
+const extractCause = (input: Error | Maybe<Error>): Maybe<Error> => {
   // Helper to check if value is an object
   const isObject = (val: unknown): val is Record<string, unknown> =>
     val !== null && typeof val === 'object';
-
-  // Check if it's Err<Error> first - has ok: false and error property
-  if (isObject(input) && input.ok === false && 'error' in input) {
-    return some((input as Err<Error>).error);
-  }
 
   // Check if it's Some<Error> - has ok: true and value property
   if (isObject(input) && input.ok === true && 'value' in input) {
@@ -107,8 +74,14 @@ const extractCause = (input: Error | Err<Error> | Maybe<Error>): Maybe<Error> =>
     return isError(value as Error) ? some(value as Error) : none();
   }
 
+  // Check if it's Err<Error> - has ok: false and error property
+  if (isObject(input) && input.ok === false && 'error' in input) {
+    const error = (input as unknown as { error: unknown }).error;
+    return isError(error as Error) ? some(error as Error) : none();
+  }
+
   // Check if it's None - has ok: false and no value/error properties
-  if (isObject(input) && input.ok === false && !('error' in input)) {
+  if (isObject(input) && input.ok === false) {
     return none();
   }
 
@@ -136,7 +109,8 @@ export const error = <T>(options: ErrorOptions<T>): ErrorBuilder<T> => {
         Object.freeze([]),
         none(),
         customMessage,
-        captureStack()
+        captureStack(),
+        false
       );
     }
 
@@ -156,13 +130,14 @@ export const error = <T>(options: ErrorOptions<T>): ErrorBuilder<T> => {
     }
 
     // Valid args - create normal error
-    const customMessage = messageFn ? messageFn(args) : `${name}: ${JSON.stringify(args)}`;
+    const customMessage = messageFn ? messageFn(args) : `${name}: ${JSON.stringify(parsed.data)}`;
     return createErrorObject<T>(
       name, parsed.data,
       Object.freeze([]),
       none(),
       customMessage,
-      captureStack()
+      captureStack(),
+      false
     );
   };
 };
@@ -176,7 +151,7 @@ export const error = <T>(options: ErrorOptions<T>): ErrorBuilder<T> => {
  *   ValidationError({ field: "email" })
  * ]);
  */
-export const exceptionGroup = (exceptions: readonly (Error | Err<Error> | ErrorGroup)[]): ErrorGroup => {
+export const exceptionGroup = (exceptions: readonly (Error | ErrorGroup)[]): ErrorGroup => {
   // Flatten nested errors
   const extractedErrors: Error[] = [];
   for (const e of exceptions) {
@@ -184,8 +159,6 @@ export const exceptionGroup = (exceptions: readonly (Error | Err<Error> | ErrorG
       extractedErrors.push(...e.exceptions);
     } else if (isError(e)) {
       extractedErrors.push(e);
-    } else {
-      extractedErrors.push(e.error);
     }
   }
 
@@ -204,24 +177,7 @@ export const exceptionGroup = (exceptions: readonly (Error | Err<Error> | ErrorG
     // Additional ErrorGroup property
     exceptions: Object.freeze(extractedErrors),
 
-    // ErrorResult
-    ok: false as const,
-    isOk(): false { return false; },
-    isErr(): true { return true; },
-    map(_fn: (value: never) => unknown): ErrorGroup { return self; },
-    flatMap(_fn: (value: never) => Error<unknown>): ErrorGroup { return self; },
-    mapErr<F extends NativeError>(_fn: (error: ErrorGroup) => F): ErrorGroup { return self; },
-    getOrElse<T>(defaultValue: T): T { return defaultValue; },
-    getOrCompute<T>(_fn: () => T): T { return _fn(); },
-    tap(): ErrorGroup { return self; },
-    tapErr(): ErrorGroup { return self; },
-    match<U>(_ok: (value: never) => U, err: (error: ErrorGroup) => U): U { return err(self); },
-    unwrap(): never { throw self; },
-
-    // Self-reference
-    get error(): ErrorGroup { return self; },
-
-    // ErrorGroup-specific: addNotes and from are no-ops
+    // Error-specific methods (no-ops for ErrorGroup)
     addNotes(): ErrorGroup { return self; },
     from(): ErrorGroup { return self; },
   } as ErrorGroup;

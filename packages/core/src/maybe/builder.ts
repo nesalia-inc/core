@@ -2,7 +2,7 @@
  * Maybe builder functions
  */
 
-import { ok, type Result } from "../result";
+import { ok, err, type Result } from "../result";
 import type { Error } from "../error/types";
 import type { Some, None, Maybe } from "./types";
 
@@ -93,8 +93,8 @@ const NONE: None = Object.freeze({
     return NONE;
   },
   toResult(onNone: () => Error<unknown>): Result<never, Error<unknown>> {
-    // Error IS the Result (with self-referential error property), return it directly
-    return onNone() as unknown as Result<never, Error<unknown>>;
+    // Error<T> is now separate from Result, so we wrap it with err()
+    return err(onNone());
   },
 });
 
@@ -298,4 +298,4 @@ export const toResult = <T>(
   maybe: Maybe<T>,
   onNone: () => Error<unknown>
 ): Result<T, Error<unknown>> =>
-  isSome(maybe) ? ok(maybe.value) : onNone() as unknown as Result<T, Error<unknown>>;
+  isSome(maybe) ? ok(maybe.value) : err(onNone());

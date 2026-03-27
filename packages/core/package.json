@@ -1,11 +1,10 @@
 {
   "name": "@deessejs/core",
-  "version": "0.4.4",
+  "version": "0.5.0",
   "description": "Type-safe error handling for TypeScript - Result, Maybe, Try, and AsyncResult monads with zero runtime dependencies",
   "type": "module",
   "files": [
-    "dist",
-    "scripts"
+    "dist"
   ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -18,7 +17,7 @@
     "./public/*": "./public/*"
   },
   "scripts": {
-    "build": "tsc && node scripts/add-js-extensions.mjs",
+    "build": "tsup",
     "test": "vitest run",
     "test:coverage": "vitest --coverage",
     "lint": "eslint src tests",
@@ -26,6 +25,7 @@
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^2.0.0",
+    "tsup": "^8.5.1",
     "typescript": "^5.0.0",
     "vitest": "^2.0.0"
   },
