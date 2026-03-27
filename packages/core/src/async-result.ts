@@ -42,288 +42,277 @@ export type AsyncErr<E> = {
 export type AsyncResultInner<T, E> = AsyncOk<T> | AsyncErr<E>;
 
 /**
- * AsyncResult class - Thenable wrapper for async operations
+ * Type for AsyncResult instance methods
+ */
+export interface AsyncResultInstance<T, E> {
+  /** Check if AsyncOk (always undefined before resolution) */
+  readonly ok: boolean | undefined;
+  /** Get the value (throws before resolution) */
+  readonly value: T;
+  /** Get the error (throws before resolution) */
+  readonly error: E;
+  /** Thenable implementation - allows using await directly */
+  then<TResult1 = AsyncResultInner<T, E>, TResult2 = never>(
+    onfulfilled?: (value: AsyncResultInner<T, E>) => TResult1 | PromiseLike<TResult1>,
+    onrejected?: (reason: E) => TResult2 | PromiseLike<TResult2>
+  ): Promise<TResult1 | TResult2>;
+  /** Catch handler */
+  catch<U = AsyncResultInner<T, E>>(
+    onrejected?: (error: E) => U | PromiseLike<U>
+  ): Promise<AsyncResultInner<T, E> | U>;
+  /** Finally handler */
+  finally(onfinally?: () => void): Promise<AsyncResultInner<T, E>>;
+  /** Maps the value if AsyncOk, returns AsyncErr otherwise */
+  map<U>(fn: (value: T) => U | Promise<U>): AsyncResult<U, E>;
+  /** Maps the error if AsyncErr, returns AsyncOk otherwise */
+  mapErr<F>(fn: (error: E) => F): AsyncResult<T, F>;
+  /** Chains AsyncResults - function returns AsyncResult if AsyncOk */
+  flatMap<U>(fn: (value: T) => AsyncResult<U, E> | Promise<AsyncResultInner<U, E>>): AsyncResult<U, E>;
+  /** Chains AsyncResults with async function */
+  flatMapAsync<U>(fn: (value: T) => Promise<AsyncResultInner<U, E>>): AsyncResult<U, E>;
+  /** Gets the value or a default */
+  getOrElse(defaultValue: T): Promise<T>;
+  /** Gets the value or computes a default */
+  getOrCompute(fn: () => T | Promise<T>): Promise<T>;
+  /** Performs a side effect without changing the value */
+  tap(fn: (value: T) => void): AsyncResult<T, E>;
+  /** Performs a side effect on error without changing the value */
+  tapErr(fn: (error: E) => void): AsyncResult<T, E>;
+  /** Matches both AsyncOk and AsyncErr cases */
+  match<U>(ok: (value: T) => U, err: (error: E) => U): Promise<U>;
+  /** Converts AsyncResult to a nullable value */
+  toNullable(): Promise<T | null>;
+  /** Converts AsyncResult to an undefined-able value */
+  toUndefined(): Promise<T | undefined>;
+  /** Unwraps the AsyncResult, throwing if error */
+  unwrap(): Promise<T>;
+  /** Unwraps the AsyncResult, returning default if error */
+  unwrapOr(defaultValue: T): Promise<T>;
+  /** Converts to the underlying Promise */
+  toPromise(): Promise<AsyncResultInner<T, E>>;
+}
+
+/**
+ * AsyncResult function type (callable factory)
+ */
+export interface AsyncResultFactory {
+  <T, E = Error>(promise: Promise<AsyncResultInner<T, E>>): AsyncResult<T, E>;
+  /** Creates an async Ok (success result) */
+  ok<T>(value: T): AsyncResult<T, never>;
+  /** Creates an async Err (error result) */
+  err<E>(error: E): AsyncResult<never, E>;
+  /** Creates an AsyncResult from a Promise */
+  fromPromise<T>(promise: Promise<T>): AsyncResult<T, Error>;
+  /** Creates AsyncResult from a Promise that may already have the Result shape */
+  from<T, E>(promise: Promise<AsyncResultInner<T, E>>): AsyncResult<T, E>;
+  /** Creates AsyncResult that resolves after delay */
+  fromValue<T>(value: T, ms?: number): AsyncResult<T, never>;
+  /** Creates AsyncResult that rejects after delay */
+  fromError<E>(error: E, ms?: number): AsyncResult<never, E>;
+}
+
+/**
+ * AsyncResult type - Thenable wrapper for async operations
  * Provides fluent chaining without intermediate await calls
  * @typeParam T - The type of the success value
  * @typeParam E - The type of the error
  */
-export class AsyncResult<T, E = Error> {
-  private readonly promise: Promise<AsyncResultInner<T, E>>;
+export type AsyncResult<T, E = Error> = AsyncResultInstance<T, E> & {
+  /** Internal promise for Thenable implementation */
+  readonly [Symbol.toStringTag]: "AsyncResult";
+};
 
-  /**
-   * Creates a new AsyncResult from a promise
-   * @param promise - The promise to wrap
-   */
-  constructor(promise: Promise<AsyncResultInner<T, E>>) {
-    this.promise = promise;
-  }
+/**
+ * Creates a new AsyncResult from a promise
+ * @param promise - The promise to wrap
+ */
+function createAsyncResult<T, E>(
+  promise: Promise<AsyncResultInner<T, E>>
+): AsyncResult<T, E> {
+  const obj: AsyncResult<T, E> = {
+    ok: undefined,
+    get value(): T {
+      throw new Error("Cannot synchronously access value - use await or .then()");
+    },
+    get error(): E {
+      throw new Error("Cannot synchronously access error - use await or .then()");
+    },
+    [Symbol.toStringTag]: "AsyncResult",
 
-  /**
-   * Check if the AsyncResult is an Ok (synchronous check)
-   * Note: This returns undefined if the promise hasn't resolved yet
-   */
-  get ok(): boolean | undefined {
-    return undefined;
-  }
-
-  /**
-   * Get the value if Ok (synchronous check)
-   * Note: This throws if the promise hasn't resolved yet or if Err
-   */
-  get value(): T {
-    throw new Error("Cannot synchronously access value - use await or .then()");
-  }
-
-  /**
-   * Get the error if Err (synchronous check)
-   * Note: This throws if the promise hasn't resolved yet or if Ok
-   */
-  get error(): E {
-    throw new Error("Cannot synchronously access error - use await or .then()");
-  }
-
-  /**
-   * Thenable implementation - allows using await directly
-   * When awaited, resolves to the inner result (never throws)
-   */
-  then<TResult1 = AsyncResultInner<T, E>, TResult2 = never>(
-    onfulfilled?: (value: AsyncResultInner<T, E>) => TResult1 | PromiseLike<TResult1>,
-    onrejected?: (reason: E) => TResult2 | PromiseLike<TResult2>
-  ): Promise<TResult1 | TResult2> {
-    return this.promise.then(
-      (result) => {
-        // Always resolve (never reject) - treat errors as values
-        if (onfulfilled) {
-          return onfulfilled(result);
+    then<TResult1 = AsyncResultInner<T, E>, TResult2 = never>(
+      onfulfilled?: (value: AsyncResultInner<T, E>) => TResult1 | PromiseLike<TResult1>,
+      onrejected?: (reason: E) => TResult2 | PromiseLike<TResult2>
+    ): Promise<TResult1 | TResult2> {
+      return promise.then(
+        (result) => {
+          if (onfulfilled) {
+            return onfulfilled(result);
+          }
+          return result as unknown as TResult1;
+        },
+        (reason) => {
+          if (onrejected) {
+            return onrejected(reason);
+          }
+          return reason as unknown as TResult2;
         }
-        return result as unknown as TResult1;
-      },
-      (reason) => {
-        // Handle promise rejection - resolve with error as value
+      );
+    },
+
+    catch<U = AsyncResultInner<T, E>>(
+      onrejected?: (error: E) => U | PromiseLike<U>
+    ): Promise<AsyncResultInner<T, E> | U> {
+      return promise.catch((error) => {
         if (onrejected) {
-          return onrejected(reason);
+          return onrejected(error as E);
         }
-        // If no onrejected handler, resolve with the reason as a value
-        return reason as unknown as TResult2;
+        throw error;
+      });
+    },
+
+    finally(onfinally?: () => void): Promise<AsyncResultInner<T, E>> {
+      return promise.finally(onfinally);
+    },
+
+    map<U>(fn: (value: T) => U | Promise<U>): AsyncResult<U, E> {
+      const isAsync =
+        fn.length > 0 || (fn.constructor && fn.constructor.name === "AsyncFunction");
+      if (!isAsync) {
+        return createAsyncResult<U, E>(
+          promise.then((result) =>
+            result.ok ? { ok: true as const, value: fn(result.value) as U } : result
+          )
+        );
       }
-    );
-  }
+      return createAsyncResult<U, E>(
+        promise.then(async (result) => {
+          if (!result.ok) return result;
+          const mapped = await Promise.resolve(fn(result.value));
+          return { ok: true as const, value: mapped };
+        })
+      );
+    },
 
-  /**
-   * Catch handler - catches errors from the inner promise
-   */
-  catch<U = AsyncResultInner<T, E>>(
-    onrejected?: (error: E) => U | PromiseLike<U>
-  ): Promise<AsyncResultInner<T, E> | U> {
-    return this.promise.catch((error) => {
-      if (onrejected) {
-        return onrejected(error as E);
+    mapErr<F>(fn: (error: E) => F): AsyncResult<T, F> {
+      return createAsyncResult<T, F>(
+        promise.then((result) =>
+          result.ok ? result : { ok: false as const, error: fn(result.error) }
+        )
+      );
+    },
+
+    flatMap<U>(
+      fn: (value: T) => AsyncResult<U, E> | Promise<AsyncResultInner<U, E>>
+    ): AsyncResult<U, E> {
+      return createAsyncResult<U, E>(
+        promise.then(async (result) => {
+          if (!result.ok) return result;
+          const next = await Promise.resolve(fn(result.value));
+          // If fn returned an AsyncResult (which is Thenable), await it
+          if (next && typeof next === "object" && "ok" in next) {
+            return next as AsyncResultInner<U, E>;
+          }
+          return next as AsyncResultInner<U, E>;
+        })
+      );
+    },
+
+    flatMapAsync<U>(fn: (value: T) => Promise<AsyncResultInner<U, E>>): AsyncResult<U, E> {
+      return createAsyncResult<U, E>(
+        promise.then(async (result) =>
+          result.ok ? await fn(result.value) : result
+        )
+      );
+    },
+
+    getOrElse(defaultValue: T): Promise<T> {
+      return promise.then((result) => (result.ok ? result.value : defaultValue));
+    },
+
+    getOrCompute(fn: () => T | Promise<T>): Promise<T> {
+      return promise.then(async (result) =>
+        result.ok ? result.value : await Promise.resolve(fn())
+      );
+    },
+
+    tap(fn: (value: T) => void): AsyncResult<T, E> {
+      return createAsyncResult<T, E>(
+        promise.then((result) => {
+          if (result.ok) {
+            fn(result.value);
+          }
+          return result;
+        })
+      );
+    },
+
+    tapErr(fn: (error: E) => void): AsyncResult<T, E> {
+      return createAsyncResult<T, E>(
+        promise.then((result) => {
+          if (!result.ok) {
+            fn(result.error);
+          }
+          return result;
+        })
+      );
+    },
+
+    match<U>(ok: (value: T) => U, err: (error: E) => U): Promise<U> {
+      return promise.then((result) => (result.ok ? ok(result.value) : err(result.error)));
+    },
+
+    toNullable(): Promise<T | null> {
+      return promise.then((result) => (result.ok ? result.value : null));
+    },
+
+    toUndefined(): Promise<T | undefined> {
+      return promise.then((result) => (result.ok ? result.value : undefined));
+    },
+
+    async unwrap(): Promise<T> {
+      const result = await promise;
+      if (result.ok) {
+        return result.value;
       }
-      throw error;
-    });
-  }
+      throw result.error;
+    },
 
-  /**
-   * Finally handler
-   */
-  finally(onfinally?: () => void): Promise<AsyncResultInner<T, E>> {
-    return this.promise.finally(onfinally);
-  }
+    unwrapOr(defaultValue: T): Promise<T> {
+      return this.getOrElse(defaultValue);
+    },
 
-  /**
-   * Maps the value if AsyncOk, returns AsyncErr otherwise
-   * @param fn - The mapping function
-   * @returns New AsyncResult with mapped value
-   */
-  map<U>(fn: (value: T) => U): AsyncResult<U, E> {
-    return new AsyncResult<U, E>(
-      this.promise.then((result) =>
-        result.ok ? { ok: true as const, value: fn(result.value) } : result
-      )
-    );
-  }
+    toPromise(): Promise<AsyncResultInner<T, E>> {
+      return promise;
+    },
+  };
 
-  /**
-   * Maps the error if AsyncErr, returns AsyncOk otherwise
-   * @param fn - The error mapping function
-   * @returns New AsyncResult with mapped error
-   */
-  mapErr<F>(fn: (error: E) => F): AsyncResult<T, F> {
-    return new AsyncResult<T, F>(
-      this.promise.then((result) =>
-        result.ok ? result : { ok: false as const, error: fn(result.error) }
-      )
-    );
-  }
+  return obj;
+}
 
-  /**
-   * Chains AsyncResults - function returns AsyncResult if AsyncOk
-   * @param fn - The chaining function
-   * @returns Chained AsyncResult
-   */
-  flatMap<U>(fn: (value: T) => AsyncResult<U, E>): AsyncResult<U, E> {
-    return new AsyncResult<U, E>(
-      this.promise.then((result) => (result.ok ? fn(result.value) : result))
-    );
-  }
-
-  /**
-   * Chains AsyncResults with async function
-   * @param fn - The async chaining function
-   * @returns Chained AsyncResult
-   */
-  flatMapAsync<U>(fn: (value: T) => Promise<AsyncResultInner<U, E>>): AsyncResult<U, E> {
-    return new AsyncResult<U, E>(
-      this.promise.then(async (result) =>
-        result.ok ? await fn(result.value) : result
-      )
-    );
-  }
-
-  /**
-   * Gets the value or a default
-   * @param defaultValue - The default value
-   * @returns Promise resolving to value or default
-   */
-  getOrElse(defaultValue: T): Promise<T> {
-    return this.promise.then((result) => (result.ok ? result.value : defaultValue));
-  }
-
-  /**
-   * Gets the value or computes a default
-   * @param fn - The function to compute default
-   * @returns Promise resolving to value or computed default
-   */
-  getOrCompute(fn: () => T | Promise<T>): Promise<T> {
-    return this.promise.then((result) => (result.ok ? result.value : fn()));
-  }
-
-  /**
-   * Performs a side effect without changing the value
-   * @param fn - The side effect function
-   * @returns Same AsyncResult for chaining
-   */
-  tap(fn: (value: T) => void): AsyncResult<T, E> {
-    return new AsyncResult<T, E>(
-      this.promise.then((result) => {
-        if (result.ok) {
-          fn(result.value);
-        }
-        return result;
-      })
-    );
-  }
-
-  /**
-   * Performs a side effect on error without changing the value
-   * @param fn - The error side effect function
-   * @returns Same AsyncResult for chaining
-   */
-  tapErr(fn: (error: E) => void): AsyncResult<T, E> {
-    return new AsyncResult<T, E>(
-      this.promise.then((result) => {
-        if (!result.ok) {
-          fn(result.error);
-        }
-        return result;
-      })
-    );
-  }
-
-  /**
-   * Matches both AsyncOk and AsyncErr cases
-   * @param ok - Function to handle AsyncOk
-   * @param err - Function to handle AsyncErr
-   * @returns Promise resolving to result of the handler
-   */
-  match<U>(ok: (value: T) => U, err: (error: E) => U): Promise<U> {
-    return this.promise.then((result) => (result.ok ? ok(result.value) : err(result.error)));
-  }
-
-  /**
-   * Converts AsyncResult to a nullable value
-   * @returns Promise resolving to value or null
-   */
-  toNullable(): Promise<T | null> {
-    return this.promise.then((result) => (result.ok ? result.value : null));
-  }
-
-  /**
-   * Converts AsyncResult to an undefined-able value
-   * @returns Promise resolving to value or undefined
-   */
-  toUndefined(): Promise<T | undefined> {
-    return this.promise.then((result) => (result.ok ? result.value : undefined));
-  }
-
-  /**
-   * Unwraps the AsyncResult, throwing if error
-   * @returns Promise resolving to the value
-   */
-  async unwrap(): Promise<T> {
-    const result = await this.promise;
-    if (result.ok) {
-      return result.value;
-    }
-    throw result.error;
-  }
-
-  /**
-   * Unwraps the AsyncResult, returning default if error
-   * @param defaultValue - The default value
-   * @returns Promise resolving to the value or default
-   */
-  unwrapOr(defaultValue: T): Promise<T> {
-    return this.getOrElse(defaultValue);
-  }
-
-  /**
-   * Converts to the underlying Promise for PromiseLike behavior
-   * Use this when you need to await the AsyncResult
-   * @returns Promise<AsyncResultInner<T, E>>
-   */
-  toPromise(): Promise<AsyncResultInner<T, E>> {
-    return this.promise;
-  }
-
-  // Make the class iterable by returning the promise when spread
-  // This allows: const [ok, value] = await asyncResult
-
-  /**
-   * Creates an async Ok (success result)
-   * @param value - The success value
-   * @returns AsyncResult<T, never>
-   */
-  static ok<T>(value: T): AsyncResult<T, never> {
-    return new AsyncResult<T, never>(
+/**
+ * AsyncResult factory function with static methods
+ */
+const AsyncResultFn: AsyncResultFactory = Object.assign(createAsyncResult, {
+  ok<T>(value: T): AsyncResult<T, never> {
+    return createAsyncResult<T, never>(
       Promise.resolve({
         ok: true as const,
         value,
       })
     );
-  }
+  },
 
-  /**
-   * Creates an async Err (error result)
-   * @param error - The error value
-   * @returns AsyncResult<never, E>
-   */
-  static err<E>(error: E): AsyncResult<never, E> {
-    return new AsyncResult<never, E>(
+  err<E>(error: E): AsyncResult<never, E> {
+    return createAsyncResult<never, E>(
       Promise.resolve({
         ok: false as const,
         error,
       })
     );
-  }
+  },
 
-  /**
-   * Creates an AsyncResult from a Promise
-   * @param promise - The promise to convert
-   * @returns AsyncResult<T, Error>
-   */
-  static fromPromise<T>(promise: Promise<T>): AsyncResult<T, Error> {
-    return new AsyncResult<T, Error>(
+  fromPromise<T>(promise: Promise<T>): AsyncResult<T, Error> {
+    return createAsyncResult<T, Error>(
       promise
         .then((value) => ({ ok: true as const, value }))
         .catch((error) => ({
@@ -331,41 +320,29 @@ export class AsyncResult<T, E = Error> {
           error: error instanceof Error ? error : new Error(String(error)),
         }))
     );
-  }
+  },
 
-  /**
-   * Creates AsyncResult from a Promise that may already have the Result shape
-   * @param promise - The promise to convert
-   * @returns AsyncResult<T, E>
-   */
-  static from<T, E>(promise: Promise<AsyncResultInner<T, E>>): AsyncResult<T, E> {
-    return new AsyncResult<T, E>(promise);
-  }
+  from<T, E>(promise: Promise<AsyncResultInner<T, E>>): AsyncResult<T, E> {
+    return createAsyncResult<T, E>(promise);
+  },
 
-  /**
-   * Creates AsyncResult that resolves after delay
-   * @param value - The value to resolve with
-   * @param ms - Delay in milliseconds
-   * @returns AsyncResult<T, never>
-   */
-  static fromValue<T>(value: T, ms = 0): AsyncResult<T, never> {
-    return new AsyncResult<T, never>(
+  fromValue<T>(value: T, ms = 0): AsyncResult<T, never> {
+    return createAsyncResult<T, never>(
       new Promise((resolve) => setTimeout(() => resolve({ ok: true as const, value }), ms))
     );
-  }
+  },
 
-  /**
-   * Creates AsyncResult that rejects after delay
-   * @param error - The error to reject with
-   * @param ms - Delay in milliseconds
-   * @returns AsyncResult<never, E>
-   */
-  static fromError<E>(error: E, ms = 0): AsyncResult<never, E> {
-    return new AsyncResult<never, E>(
+  fromError<E>(error: E, ms = 0): AsyncResult<never, E> {
+    return createAsyncResult<never, E>(
       new Promise((resolve) => setTimeout(() => resolve({ ok: false as const, error }), ms))
     );
-  }
-}
+  },
+});
+
+/**
+ * AsyncResult - Thenable wrapper for async operations
+ */
+export const AsyncResult: AsyncResultFactory = AsyncResultFn;
 
 /**
  * Creates an async Ok (success result)
@@ -395,7 +372,7 @@ export const fromPromise = <T, E = Error>(
   // Handle function overload: fromPromise(promise, onError)
   if (typeof onErrorOrOptions === "function") {
     const onError = onErrorOrOptions;
-    return new AsyncResult(
+    return AsyncResult(
       promise
         .then((value) => ({ ok: true as const, value }))
         .catch((error) => {
@@ -411,10 +388,10 @@ export const fromPromise = <T, E = Error>(
   if (signal?.aborted) {
     const error = new Error("Operation aborted") as AbortError;
     error.name = "AbortError";
-    return new AsyncResult(Promise.resolve({ ok: false as const, error: error as E }));
+    return AsyncResult(Promise.resolve({ ok: false as const, error: error as E }));
   }
 
-  return new AsyncResult(
+  return AsyncResult(
     new Promise((resolve) => {
       if (signal) {
         const abortHandler = () => {
@@ -658,7 +635,7 @@ export const race = <T, E>(...results: Array<AsyncResult<T, E>>): Promise<T> =>
  * @returns AsyncResult<T[], E> - Array of values or first error
  */
 export const all = <T, E>(...results: Array<AsyncResult<T, E>>): AsyncResult<T[], E> =>
-  new AsyncResult<T[], E>(
+  AsyncResult<T[], E>(
     Promise.all(results).then((rs) => {
       // Check for errors
       const firstErr = rs.find((r) => isErr(r)) as AsyncErr<E> | undefined;
@@ -685,9 +662,9 @@ export const traverse = async <T, U, E>(
   const results = await Promise.all(items.map(fn));
   const firstErr = results.find((r) => isErr(r)) as AsyncErr<E> | undefined;
   if (firstErr) {
-    return new AsyncResult<U[], E>(Promise.resolve({ ok: false as const, error: firstErr.error }));
+    return AsyncResult<U[], E>(Promise.resolve({ ok: false as const, error: firstErr.error }));
   }
-  return new AsyncResult<U[], E>(Promise.resolve({ ok: true as const, value: results.map((r) => (r as AsyncOk<U>).value) }));
+  return AsyncResult<U[], E>(Promise.resolve({ ok: true as const, value: results.map((r) => (r as AsyncOk<U>).value) }));
 };
 
 /**
@@ -700,7 +677,7 @@ export const traverse = async <T, U, E>(
 export const allSettled = <T, E>(
   ...results: Array<AsyncResult<T, E>>
 ): AsyncResult<[T[], E[]], E[]> =>
-  new AsyncResult<[T[], E[]], E[]>(
+  AsyncResult<[T[], E[]], E[]>(
     Promise.all(results).then((rs) => {
       const values: T[] = [];
       const errors: E[] = [];
@@ -752,10 +729,10 @@ export const withSignal = <T, E = Error>(
   if (signal.aborted) {
     const error = new Error("Operation aborted") as AbortError;
     error.name = "AbortError";
-    return new AsyncResult(Promise.resolve({ ok: false as const, error }));
+    return AsyncResult(Promise.resolve({ ok: false as const, error }));
   }
 
-  return new AsyncResult(
+  return AsyncResult(
     new Promise((resolve) => {
       const abortHandler = () => {
         const error = new Error("Operation aborted") as AbortError;
