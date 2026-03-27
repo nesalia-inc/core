@@ -4,10 +4,15 @@
 
 // Type helpers
 type AnyFn = (...args: unknown[]) => unknown;
-type Thenable = { then: (onfulfilled: unknown, onrejected?: unknown) => unknown };
+
+interface Thenable {
+  then: (onfulfilled: unknown, onrejected?: unknown) => unknown;
+}
 
 const isThenable = (value: unknown): value is Thenable =>
-  value !== null && typeof value === "object" && typeof (value as Thenable).then === "function";
+  !!value &&
+  (typeof value === "object" || typeof value === "function") &&
+  typeof (value as { then?: unknown }).then === "function";
 
 // ============================================================================
 // PIPE (SYNC)
@@ -236,11 +241,11 @@ export function pipeAsync(value: unknown, ...fns: AnyFn[]): Promise<unknown>;
  * @internal
  */
 export async function pipeAsync(value: unknown, ...fns: AnyFn[]): Promise<unknown> {
-  let result = await value;
+  // Check initial value too to avoid unnecessary microtasks
+  let result = isThenable(value) ? await value : value;
   for (let i = 0; i < fns.length; i++) {
     const next = fns[i](result);
-    // Only await if it's actually a thenable to avoid unnecessary microtasks
-    result = isThenable(next) ? await (next as Promise<unknown>) : next;
+    result = isThenable(next) ? await next : next;
   }
   return result;
 }
@@ -289,7 +294,7 @@ export function flowAsync(...fns: AnyFn[]): (...args: unknown[]) => Promise<unkn
     let result = await fns[0](...args);
     for (let i = 1; i < fns.length; i++) {
       const next = fns[i](result);
-      result = isThenable(next) ? await (next as Promise<unknown>) : next;
+      result = isThenable(next) ? await next : next;
     }
 
     return result;
