@@ -17,7 +17,7 @@
     "./public/*": "./public/*"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node scripts/add-js-extensions.mjs",
     "test": "vitest run",
     "test:coverage": "vitest --coverage",
     "lint": "eslint src tests",
