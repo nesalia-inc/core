@@ -3,7 +3,7 @@
  */
 
 // ============================================================================
-// PIPE
+// PIPE (SYNC)
 // ============================================================================
 
 /**
@@ -49,7 +49,7 @@ export function pipe(value: unknown, ...fns: Array<(arg: unknown) => unknown>): 
 }
 
 // ============================================================================
-// FLOW
+// FLOW (SYNC)
 // ============================================================================
 
 /**
@@ -106,6 +106,151 @@ export function flow(...fns: Array<Function>): Function {
     // Subsequent functions are strictly unary
     for (let i = 1; i < fns.length; i++) {
       result = fns[i](result);
+    }
+
+    return result;
+  };
+}
+
+// ============================================================================
+// TAP (SIDE EFFECTS)
+// ============================================================================
+
+/**
+ * Executes a side effect function and returns the original value unchanged.
+ * Useful for debugging, logging, or injecting effects into a pipe/flow without altering the value.
+ *
+ * @param fn - The side effect function to execute
+ * @returns A function that executes the side effect and returns the original value
+ *
+ * @example
+ * import { pipe, tap } from '@deessejs/core';
+ *
+ * const result = pipe(
+ *   { name: "test" },
+ *   tap(user => console.log(`User: ${user.name}`)),
+ *   user => user.name.toUpperCase()
+ * );
+ * // Logs: "User: test"
+ * // result: "TEST"
+ */
+export const tap = <T>(fn: (value: T) => void) => (value: T): T => {
+  fn(value);
+  return value;
+};
+
+/**
+ * Executes an async side effect function and returns the original value unchanged.
+ * Useful for async operations like analytics tracking without altering the flow.
+ *
+ * @param fn - The async side effect function to execute
+ * @returns A function that executes the async side effect and returns the original value
+ *
+ * @example
+ * import { pipe, tapAsync } from '@deessejs/core';
+ *
+ * const result = await pipe(
+ *   { userId: "123" },
+ *   tapAsync(user => sendAnalytics(user.userId)),
+ *   fetchUser
+ * );
+ */
+export const tapAsync = <T>(fn: (value: T) => Promise<void>) => async (value: T): Promise<T> => {
+  await fn(value);
+  return value;
+};
+
+// ============================================================================
+// PIPE ASYNC
+// ============================================================================
+
+/**
+ * Pipes a value through a sequence of functions, awaiting each step if it returns a Promise.
+ * Allows mixing sync and async functions seamlessly.
+ *
+ * @param value - The initial value or Promise
+ * @param fns - The functions to apply in sequence
+ * @returns The final result after applying all functions
+ *
+ * @example
+ * import { pipeAsync } from '@deessejs/core';
+ *
+ * const result = await pipeAsync(
+ *   fetchUser(id),
+ *   async user => await validateUser(user),
+ *   user => user.profile
+ * );
+ */
+
+// Overloads for up to 7 functions
+export function pipeAsync<A>(value: A | Promise<A>): Promise<A>;
+export function pipeAsync<A, B>(value: A | Promise<A>, ab: (a: A) => B | Promise<B>): Promise<B>;
+export function pipeAsync<A, B, C>(value: A | Promise<A>, ab: (a: A) => B | Promise<B>, bc: (b: B) => C | Promise<C>): Promise<C>;
+export function pipeAsync<A, B, C, D>(value: A | Promise<A>, ab: (a: A) => B | Promise<B>, bc: (b: B) => C | Promise<C>, cd: (c: C) => D | Promise<D>): Promise<D>;
+export function pipeAsync<A, B, C, D, E>(value: A | Promise<A>, ab: (a: A) => B | Promise<B>, bc: (b: B) => C | Promise<C>, cd: (c: C) => D | Promise<D>, de: (d: D) => E | Promise<E>): Promise<E>;
+export function pipeAsync<A, B, C, D, E, F>(value: A | Promise<A>, ab: (a: A) => B | Promise<B>, bc: (b: B) => C | Promise<C>, cd: (c: C) => D | Promise<D>, de: (d: D) => E | Promise<E>, ef: (e: E) => F | Promise<F>): Promise<F>;
+export function pipeAsync<A, B, C, D, E, F, G>(value: A | Promise<A>, ab: (a: A) => B | Promise<B>, bc: (b: B) => C | Promise<C>, cd: (c: C) => D | Promise<D>, de: (d: D) => E | Promise<E>, ef: (e: E) => F | Promise<F>, fg: (f: F) => G | Promise<G>): Promise<G>;
+// Fallback
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+export function pipeAsync(value: unknown, ...fns: Array<(arg: unknown) => unknown>): Promise<unknown>;
+
+/**
+ * @internal
+ */
+export async function pipeAsync(value: unknown, ...fns: Array<(arg: unknown) => unknown>): Promise<unknown> {
+  let result = await value;
+  for (let i = 0; i < fns.length; i++) {
+    result = await fns[i](result);
+  }
+  return result;
+}
+
+// ============================================================================
+// FLOW ASYNC
+// ============================================================================
+
+/**
+ * Creates a reusable async function that composes multiple functions.
+ * The returned function can be called with a value or Promise, and will await each step.
+ * The first function can accept multiple arguments.
+ *
+ * @param fns - The functions to compose
+ * @returns A new async function that applies all functions in sequence
+ *
+ * @example
+ * import { flowAsync } from '@deessejs/core';
+ *
+ * const processUser = flowAsync(
+ *   async (id: string) => await fetchUser(id),
+ *   async user => await validateUser(user),
+ *   user => user.profile
+ * );
+ *
+ * const result = await processUser("123");
+ */
+
+// Overloads for up to 7 functions
+export function flowAsync<A extends ReadonlyArray<unknown>, B>(ab: (...a: A) => B | Promise<B>): (...a: A) => Promise<B>;
+export function flowAsync<A extends ReadonlyArray<unknown>, B, C>(ab: (...a: A) => B | Promise<B>, bc: (b: B) => C | Promise<C>): (...a: A) => Promise<C>;
+export function flowAsync<A extends ReadonlyArray<unknown>, B, C, D>(ab: (...a: A) => B | Promise<B>, bc: (b: B) => C | Promise<C>, cd: (c: C) => D | Promise<D>): (...a: A) => Promise<D>;
+export function flowAsync<A extends ReadonlyArray<unknown>, B, C, D, E>(ab: (...a: A) => B | Promise<B>, bc: (b: B) => C | Promise<C>, cd: (c: C) => D | Promise<D>, de: (d: D) => E | Promise<E>): (...a: A) => Promise<E>;
+export function flowAsync<A extends ReadonlyArray<unknown>, B, C, D, E, F>(ab: (...a: A) => B | Promise<B>, bc: (b: B) => C | Promise<C>, cd: (c: C) => D | Promise<D>, de: (d: D) => E | Promise<E>, ef: (e: E) => F | Promise<F>): (...a: A) => Promise<F>;
+export function flowAsync<A extends ReadonlyArray<unknown>, B, C, D, E, F, G>(ab: (...a: A) => B | Promise<B>, bc: (b: B) => C | Promise<C>, cd: (c: C) => D | Promise<D>, de: (d: D) => E | Promise<E>, ef: (e: E) => F | Promise<F>, fg: (f: F) => G | Promise<G>): (...a: A) => Promise<G>;
+// Fallback
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+export function flowAsync(...fns: Array<Function>): (...args: unknown[]) => Promise<unknown>;
+
+/**
+ * @internal
+ */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+export function flowAsync(...fns: Array<Function>): (...args: unknown[]) => Promise<unknown> {
+  return async (...args: unknown[]) => {
+    if (fns.length === 0) return args[0];
+
+    let result = await fns[0](...args);
+    for (let i = 1; i < fns.length; i++) {
+      result = await fns[i](result);
     }
 
     return result;

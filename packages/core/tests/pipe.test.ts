@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { pipe, flow } from "../src/pipe";
+import { pipe, flow, pipeAsync, flowAsync, tap, tapAsync } from "../src/pipe";
 
 describe("pipe", () => {
   it("should pipe a value through a single function", () => {
@@ -96,3 +96,129 @@ describe("flow", () => {
     expect(identity("hello")).toBe("hello");
   });
 });
+
+describe("tap", () => {
+  it("should execute side effect and return original value", () => {
+    let logged: string | undefined;
+    const log = tap((x: string) => { logged = x; });
+
+    const result = log("hello");
+
+    expect(logged).toBe("hello");
+    expect(result).toBe("hello");
+  });
+
+  it("should work in a pipe", () => {
+    let logged: number | undefined;
+    const result = pipe(
+      42,
+      tap(x => { logged = x; }),
+      x => x * 2
+    );
+
+    expect(logged).toBe(42);
+    expect(result).toBe(84);
+  });
+});
+
+describe("tapAsync", () => {
+  it("should execute async side effect and return original value", async () => {
+    let logged: string | undefined;
+    const logAsync = tapAsync(async (x: string) => { logged = x; });
+
+    const result = await logAsync("hello");
+
+    expect(logged).toBe("hello");
+    expect(result).toBe("hello");
+  });
+
+  it("should work in pipeAsync", async () => {
+    let logged: number | undefined;
+    const result = await pipeAsync(
+      Promise.resolve(42),
+      tapAsync(async x => { logged = x; }),
+      async x => x * 2
+    );
+
+    expect(logged).toBe(42);
+    expect(result).toBe(84);
+  });
+});
+
+describe("pipeAsync", () => {
+  it("should resolve promises at each step", async () => {
+    const result = await pipeAsync(
+      Promise.resolve(1),
+      async (x: number) => x + 1,
+      async (x: number) => x * 2
+    );
+
+    expect(result).toBe(4);
+  });
+
+  it("should handle mixed sync and async functions", async () => {
+    const result = await pipeAsync(
+      1,
+      async (x: number) => x + 1,
+      (x: number) => x * 2
+    );
+
+    expect(result).toBe(4);
+  });
+
+  it("should work with a promise value", async () => {
+    const result = await pipeAsync(
+      fetchLike(),
+      async (x: number) => x + 1
+    );
+
+    expect(result).toBe(2);
+  });
+
+  it("should pipe through multiple async steps", async () => {
+    const result = await pipeAsync(
+      Promise.resolve("hello"),
+      async (s: string) => s.toUpperCase(),
+      async (s: string) => s + "!"
+    );
+
+    expect(result).toBe("HELLO!");
+  });
+});
+
+describe("flowAsync", () => {
+  it("should create an async function", async () => {
+    const process = flowAsync(
+      async (x: number) => x + 1,
+      async (x: number) => x * 2
+    );
+
+    const result = await process(1);
+    expect(result).toBe(4);
+  });
+
+  it("should handle mixed sync and async", async () => {
+    const process = flowAsync(
+      async (x: number) => x + 1,
+      (x: number) => x * 2
+    );
+
+    const result = await process(1);
+    expect(result).toBe(4);
+  });
+
+  it("should accept multiple arguments in first function", async () => {
+    const addAndDouble = flowAsync(
+      async (a: number, b: number) => a + b,
+      async (sum: number) => sum * 2
+    );
+
+    const result = await addAndDouble(3, 7);
+    expect(result).toBe(20);
+  });
+});
+
+// Helper
+function fetchLike(): Promise<number> {
+  return Promise.resolve(1);
+}
