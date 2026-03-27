@@ -140,8 +140,6 @@ export {
   raise,
   isError,
   isErrorGroup,
-  isErrWithError,
-  isErrTryWithError,
   getErrorMessage,
   flattenErrorGroup,
   filterErrorsByName,

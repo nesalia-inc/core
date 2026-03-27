@@ -2,54 +2,34 @@
  * Error system - Inspired by Python's exception handling
  * Provides structured errors with enrichment, chaining, and grouping
  *
- * ## Error vs Result Semantics
+ * ## Design Philosophy
  *
- * The Error system and Result type serve different purposes:
+ * Error<T> is a plain error object with rich metadata for domain errors.
+ * It does NOT carry Result methods - use err(Error<T>) to get a Result.
  *
- * ### Result<T, E>
- * - Represents a computation that may fail
- * - Use for: Expected failures, validation, fallible operations
- * - Fluent API with map(), flatMap(), getOrElse(), etc.
- * - Best for: Railway-oriented programming
+ * ## Error vs Result
  *
- * ### Error<T>
- * - Represents a structured error with rich metadata
- * - Use for: Domain errors, error enrichment, error chains
- * - Features: name, args, notes, cause, message, stack
- * - Best for: Logging, error tracking, debugging
+ * Error<T> represents a domain error with:
+ * - name: error type identifier
+ * - args: typed error data
+ * - notes: additional context
+ * - cause: chain to previous error
+ * - message, stack: standard Error properties
  *
- * ### When to use which?
+ * Result<T, E> represents a computation that may fail and provides
+ * methods for chaining (map, flatMap, getOrElse, match, etc.)
  *
- * Use Result when:
- * - You need to chain operations that may fail
- * - You want to propagate failures without detailed context
- * - You're building a pipeline of fallible operations
- *
- * Use Error when:
- * - You need rich error context for debugging
- * - You're building domain-specific errors
- * - You need error chaining (cause)
- * - You're integrating with error tracking tools
- *
- * ### Converting between them
- *
- * The error() factory returns an Err<Error<T>> - a Result containing your Error:
+ * ## Usage
  *
  * ```typescript
- * const SizeError = error({ name: 'SizeError', ... });
- * const result = SizeError({ current: 3, wanted: 5 });
+ * const SizeError = error({ name: "SizeError" });
+ * const domainError = SizeError({ current: 3, wanted: 5 });
  *
- * // result is Err<Error<{current: number, wanted: number}>>
- * result.ok === false; // true
- * result.error.name === 'SizeError'; // true
- *
- * // Access the raw Error object if needed
- * const err = result.error;
+ * // Use with Result
+ * return err(domainError);
+ * // result.ok === false
+ * // result.error === domainError (reference, not self)
  * ```
- *
- * This design allows Error to be used both as:
- * 1. A standalone error object (via result.error)
- * 2. A Result for chaining (the full result)
  */
 
 // Types
@@ -62,7 +42,7 @@ export type {
 } from "./types";
 
 // Guards
-export { isError, isErrorGroup, isErrWithError, isErrTryWithError, assertIsError, assertIsErrorGroup } from "./guards";
+export { isError, isErrorGroup, assertIsError, assertIsErrorGroup } from "./guards";
 
 // Utilities
 export { getErrorMessage, flattenErrorGroup, filterErrorsByName } from "./utils";

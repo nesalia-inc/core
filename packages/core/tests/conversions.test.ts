@@ -17,14 +17,14 @@ describe("Conversions", () => {
   describe("fromMaybe (new naming)", () => {
     it("should convert Some to Ok", () => {
       const TestError = error({ name: "TestError", schema: z.object({ value: z.number() }) });
-      const result = fromMaybe(some(42), () => TestError({ value: 0 }).error);
+      const result = fromMaybe(some(42), () => TestError({ value: 0 }));
       expect(result.ok).toBe(true);
       expect(result.value).toBe(42);
     });
 
     it("should convert None to Err", () => {
       const TestError = error({ name: "TestError", schema: z.object({ value: z.number() }) });
-      const result = fromMaybe(none(), () => TestError({ value: 0 }).error);
+      const result = fromMaybe(none(), () => TestError({ value: 0 }));
       expect(result.ok).toBe(false);
       expect(result.error.name).toBe("TestError");
     });
@@ -38,7 +38,7 @@ describe("Conversions", () => {
 
     it("should convert Err to None", () => {
       const TestError = error({ name: "TestError", schema: z.object({ value: z.number() }) });
-      const maybe = fromResult(err(TestError({ value: 0 }).error));
+      const maybe = fromResult(err(TestError({ value: 0 })));
       expect(maybe.ok).toBe(false);
     });
   });
@@ -46,14 +46,14 @@ describe("Conversions", () => {
   describe("toResult (legacy naming)", () => {
     it("should convert Some to Ok", () => {
       const TestError = error({ name: "TestError", schema: z.object({ value: z.number() }) });
-      const result = toResult(some(42), () => TestError({ value: 0 }).error);
+      const result = toResult(some(42), () => TestError({ value: 0 }));
       expect(result.ok).toBe(true);
       expect(result.value).toBe(42);
     });
 
     it("should convert None to Err", () => {
       const TestError = error({ name: "TestError", schema: z.object({ value: z.number() }) });
-      const result = toResult(none(), () => TestError({ value: 0 }).error);
+      const result = toResult(none(), () => TestError({ value: 0 }));
       expect(result.ok).toBe(false);
       expect(result.error.name).toBe("TestError");
     });
@@ -67,7 +67,7 @@ describe("Conversions", () => {
 
     it("should convert Err to None", () => {
       const TestError = error({ name: "TestError", schema: z.object({ value: z.number() }) });
-      const maybe = toMaybeFromResult(err(TestError({ value: 0 }).error));
+      const maybe = toMaybeFromResult(err(TestError({ value: 0 })));
       expect(maybe.ok).toBe(false);
     });
   });
@@ -75,20 +75,20 @@ describe("Conversions", () => {
   describe("resultFromNullable", () => {
     it("should convert non-null value to Ok", () => {
       const TestError = error({ name: "TestError" });
-      const result = resultFromNullable(42, () => TestError({}).error);
+      const result = resultFromNullable(42, () => TestError({}));
       expect(result.ok).toBe(true);
       expect(result.value).toBe(42);
     });
 
     it("should convert null to Err", () => {
       const TestError = error({ name: "TestError" });
-      const result = resultFromNullable(null, () => TestError({}).error);
+      const result = resultFromNullable(null, () => TestError({}));
       expect(result.ok).toBe(false);
     });
 
     it("should convert undefined to Err", () => {
       const TestError = error({ name: "TestError" });
-      const result = resultFromNullable(undefined, () => TestError({}).error);
+      const result = resultFromNullable(undefined, () => TestError({}));
       expect(result.ok).toBe(false);
     });
   });
