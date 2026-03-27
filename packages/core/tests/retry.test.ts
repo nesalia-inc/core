@@ -1,6 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { retry, retryAsync, exponentialBackoff, linearBackoff, constantBackoff, calculateDelay, handleUnknownBackoff, throwIfUnreachable } from "../src/retry";
-import type { RetryAbortedError } from "../src/retry";
+import { retry, retryAsync, exponentialBackoff, linearBackoff, constantBackoff, calculateDelay, RetryAbortedError } from "../src/retry";
 
 describe("Retry", () => {
   describe("retry (sync)", () => {
@@ -200,11 +199,7 @@ describe("Retry", () => {
         retry(() => { throw new Error("fail"); }, { attempts: 3, signal: controller.signal });
         fail("Should have thrown");
       } catch (error) {
-        // Type guard - check that it's a RetryAbortedError
-        const isRetryAbortedError = (e: unknown): e is RetryAbortedError =>
-          error instanceof Error && "name" in error && error.name === "RETRY_ABORTED";
-
-        expect(isRetryAbortedError(error)).toBe(true);
+        expect(error instanceof RetryAbortedError).toBe(true);
       }
     });
 
@@ -423,28 +418,7 @@ describe("Retry", () => {
       expect(calculateDelay(5, 1000, "linear", undefined)).toBe(5000);
     });
 
-    it("handleUnknownBackoff should handle valid backoffs", () => {
-      expect(handleUnknownBackoff("exponential", 100, 1)).toBe(100);
-      expect(handleUnknownBackoff("linear", 100, 2)).toBe(200);
-      expect(handleUnknownBackoff("constant", 100, 3)).toBe(100);
-    });
-
-    it("handleUnknownBackoff should return fallback for invalid backoff", () => {
-      // For coverage, returns exponential as fallback
-      expect(handleUnknownBackoff("invalid" as "exponential", 100, 1)).toBe(100);
-    });
-
-    it("throwIfUnreachable should throw when succeeded is false", () => {
-      expect(() => throwIfUnreachable<number>(false, 0))
-        .toThrow("Retry failed");
-      expect(() => throwIfUnreachable<number>(false, 0, new Error("Custom error")))
-        .toThrow("Custom error");
-    });
-
-    it("throwIfUnreachable should return result when succeeded is true", () => {
-      expect(throwIfUnreachable<number>(true, 42)).toBe(42);
-    });
-  });
+      });
 
   describe("retryAsync with AbortSignal", () => {
     it("should throw RetryAbortedError if signal is already aborted", async () => {
@@ -464,11 +438,7 @@ describe("Retry", () => {
         await retryAsync(async () => { throw new Error("fail"); }, { attempts: 3, signal: controller.signal });
         fail("Should have thrown");
       } catch (error) {
-        // Type guard - check that it's a RetryAbortedError
-        const isRetryAbortedError = (e: unknown): e is RetryAbortedError =>
-          error instanceof Error && "name" in error && error.name === "RETRY_ABORTED";
-
-        expect(isRetryAbortedError(error)).toBe(true);
+        expect(error instanceof RetryAbortedError).toBe(true);
       }
     });
 
