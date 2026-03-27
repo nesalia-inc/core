@@ -242,10 +242,10 @@ export function pipeAsync(value: unknown, ...fns: AnyFn[]): Promise<unknown>;
  */
 export async function pipeAsync(value: unknown, ...fns: AnyFn[]): Promise<unknown> {
   // Check initial value too to avoid unnecessary microtasks
-  let result = isThenable(value) ? await value : value;
+  let result = isThenable(value) ? await (value as Promise<unknown>) : value;
   for (let i = 0; i < fns.length; i++) {
     const next = fns[i](result);
-    result = isThenable(next) ? await next : next;
+    result = isThenable(next) ? await (next as Promise<unknown>) : next;
   }
   return result;
 }
@@ -294,7 +294,7 @@ export function flowAsync(...fns: AnyFn[]): (...args: unknown[]) => Promise<unkn
     let result = await fns[0](...args);
     for (let i = 1; i < fns.length; i++) {
       const next = fns[i](result);
-      result = isThenable(next) ? await next : next;
+      result = isThenable(next) ? await (next as Promise<unknown>) : next;
     }
 
     return result;
