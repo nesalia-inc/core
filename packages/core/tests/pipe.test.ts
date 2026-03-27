@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { pipe, flow, pipeAsync, flowAsync, tap, tapAsync } from "../src/pipe";
+import { pipe, flow, pipeAsync, flowAsync, tap, tapAsync, tapSafe } from "../src/pipe";
 
 describe("pipe", () => {
   it("should pipe a value through a single function", () => {
@@ -141,6 +141,41 @@ describe("tapAsync", () => {
     );
 
     expect(logged).toBe(42);
+    expect(result).toBe(84);
+  });
+});
+
+describe("tapSafe", () => {
+  it("should execute side effect and return original value", () => {
+    let logged: string | undefined;
+    const log = tapSafe((x: string) => { logged = x; });
+
+    const result = log("hello");
+
+    expect(logged).toBe("hello");
+    expect(result).toBe("hello");
+  });
+
+  it("should catch errors in side effect and continue", () => {
+    let caught: unknown;
+    const log = tapSafe(
+      (_x: string) => { throw new Error("fail"); },
+      err => { caught = err; }
+    );
+
+    const result = log("hello");
+
+    expect(caught).toBeInstanceOf(Error);
+    expect(result).toBe("hello");
+  });
+
+  it("should work in pipe without onError", () => {
+    const result = pipe(
+      42,
+      tapSafe(() => { throw new Error("oops"); }),
+      x => x * 2
+    );
+
     expect(result).toBe(84);
   });
 });

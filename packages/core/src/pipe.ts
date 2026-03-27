@@ -2,6 +2,13 @@
  * Pipe and Flow utilities for functional composition
  */
 
+// Type helpers
+type AnyFn = (...args: unknown[]) => unknown;
+type Thenable = { then: (onfulfilled: unknown, onrejected?: unknown) => unknown };
+
+const isThenable = (value: unknown): value is Thenable =>
+  value !== null && typeof value === "object" && typeof (value as Thenable).then === "function";
+
 // ============================================================================
 // PIPE (SYNC)
 // ============================================================================
@@ -33,14 +40,13 @@ export function pipe<A, B, C, D>(value: A, ab: (a: A) => B, bc: (b: B) => C, cd:
 export function pipe<A, B, C, D, E>(value: A, ab: (a: A) => B, bc: (b: B) => C, cd: (c: C) => D, de: (d: D) => E): E;
 export function pipe<A, B, C, D, E, F>(value: A, ab: (a: A) => B, bc: (b: B) => C, cd: (c: C) => D, de: (d: D) => E, ef: (e: E) => F): F;
 export function pipe<A, B, C, D, E, F, G>(value: A, ab: (a: A) => B, bc: (b: B) => C, cd: (c: C) => D, de: (d: D) => E, ef: (e: E) => F, fg: (f: F) => G): G;
-// Fallback for more than 7 functions
-// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-export function pipe(value: unknown, ...fns: Array<(arg: unknown) => unknown>): unknown;
+// Fallback
+export function pipe(value: unknown, ...fns: AnyFn[]): unknown;
 
 /**
  * @internal
  */
-export function pipe(value: unknown, ...fns: Array<(arg: unknown) => unknown>): unknown {
+export function pipe(value: unknown, ...fns: AnyFn[]): unknown {
   let result = value;
   for (let i = 0; i < fns.length; i++) {
     result = fns[i](result);
@@ -89,14 +95,12 @@ export function flow<A extends ReadonlyArray<unknown>, B, C, D, E>(ab: (...a: A)
 export function flow<A extends ReadonlyArray<unknown>, B, C, D, E, F>(ab: (...a: A) => B, bc: (b: B) => C, cd: (c: C) => D, de: (d: D) => E, ef: (e: E) => F): (...a: A) => F;
 export function flow<A extends ReadonlyArray<unknown>, B, C, D, E, F, G>(ab: (...a: A) => B, bc: (b: B) => C, cd: (c: C) => D, de: (d: D) => E, ef: (e: E) => F, fg: (f: F) => G): (...a: A) => G;
 // Fallback
-// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-export function flow(...fns: Array<Function>): Function;
+export function flow(...fns: AnyFn[]): (...args: unknown[]) => unknown;
 
 /**
  * @internal
  */
-// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-export function flow(...fns: Array<Function>): Function {
+export function flow(...fns: AnyFn[]): (...args: unknown[]) => unknown {
   return (...args: unknown[]) => {
     if (fns.length === 0) return args[0];
 
@@ -160,6 +164,40 @@ export const tapAsync = <T>(fn: (value: T) => Promise<void>) => async (value: T)
   return value;
 };
 
+/**
+ * Safe version of tap that catches errors in the side effect function.
+ * If the side effect throws, the error is logged but the value is still returned.
+ *
+ * @param fn - The side effect function to execute
+ * @param onError - Optional error handler
+ * @returns A function that executes the side effect safely and returns the original value
+ *
+ * @example
+ * import { pipe, tapSafe } from '@deessejs/core';
+ *
+ * const result = pipe(
+ *   { name: "test" },
+ *   tapSafe(
+ *     user => riskyLogging(user),
+ *     err => console.error("Logging failed:", err)
+ *   ),
+ *   user => user.name.toUpperCase()
+ * );
+ */
+export const tapSafe = <T>(
+  fn: (value: T) => void,
+  onError?: (error: unknown) => void
+) => (value: T): T => {
+  try {
+    fn(value);
+  } catch (e) {
+    if (onError) {
+      onError(e);
+    }
+  }
+  return value;
+};
+
 // ============================================================================
 // PIPE ASYNC
 // ============================================================================
@@ -167,6 +205,7 @@ export const tapAsync = <T>(fn: (value: T) => Promise<void>) => async (value: T)
 /**
  * Pipes a value through a sequence of functions, awaiting each step if it returns a Promise.
  * Allows mixing sync and async functions seamlessly.
+ * Only awaits if the return value is actually a thenable (Promise-like).
  *
  * @param value - The initial value or Promise
  * @param fns - The functions to apply in sequence
@@ -191,16 +230,17 @@ export function pipeAsync<A, B, C, D, E>(value: A | Promise<A>, ab: (a: A) => B 
 export function pipeAsync<A, B, C, D, E, F>(value: A | Promise<A>, ab: (a: A) => B | Promise<B>, bc: (b: B) => C | Promise<C>, cd: (c: C) => D | Promise<D>, de: (d: D) => E | Promise<E>, ef: (e: E) => F | Promise<F>): Promise<F>;
 export function pipeAsync<A, B, C, D, E, F, G>(value: A | Promise<A>, ab: (a: A) => B | Promise<B>, bc: (b: B) => C | Promise<C>, cd: (c: C) => D | Promise<D>, de: (d: D) => E | Promise<E>, ef: (e: E) => F | Promise<F>, fg: (f: F) => G | Promise<G>): Promise<G>;
 // Fallback
-// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-export function pipeAsync(value: unknown, ...fns: Array<(arg: unknown) => unknown>): Promise<unknown>;
+export function pipeAsync(value: unknown, ...fns: AnyFn[]): Promise<unknown>;
 
 /**
  * @internal
  */
-export async function pipeAsync(value: unknown, ...fns: Array<(arg: unknown) => unknown>): Promise<unknown> {
+export async function pipeAsync(value: unknown, ...fns: AnyFn[]): Promise<unknown> {
   let result = await value;
   for (let i = 0; i < fns.length; i++) {
-    result = await fns[i](result);
+    const next = fns[i](result);
+    // Only await if it's actually a thenable to avoid unnecessary microtasks
+    result = isThenable(next) ? await (next as Promise<unknown>) : next;
   }
   return result;
 }
@@ -237,20 +277,19 @@ export function flowAsync<A extends ReadonlyArray<unknown>, B, C, D, E>(ab: (...
 export function flowAsync<A extends ReadonlyArray<unknown>, B, C, D, E, F>(ab: (...a: A) => B | Promise<B>, bc: (b: B) => C | Promise<C>, cd: (c: C) => D | Promise<D>, de: (d: D) => E | Promise<E>, ef: (e: E) => F | Promise<F>): (...a: A) => Promise<F>;
 export function flowAsync<A extends ReadonlyArray<unknown>, B, C, D, E, F, G>(ab: (...a: A) => B | Promise<B>, bc: (b: B) => C | Promise<C>, cd: (c: C) => D | Promise<D>, de: (d: D) => E | Promise<E>, ef: (e: E) => F | Promise<F>, fg: (f: F) => G | Promise<G>): (...a: A) => Promise<G>;
 // Fallback
-// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-export function flowAsync(...fns: Array<Function>): (...args: unknown[]) => Promise<unknown>;
+export function flowAsync(...fns: AnyFn[]): (...args: unknown[]) => Promise<unknown>;
 
 /**
  * @internal
  */
-// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-export function flowAsync(...fns: Array<Function>): (...args: unknown[]) => Promise<unknown> {
+export function flowAsync(...fns: AnyFn[]): (...args: unknown[]) => Promise<unknown> {
   return async (...args: unknown[]) => {
     if (fns.length === 0) return args[0];
 
     let result = await fns[0](...args);
     for (let i = 1; i < fns.length; i++) {
-      result = await fns[i](result);
+      const next = fns[i](result);
+      result = isThenable(next) ? await (next as Promise<unknown>) : next;
     }
 
     return result;
