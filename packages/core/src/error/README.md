@@ -11,6 +11,24 @@ The Error system complements the [Result type](../result/index.ts) by providing 
 - Stack traces for debugging
 - Zod validation of error arguments
 
+## Design Philosophy
+
+**Error<T>** is a plain error object. It does NOT carry Result methods. This separation of concerns makes Error a pure domain error container, while Result provides the chaining/railway-oriented programming.
+
+```typescript
+// Error<T> is just an error object
+const domainError = SizeError({ current: 3, wanted: 5 });
+domainError.name;     // "SizeError"
+domainError.args;     // { current: 3, wanted: 5 }
+domainError.addNotes("context");  // Error method
+domainError.from(cause);         // Error method
+
+// Wrap with err() to get Result methods
+const result = err(domainError);
+result.ok === false;           // Result methods from err()
+result.error === domainError;  // reference to original error
+```
+
 ## When to Use Error vs Result
 
 | Use **Result** when: | Use **Error** when: |
@@ -24,40 +42,27 @@ The Error system complements the [Result type](../result/index.ts) by providing 
 
 ### Error\<T\>
 
-The base error type with structured metadata and fluent methods:
+The base error type with structured metadata:
 
 ```typescript
-type Error<T = unknown> = Readonly<ErrorData<T>> & ErrorResult<T> & NativeError;
+type Error<T = unknown> = Readonly<ErrorData<T>> & ErrorMethods<T> & NativeError;
 ```
 
 **ErrorData** provides the core properties:
 ```typescript
 interface ErrorData<T> {
-  readonly name: string;           // Error class name (e.g., "SizeError")
-  readonly args: T;                // Domain-specific error data
-  readonly notes: readonly string[]; // Additional context
-  readonly cause: Maybe<Error>;   // Original error (Maybe<Error>)
-  readonly stack?: string;         // Stack trace
-  readonly message: string;         // Human-readable message
+  readonly name: string;              // Error class name (e.g., "SizeError")
+  readonly args: T;                  // Domain-specific error data
+  readonly notes: readonly string[];  // Additional context
+  readonly cause: Maybe<Error>;       // Original error (Maybe<Error>)
+  readonly stack?: string;            // Stack trace
+  readonly message: string;           // Human-readable message
 }
 ```
 
-**ErrorResult** provides fluent methods for chaining and transformation:
+**ErrorMethods** provides Error-specific enrichment methods:
 ```typescript
-interface ErrorResult<T> {
-  readonly ok: false;
-  readonly error: Error<T>;       // Self-reference (e.error === e)
-  isOk(): false;
-  isErr(): true;
-  map<U>(fn: (value: never) => U): Error<T>;
-  flatMap<U>(fn: (value: never) => Error<U>): Error<T>;
-  mapErr<F extends NativeError>(fn: (error: Error<T>) => F): Error<T>;
-  getOrElse<T2>(defaultValue: T2): T2;
-  getOrCompute<T2>(fn: () => T2): T2;
-  tap(fn: (value: never) => void): Error<T>;
-  tapErr(fn: (error: Error<T>) => void): Error<T>;
-  match<U>(ok: (value: never) => U, err: (error: Error<T>) => U): U;
-  unwrap(): never;
+interface ErrorMethods<T> {
   addNotes(...notes: string[]): Error<T>;
   from(cause: Error | Maybe<Error>): Error<T>;
 }
@@ -87,10 +92,6 @@ const SizeError = error({
 type SizeErrorType = ExtractError<typeof SizeError>;
 // Error<{ current: number, wanted: number }>
 ```
-
-### Self-Reference
-
-Error has a unique property: `e.error === e`. This allows the error to be used both as a standalone error object and as a Result for chaining.
 
 ## Accessing cause
 
@@ -143,17 +144,31 @@ Call the error builder:
 
 ```typescript
 // With schema - validates arguments
-const err = SizeError({ current: 3, wanted: 5 });
+const domainError = SizeError({ current: 3, wanted: 5 });
 
-// err is Error<{ current: number, wanted: number }>
-err.ok === false;              // true
-err.name === "SizeError";      // true
-err.args.current === 3;        // true
-err.error === err;             // true (self-reference)
+// domainError is just an Error, not a Result
+domainError.name === "SizeError";      // true
+domainError.args.current === 3;        // true
 
-// Without schema - accepts any args
-const simple = SimpleError({ message: "something went wrong" });
-simple.args.message === "something went wrong";  // true
+// Use err() to wrap as Result for chaining
+const result = err(domainError);
+result.ok === false;                    // true
+result.error === domainError;           // reference, not self
+```
+
+### Using with Result
+
+Error objects integrate with the Result system via `err()`:
+
+```typescript
+const result = ok(10).flatMap((x) => {
+  if (x > 5) {
+    return err(SizeError({ current: x, wanted: 5 }));
+  }
+  return ok(x * 2);
+});
+
+result.mapErr((e) => console.log(e.name));
 ```
 
 ### Zod Validation
@@ -196,6 +211,10 @@ Chain the cause of an error. Accepts `Error`, `Err<Error>`, or `Maybe<Error>`:
 const networkError = NetworkError({ host: "api.example.com" });
 const e = SizeError({ current: 3, wanted: 5 })
   .from(networkError);  // Error object as cause
+
+// Or from a Result containing an Error
+const result = err(networkError);
+const e2 = SizeError({ current: 3, wanted: 5 }).from(result);
 ```
 
 ### Combining enrichments
@@ -283,9 +302,11 @@ Throw errors in a functional style for early exit:
 ```typescript
 import { raise } from "@deessejs/core";
 
-const decimal = (p: number, s: number): Result<Column, Error<...>> => {
-  if (p < s) raise(DecimalError({ precision: p, scale: s }));
-  return ok({ precision: p, scale: s });
+const process = (size: number): Result<Data, Error> => {
+  if (size > MAX_SIZE) {
+    raise(SizeError({ current: size, wanted: MAX_SIZE }));
+  }
+  return ok({ size });
 };
 ```
 
