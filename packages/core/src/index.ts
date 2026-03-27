@@ -130,7 +130,7 @@ export {
 export type { ToResultOptions } from "./conversions";
 
 // Pipe & Flow
-export { pipe, flow } from "./pipe";
+export { pipe, flow, pipeAsync, flowAsync, tap, tapAsync, tapSafe } from "./pipe";
 
 // Error System
 export type { Error, ErrorGroup, ErrorOptions } from "./error/index";
