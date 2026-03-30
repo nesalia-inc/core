@@ -106,16 +106,30 @@ const result = await AsyncResult.fromPromise(fetchUsers())
 
 ### Handling Errors
 
+All errors in AsyncResult are structured `Error<T>` objects from the Error system, which means you can use `addNotes()` and `from()` for error enrichment:
+
 ```typescript
 const result = await AsyncResult.fromPromise(fetchData())
-  .mapErr(e => {
-    if (e instanceof NetworkError) {
-      return new Error("Network unavailable");
-    }
-    return e;
-  });
+  .mapErr(e => e.addNotes(`Failed to fetch data for user ${id}`));
 
-const value = result.getOrElse(defaultValue);
+// Chain causes for debugging
+const result2 = await AsyncResult.fromPromise(riskyOperation())
+  .mapErr(e => SomeOtherError({ context: "operation" }).from(e));
+```
+
+The `fromPromise` wrapper automatically converts:
+- Native errors to `PanicError` with the original as `cause`
+- Non-Error values to `PanicError` with message preserved
+- AbortSignal aborts to structured `AbortError`
+
+```typescript
+// Access error properties
+result.mapErr(e => {
+  console.log(e.name);      // "PanicError" or custom
+  console.log(e.message);  // error message
+  console.log(e.cause);   // Maybe<Error> - original error if any
+  e.addNotes("Additional context");
+});
 ```
 
 ### Combining Multiple AsyncResults
@@ -304,10 +318,32 @@ const getUserProfile = async (id: string) => {
 
 ## Best Practices
 
-1. **Use `fromPromise`** for wrapping existing Promises
+1. **Use `fromPromise`** for wrapping existing Promises - it automatically wraps errors in the Error system
 2. **Use `okAsync`/`errAsync`** for creating immediately resolved/rejected results
 3. **Chain transformations** instead of nested await/catch
 4. **Use `race`** when you need the first result and don't care which completes first
 5. **Use `allSettled`** when you need all results regardless of success/failure
 6. **Handle errors with `mapErr`** to add context before they propagate
 7. **Use `withSignal`** for cancellable operations
+8. **Use error enrichment** with `addNotes()` and `from()` to build error chains for debugging
+
+## Error System Integration
+
+AsyncResult is fully integrated with the Error system. All errors are structured `Error<T>` objects that support:
+
+- **`addNotes(...notes)`** - Add contextual information to errors
+- **`from(cause)`** - Chain errors to track provenance
+- **`cause`** - Access the original error via `Maybe<Error>`
+
+This allows building rich error chains for debugging:
+
+```typescript
+const result = await fetchUser(id)
+  .mapErr(e => e.addNotes(`User ${id} not found`))
+  .mapErr(e => AuthorizationError({ userId: id }).from(e));
+
+// At the end, you can trace:
+// AuthorizationError
+//   cause: PanicError("User 123 not found")
+//   notes: ["User 123 not found"]
+```
