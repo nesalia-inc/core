@@ -74,13 +74,15 @@ import { ok, err, okAsync, errAsync, fromPromise } from "@deessejs/core";
 const result = ok(42);
 const result2 = okAsync(42);
 
-// From an error (immediately rejected)
-const error = err(new Error("failed"));
-const error2 = errAsync(new Error("failed"));
+// From an error (use err with a structured error)
+const error = err(new Error("failed")); // Error wrapped in AsyncErr
+const error2 = errAsync(new Error("failed")); // Alias for err
 
 // From an existing Promise
 const asyncResult = fromPromise(fetch("/api/user"));
 ```
+
+Note: When wrapping with `err()`, use the Error system for structured errors with enrichment support.
 
 ### Using with await
 
@@ -99,11 +101,21 @@ if (result.ok) {
 ### Chaining Operations
 
 ```typescript
+import { map, mapErr, fromPromise, err, error } from "@deessejs/core";
+
+// Define a custom error for HTTP errors
+const HttpError = error({
+  name: "HttpError",
+  message: (args: { status: number }) => `HTTP error: ${args.status}`,
+});
+
 const result = await fromPromise(fetchUsers())
   .map(users => users.filter(u => u.active))
   .map(users => users.map(u => u.name))
-  .mapErr(e => new Error(`Failed to get users: ${e.message}`));
+  .mapErr(e => HttpError({ status: 500 }));
 ```
+
+Note: Never use `throw` or `raise()` for expected failures. Use `err()` to propagate errors through the rail.
 
 ### Handling Errors
 
@@ -277,20 +289,26 @@ async function getUserProfile(id: string) {
 ### After
 
 ```typescript
-import { ok, err, fromPromise, all, map, mapErr } from "@deessejs/core";
+import { fromPromise, map, mapErr, all, err, error } from "@deessejs/core";
+
+// Define custom errors for HTTP operations
+const HttpError = error({
+  name: "HttpError",
+  message: (args: { status: number }) => `HTTP error: ${args.status}`,
+});
 
 const fetchUser = (id: string) =>
   fromPromise(fetch(`/api/users/${id}`))
     .mapErr(e => e.addNotes(`Failed to fetch user ${id}`))
     .map(async (response) => {
-      if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+      if (!response.ok) return err(HttpError({ status: response.status }));
       return response.json();
     });
 
 const fetchPosts = (userId: string) =>
   fromPromise(fetch(`/api/users/${userId}/posts`))
     .map(async (response) => {
-      if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+      if (!response.ok) return err(HttpError({ status: response.status }));
       return response.json();
     });
 
@@ -310,6 +328,20 @@ const getUserProfile = async (id: string) => {
   );
 };
 ```
+
+### Never Break the Rail
+
+In railway-oriented programming, errors should travel through the Result/AsyncResult without breaking the flow. Never use `throw` or `raise()` for expected failures:
+
+```typescript
+// Bad - breaks the rail
+if (!response.ok) throw HttpError({ status: response.status });
+
+// Good - error travels through the rail
+if (!response.ok) return err(HttpError({ status: response.status }));
+```
+
+The only exception is for unrecoverable programmer errors where you want to halt execution.
 
 ## Best Practices
 
