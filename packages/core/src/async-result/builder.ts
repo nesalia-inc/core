@@ -12,6 +12,8 @@ import type {
   AsyncResult as AsyncResultType,
 } from "./types";
 
+import { error, type Error, isError } from "../error";
+
 // Re-export types
 export type {
   AsyncResultInner,
@@ -20,6 +22,24 @@ export type {
   AbortError,
   FromPromiseOptions,
 } from "./types";
+
+/**
+ * PanicError - wraps unexpected exceptions from rejected promises
+ * Used by fromPromise to convert native errors into the Error system
+ */
+const PanicError = error({
+  name: "PanicError",
+  message: (args: { message: string }) => args.message,
+});
+
+/**
+ * AbortError - structured error for aborted operations
+ * Uses the Error system for consistency with addNotes(), from(), etc.
+ */
+const AbortError = error({
+  name: "AbortError",
+  message: () => "Operation aborted",
+});
 
 /**
  * Creates a new AsyncResult from a promise
@@ -214,9 +234,12 @@ const AsyncResultFn: AsyncResultFactory = Object.assign(typedCreateAsyncResult, 
     return createAsyncResult<T, Error>(
       promise
         .then((value) => ({ ok: true as const, value }))
-        .catch((error) => ({
+        .catch((rawError) => ({
           ok: false as const,
-          error: error instanceof Error ? error : new Error(String(error)),
+          // Wrap in PanicError with .from() to preserve cause chain
+          error: isError(rawError)
+            ? PanicError({ message: rawError.message }).from(rawError)
+            : PanicError({ message: String(rawError) }),
         }))
     );
   },
@@ -285,18 +308,14 @@ export const fromPromise = <T, E = Error>(
 
   // If already aborted, return immediately with AbortError
   if (signal?.aborted) {
-    const error = new Error("Operation aborted") as AbortError;
-    error.name = "AbortError";
-    return AsyncResult(Promise.resolve({ ok: false as const, error: error as E }));
+    return AsyncResult(Promise.resolve({ ok: false as const, error: AbortError({}) as AbortError as E }));
   }
 
   return AsyncResult(
     new Promise((resolve) => {
       if (signal) {
         const abortHandler = () => {
-          const error = new Error("Operation aborted") as AbortError;
-          error.name = "AbortError";
-          resolve({ ok: false as const, error: error as E });
+          resolve({ ok: false as const, error: AbortError({}) as AbortError as E });
         };
 
         signal.addEventListener("abort", abortHandler, { once: true });
@@ -304,10 +323,12 @@ export const fromPromise = <T, E = Error>(
 
       promise
         .then((value) => resolve({ ok: true as const, value }))
-        .catch((error) =>
+        .catch((rawError) =>
           resolve({
             ok: false as const,
-            error: (error instanceof Error ? error : new Error(String(error))) as E,
+            error: isError(rawError)
+              ? PanicError({ message: rawError.message }).from(rawError) as E
+              : PanicError({ message: String(rawError) }) as E,
           })
         );
     })
@@ -331,7 +352,7 @@ export const fromPromiseWithOptions = <T>(
  * @returns true if error is an AbortError
  */
 export const isAbortError = (error: unknown): error is AbortError =>
-  error instanceof Error && error.name === "AbortError";
+  isError(error) && error.name === "AbortError";
 
 /**
  * Type guard to check if AsyncResult is AsyncOk
@@ -618,17 +639,13 @@ export const withSignal = <T, E = Error>(
 ): AsyncResultType<T, E | AbortError> => {
   // If already aborted, return immediately with AbortError
   if (signal.aborted) {
-    const error = new Error("Operation aborted") as AbortError;
-    error.name = "AbortError";
-    return AsyncResult(Promise.resolve({ ok: false as const, error }));
+    return AsyncResult(Promise.resolve({ ok: false as const, error: AbortError({}) as AbortError }));
   }
 
   return AsyncResult(
     new Promise((resolve) => {
       const abortHandler = () => {
-        const error = new Error("Operation aborted") as AbortError;
-        error.name = "AbortError";
-        resolve({ ok: false as const, error });
+        resolve({ ok: false as const, error: AbortError({}) as AbortError });
       };
 
       signal.addEventListener("abort", abortHandler, { once: true });
