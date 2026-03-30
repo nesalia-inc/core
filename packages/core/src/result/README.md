@@ -87,14 +87,21 @@ type Success<T> = Result<T, never>;
 ### Creating Results
 
 ```typescript
-import { ok, err } from "@deessejs/core";
+import { ok, err, error } from "@deessejs/core";
 
 // Success
 const result: Result<number, Error> = ok(42);
 
-// Failure
-const result2: Result<number, Error> = err(new Error("something went wrong"));
+// Failure - use error() factory for structured errors
+const SomeError = error({
+  name: "SomeError",
+  message: () => "something went wrong",
+});
+
+const result2: Result<number, Error> = err(SomeError({}));
 ```
+
+Note: Always use the Error system (`error()` factory) for structured errors with enrichment support (`addNotes()`, `from()`).
 
 ### Using with Error System
 
@@ -132,15 +139,22 @@ const result = ok(5)
 In railway-oriented programming, errors should travel through the Result without breaking the flow. Never use `throw` or `raise()` for expected failures:
 
 ```typescript
+import { error } from "@deessejs/core";
+
+const DivisionError = error({
+  name: "DivisionError",
+  message: () => "Division by zero",
+});
+
 // Bad - breaks the rail
-const divide = (a: number, b: number): Result<number, Error> => {
+const divideBad = (a: number, b: number): Result<number, Error> => {
   if (b === 0) throw new Error("Division by zero");
   return ok(a / b);
 };
 
 // Good - error travels through the rail
 const divide = (a: number, b: number): Result<number, Error> => {
-  if (b === 0) return err(new Error("Division by zero"));
+  if (b === 0) return err(DivisionError({}));
   return ok(a / b);
 };
 ```
@@ -188,7 +202,12 @@ const message = result.match(
 ### Combining Results
 
 ```typescript
-import { all } from "@deessejs/core";
+import { all, error } from "@deessejs/core";
+
+const FailError = error({
+  name: "FailError",
+  message: () => "fail",
+});
 
 const results = all(
   ok(1),
@@ -198,9 +217,9 @@ const results = all(
 
 const withFailure = all(
   ok(1),
-  err(new Error("fail")),
+  err(FailError({})),
   ok(3)
-);  // Err(new Error("fail")) - fail-fast
+);  // Err(FailError({})) - fail-fast
 ```
 
 ### Never Break the Rail
@@ -235,12 +254,17 @@ Use `err()` to carry errors forward. Reserve `throw`/`raise()` only for unrecove
 ```typescript
 import { error } from "@deessejs/core";
 
+const OriginalError = error({
+  name: "OriginalError",
+  message: () => "original",
+});
+
 const CustomError = error({
   name: "CustomError",
   message: (args: { message: string }) => args.message,
 });
 
-const result = err(new Error("original"));
+const result = err(OriginalError({}));
 
 result.mapErr((e) => CustomError({ message: e.message }));
 // Err(CustomError({ message: "original" }))
@@ -265,7 +289,10 @@ ok(42);  // Ok<number>
 Creates a failed result:
 
 ```typescript
-err(new Error("failed"));  // Err<Error>
+import { error } from "@deessejs/core";
+
+const FailError = error({ name: "FailError", message: () => "failed" });
+err(FailError({}));  // Err<FailError>
 ```
 
 ### Type Guards
