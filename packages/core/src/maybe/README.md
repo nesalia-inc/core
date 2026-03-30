@@ -111,6 +111,36 @@ const computed = none().getOrCompute(() => expensiveOperation()); // calls funct
 some(5).tap(x => console.log(x)); // logs 5, returns Some(5)
 ```
 
+### Understanding filter
+
+The `filter` method is key to Maybe's validation pattern:
+
+```typescript
+// How filter works:
+// Some(value).filter(predicate) -> predicate(value) ? Some(value) : None
+// None.filter(predicate)        -> None (predicate never called)
+
+// Common use case: validation that can fail
+const age = some(25);
+
+age.filter(a => a >= 18);  // Some(25) - passes
+age.filter(a => a >= 21);  // None     - fails (too young)
+none<number>().filter(() => true);  // None - already empty
+```
+
+**Combining filter with toResult** for validation:
+
+```typescript
+// filter + toResult = validation pattern
+const validated = some(25)
+  .filter(a => a >= 18)      // Some(25) or None
+  .filter(a => a <= 150)     // Some(25) or None (chained validation)
+  .toResult(() => ValidationError());
+  // Ok(25) if all filters pass, Err(ValidationError) if any fail
+```
+
+**Key insight**: `filter` lets you chain validations without breaking the Maybe rail. Only when you're ready to convert to Result (for error handling) do you call `toResult`.
+
 ### Converting to Result
 
 When you need to convert a `Maybe` to a `Result` (e.g., for error handling):
