@@ -68,16 +68,17 @@ type AsyncResultInner<T, E> = AsyncOk<T> | AsyncErr<E>;
 ### Creating AsyncResults
 
 ```typescript
-import { AsyncResult, okAsync, errAsync, fromPromise } from "@deessejs/core";
+import { ok, err, okAsync, errAsync, fromPromise } from "@deessejs/core";
 
 // From a value (immediately resolved)
-const result: AsyncResult<number, never> = okAsync(42);
+const result = ok(42);
+const result2 = okAsync(42);
 
 // From an error (immediately rejected)
-const error: AsyncResult<never, Error> = errAsync(new Error("failed"));
+const error = err(new Error("failed"));
+const error2 = errAsync(new Error("failed"));
 
 // From an existing Promise
-const data = await fetch("/api/user");
 const asyncResult = fromPromise(fetch("/api/user"));
 ```
 
@@ -86,7 +87,7 @@ const asyncResult = fromPromise(fetch("/api/user"));
 The Thenable implementation allows direct await usage:
 
 ```typescript
-const result = await AsyncResult.fromPromise(fetch("/api/user"));
+const result = await fromPromise(fetch("/api/user"));
 
 if (result.ok) {
   console.log(result.value); // Response data
@@ -98,7 +99,7 @@ if (result.ok) {
 ### Chaining Operations
 
 ```typescript
-const result = await AsyncResult.fromPromise(fetchUsers())
+const result = await fromPromise(fetchUsers())
   .map(users => users.filter(u => u.active))
   .map(users => users.map(u => u.name))
   .mapErr(e => new Error(`Failed to get users: ${e.message}`));
@@ -109,11 +110,11 @@ const result = await AsyncResult.fromPromise(fetchUsers())
 All errors in AsyncResult are structured `Error<T>` objects from the Error system, which means you can use `addNotes()` and `from()` for error enrichment:
 
 ```typescript
-const result = await AsyncResult.fromPromise(fetchData())
+const result = await fromPromise(fetchData())
   .mapErr(e => e.addNotes(`Failed to fetch data for user ${id}`));
 
 // Chain causes for debugging
-const result2 = await AsyncResult.fromPromise(riskyOperation())
+const result2 = await fromPromise(riskyOperation())
   .mapErr(e => SomeOtherError({ context: "operation" }).from(e));
 ```
 
@@ -142,15 +143,15 @@ const fastest = await race(asyncResult1, asyncResult2, asyncResult3);
 
 // All - fail-fast (returns first error)
 const combined = await all(
-  AsyncResult.fromPromise(fetchUser()),
-  AsyncResult.fromPromise(fetchPosts()),
-  AsyncResult.fromPromise(fetchComments())
+  fromPromise(fetchUser()),
+  fromPromise(fetchPosts()),
+  fromPromise(fetchComments())
 );
 
 // AllSettled - collect all results (successes and failures)
 const { values, errors } = await allSettled(
-  AsyncResult.fromPromise(fetchItem1()),
-  AsyncResult.fromPromise(fetchItem2())
+  fromPromise(fetchItem1()),
+  fromPromise(fetchItem2())
 );
 ```
 
@@ -176,20 +177,14 @@ setTimeout(() => controller.abort(), 5000);
 
 | Function | Description |
 |----------|-------------|
-| `AsyncResult.ok(value)` | Creates an immediately resolved AsyncOk |
-| `AsyncResult.err(error)` | Creates an immediately resolved AsyncErr |
-| `AsyncResult.fromPromise(promise)` | Wraps a Promise |
-| `AsyncResult.from(promise)` | Wraps a Promise<AsyncResultInner> |
-| `AsyncResult.fromValue(value, ms?)` | Resolves after optional delay |
-| `AsyncResult.fromError(error, ms?)` | Rejects after optional delay |
-
-### Standalone Factories
-
-| Function | Description |
-|----------|-------------|
-| `okAsync(value)` | Shorthand for `AsyncResult.ok(value)` |
-| `errAsync(error)` | Shorthand for `AsyncResult.err(error)` |
-| `fromPromise(promise, onError?)` | Wraps a Promise with optional error transform |
+| `ok(value)` | Creates an immediately resolved AsyncOk |
+| `err(error)` | Creates an immediately resolved AsyncErr |
+| `okAsync(value)` | Alias for `ok()` |
+| `errAsync(error)` | Alias for `err()` |
+| `fromPromise(promise)` | Wraps a Promise |
+| `from(promise)` | Wraps a Promise<AsyncResultInner> |
+| `fromValue(value, ms?)` | Resolves after optional delay |
+| `fromError(error, ms?)` | Rejects after optional delay |
 | `fromPromiseWithOptions(promise, options)` | Wraps with FromPromiseOptions |
 
 ### Type Guards
@@ -200,7 +195,7 @@ setTimeout(() => controller.abort(), 5000);
 | `isErr(result)` | Returns true if AsyncErr |
 | `isAbortError(error)` | Returns true if error is an AbortError |
 
-### Transformations
+### Transformations (standalone functions)
 
 | Function | Description |
 |----------|-------------|
@@ -282,11 +277,11 @@ async function getUserProfile(id: string) {
 ### After
 
 ```typescript
-import { AsyncResult, fromPromise, all } from "@deessejs/core";
+import { ok, err, fromPromise, all, map, mapErr } from "@deessejs/core";
 
 const fetchUser = (id: string) =>
   fromPromise(fetch(`/api/users/${id}`))
-    .mapErr(e => new Error(`Failed to fetch user: ${e.message}`))
+    .mapErr(e => e.addNotes(`Failed to fetch user ${id}`))
     .map(async (response) => {
       if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
       return response.json();
@@ -319,7 +314,7 @@ const getUserProfile = async (id: string) => {
 ## Best Practices
 
 1. **Use `fromPromise`** for wrapping existing Promises - it automatically wraps errors in the Error system
-2. **Use `okAsync`/`errAsync`** for creating immediately resolved/rejected results
+2. **Use `ok`/`err`** or their aliases `okAsync`/`errAsync`** for creating immediately resolved/rejected results
 3. **Chain transformations** instead of nested await/catch
 4. **Use `race`** when you need the first result and don't care which completes first
 5. **Use `allSettled`** when you need all results regardless of success/failure
@@ -347,3 +342,18 @@ const result = await fetchUser(id)
 //   cause: PanicError("User 123 not found")
 //   notes: ["User 123 not found"]
 ```
+
+## Comparison with Result
+
+AsyncResult follows the same functional pattern as Result:
+
+| Result | AsyncResult |
+|--------|-------------|
+| `ok(value)` | `ok(value)` or `okAsync(value)` |
+| `err(error)` | `err(error)` or `errAsync(error)` |
+| `from(result)` | `from(promise)` |
+| `map(result, fn)` | `map(asyncResult, fn)` |
+| `flatMap(result, fn)` | `flatMap(asyncResult, fn)` |
+| `result.map(fn)` (instance) | `result.then(fn)` (Thenable) |
+
+The key difference is that AsyncResult operations are always async (Promise-based), while Result operations are synchronous.
