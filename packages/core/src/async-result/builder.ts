@@ -273,14 +273,14 @@ export const fromPromise = <T, E = Error>(
 
   // If already aborted, return immediately with AbortError
   if (signal?.aborted) {
-    return createAsyncResult<T, E>(Promise.resolve({ ok: false as const, error: AbortError({}) as E as E }));
+    return createAsyncResult<T, E>(Promise.resolve({ ok: false as const, error: AbortError() as E as E }));
   }
 
   return createAsyncResult<T, E>(
     new Promise((resolve) => {
       if (signal) {
         const abortHandler = () => {
-          resolve({ ok: false as const, error: AbortError({}) as E });
+          resolve({ ok: false as const, error: AbortError() as E });
         };
 
         signal.addEventListener("abort", abortHandler, { once: true });
@@ -652,13 +652,13 @@ export const withSignal = <T, E = Error>(
 ): AsyncResultType<T, E | AbortError> => {
   // If already aborted, return immediately with AbortError
   if (signal.aborted) {
-    return createAsyncResult<T, E | AbortError>(Promise.resolve({ ok: false as const, error: AbortError({}) as E | AbortError }));
+    return createAsyncResult<T, E | AbortError>(Promise.resolve({ ok: false as const, error: AbortError() as E | AbortError }));
   }
 
   return createAsyncResult<T, E | AbortError>(
     new Promise((resolve) => {
       const abortHandler = () => {
-        resolve({ ok: false as const, error: AbortError({}) as E | AbortError });
+        resolve({ ok: false as const, error: AbortError() as E | AbortError });
       };
 
       signal.addEventListener("abort", abortHandler, { once: true });

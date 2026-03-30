@@ -91,8 +91,9 @@ export type ErrorOptions<T> = {
 
 /**
  * ErrorBuilder - creates Error<T> directly
+ * Args are optional with object as default so errors can be called without arguments
  */
-export type ErrorBuilder<T> = (args: T) => Error<T>;
+export type ErrorBuilder<T = object> = (args?: T) => Error<T>;
 
 /**
  * ExtractError - extracts Error<T> from an ErrorBuilder<T>

@@ -128,12 +128,12 @@ const age = some(25);
 // Convert to Result with structured error
 const result = age
   .filter(a => a >= 18)  // Some(25) if predicate passes, None otherwise
-  .toResult(() => TooYoungError({})); // Ok(25) or Err(TooYoungError)
+  .toResult(() => TooYoungError()); // Ok(25) or Err(TooYoungError)
 
 // Chain with Result operations
 const validated = age
   .filter(a => a >= 18)
-  .toResult(() => TooYoungError({}))
+  .toResult(() => TooYoungError())
   .map(a => a * 2); // Ok(50) or Err(TooYoungError)
 ```
 

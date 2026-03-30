@@ -98,7 +98,7 @@ const SomeError = error({
   message: () => "something went wrong",
 });
 
-const result2: Result<number, Error> = err(SomeError({}));
+const result2: Result<number, Error> = err(SomeError());
 ```
 
 Note: Always use the Error system (`error()` factory) for structured errors with enrichment support (`addNotes()`, `from()`).
