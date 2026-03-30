@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+ 
 type AnyFunction = (...args: unknown[]) => unknown;
 
 interface MockScheduler {

@@ -33,7 +33,7 @@ export type Ok<T, E extends Error = Error> = {
   tap(fn: (value: T) => void): Ok<T, E>;
   tapErr(fn: (error: E) => void): Ok<T, E>;
   // match with object-based syntax for full type inference
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   match<U>(handlers: ((value: T) => U) | ({ onSuccess: (value: T) => U; onError: (error: E) => U })): U;
   unwrap(): T;
 };
@@ -57,7 +57,7 @@ export type Err<E extends Error = Error> = {
   tap(_fn: (value: never) => void): Err<E>;
   tapErr(fn: (error: E) => void): Err<E>;
   // match with object-based syntax for full type inference
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   match<U>(handlers: ((value: never) => U) | ({ onSuccess: (value: never) => U; onError: (error: E) => U })): U;
   unwrap(): never;
 };
@@ -85,7 +85,7 @@ export type Success<T> = Result<T, never>;
  *
  * @typeParam T - The function type to extract the error from
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export type ExtractResultError<T> = T extends () => Result<unknown, infer E>
   ? E
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
