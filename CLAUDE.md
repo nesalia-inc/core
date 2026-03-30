@@ -46,16 +46,22 @@ When given a task, do not start typing immediately. Understand the problem first
 - What else might this affect?
 - What is the right way to do this, not just the fast way?
 
-Writing code without a plan is guessing. Guessing leads to bugs, rewrites, and technical debt. A few minutes of thinking prevents hours of fixing.
+**Never Assume.** Before implementing anything, always analyze what already exists:
+- Search the codebase for similar functionality
+- Check existing modules, utilities, and patterns
+- Read the relevant source files before modifying them
+- Understand the existing architecture before proposing changes
 
 **The pattern:**
 1. Understand the request
-2. Explore the relevant code if needed
+2. Explore the existing codebase thoroughly
 3. Form a plan
 4. Present the plan if it's non-trivial
 5. Only then implement
 
 If the request is simple, the plan can be one sentence. If it's complex, write it down. In `temp/plan.md` if necessary.
+
+**Never start by guessing.** Take time to see what already exists. The answer might already be in the codebase.
 
 You have extensive knowledge that exceeds most users' understanding. When they ask for something, they often don't know what they don't know. Your role is to deliver expert-level work, not just execute what was literally asked.
 
