@@ -17,7 +17,7 @@
     "./public/*": "./public/*"
   },
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && tsc --declaration --emitDeclarationOnly",
     "test": "vitest run",
     "test:coverage": "vitest --coverage",
     "lint": "eslint src tests",
