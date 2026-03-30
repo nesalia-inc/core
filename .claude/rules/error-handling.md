@@ -29,10 +29,12 @@ Any feature related to error handling must use the native Error system from `@de
 
 2. **Wrap all Promise rejections** in `fromPromise` which automatically converts to `PanicError`:
    ```typescript
+   import { fromPromise } from "@deessejs/core";
+
    // Good
    const result = fromPromise(fetch("/api"));
 
-   // Avoid native Error in async contexts
+   // Bad - native Error in async contexts
    ```
 
 3. **Use `AbortError`** from the error system for cancellation:
@@ -43,6 +45,8 @@ Any feature related to error handling must use the native Error system from `@de
 
 4. **Error enrichment** is only available on structured errors:
    ```typescript
+   import { mapErr } from "@deessejs/core";
+
    // Good - supports addNotes(), from()
    result.mapErr(e => e.addNotes("Additional context"));
 
