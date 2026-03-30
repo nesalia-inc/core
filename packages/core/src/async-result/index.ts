@@ -3,7 +3,7 @@
  * Thenable wrapper for async operations with proper error handling
  */
 
-// Types (AsyncResult type is exported separately by users importing from types.ts)
+// Types
 export type {
   AbortError,
   FromPromiseOptions,
@@ -11,17 +11,11 @@ export type {
   AsyncErr,
   AsyncResultInner,
   AsyncResultInstance,
-  AsyncResultFactory,
 } from "./types";
 
-// Factory (the AsyncResult callable with static methods)
-export { AsyncResult } from "./builder";
-
 // Factory functions
-export { okAsync, errAsync } from "./builder";
-
-// Promise conversion
-export { fromPromise, fromPromiseWithOptions } from "./builder";
+export { ok, err, okAsync, errAsync } from "./builder";
+export { fromPromise, fromPromiseWithOptions, from, fromValue, fromError } from "./builder";
 
 // Type guards
 export { isOk, isErr, isAbortError } from "./builder";

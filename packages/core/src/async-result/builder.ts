@@ -1,9 +1,9 @@
 /**
  * AsyncResult builder - factory functions and standalone utilities
+ * Async version of Result with Thenable implementation for async operations
  */
 
 import type {
-  AsyncResultFactory,
   AsyncResultInner,
   AsyncOk,
   AsyncErr,
@@ -43,9 +43,9 @@ const AbortError = error({
 
 /**
  * Creates a new AsyncResult from a promise
- * @param promise - The promise to wrap
+ * Internal function - exposed through ok(), err(), fromPromise(), etc.
  */
-function createAsyncResult<T, E>(promise: Promise<AsyncResultInner<T, E>>) {
+function createAsyncResult<T, E>(promise: Promise<AsyncResultInner<T, E>>): AsyncResultType<T, E> {
   const obj = {
     ok: undefined as boolean | undefined,
     get value(): T {
@@ -202,83 +202,48 @@ function createAsyncResult<T, E>(promise: Promise<AsyncResultInner<T, E>>) {
     },
   };
 
-  return obj;
+  return obj as AsyncResultType<T, E>;
 }
 
-// Apply the factory type to createAsyncResult
-const typedCreateAsyncResult: AsyncResultFactory = createAsyncResult as AsyncResultFactory;
-
-/**
- * AsyncResult factory function with static methods
- */
-const AsyncResultFn: AsyncResultFactory = Object.assign(typedCreateAsyncResult, {
-  ok<T>(value: T) {
-    return createAsyncResult<T, never>(
-      Promise.resolve({
-        ok: true as const,
-        value,
-      })
-    );
-  },
-
-  err<E>(error: E) {
-    return createAsyncResult<never, E>(
-      Promise.resolve({
-        ok: false as const,
-        error,
-      })
-    );
-  },
-
-  fromPromise<T>(promise: Promise<T>) {
-    return createAsyncResult<T, Error>(
-      promise
-        .then((value) => ({ ok: true as const, value }))
-        .catch((rawError) => ({
-          ok: false as const,
-          // Wrap in PanicError with .from() to preserve cause chain
-          error: isError(rawError)
-            ? PanicError({ message: rawError.message }).from(rawError)
-            : PanicError({ message: String(rawError) }),
-        }))
-    );
-  },
-
-  from<T, E>(promise: Promise<AsyncResultInner<T, E>>) {
-    return createAsyncResult<T, E>(promise);
-  },
-
-  fromValue<T>(value: T, ms = 0) {
-    return createAsyncResult<T, never>(
-      new Promise((resolve) => setTimeout(() => resolve({ ok: true as const, value }), ms))
-    );
-  },
-
-  fromError<E>(error: E, ms = 0) {
-    return createAsyncResult<never, E>(
-      new Promise((resolve) => setTimeout(() => resolve({ ok: false as const, error }), ms))
-    );
-  },
-});
-
-/**
- * AsyncResult - Thenable wrapper for async operations
- */
-export const AsyncResult: AsyncResultFactory = AsyncResultFn;
+// =============================================================================
+// FACTORY FUNCTIONS
+// =============================================================================
 
 /**
  * Creates an async Ok (success result)
  * @param value - The success value
  * @returns AsyncResult<T, never>
  */
-export const okAsync = <T>(value: T): AsyncResultType<T, never> => AsyncResult.ok(value);
+export const ok = <T>(value: T): AsyncResultType<T, never> =>
+  createAsyncResult<T, never>(
+    Promise.resolve({
+      ok: true as const,
+      value,
+    })
+  );
 
 /**
  * Creates an async Err (error result)
  * @param error - The error value
  * @returns AsyncResult<never, E>
  */
-export const errAsync = <E>(error: E): AsyncResultType<never, E> => AsyncResult.err(error);
+export const err = <E>(error: E): AsyncResultType<never, E> =>
+  createAsyncResult<never, E>(
+    Promise.resolve({
+      ok: false as const,
+      error,
+    })
+  );
+
+/**
+ * Alias for ok - creates an async Ok (success result)
+ */
+export const okAsync = ok;
+
+/**
+ * Alias for err - creates an async Err (error result)
+ */
+export const errAsync = err;
 
 /**
  * Creates an AsyncResult from a Promise
@@ -294,7 +259,7 @@ export const fromPromise = <T, E = Error>(
   // Handle function overload: fromPromise(promise, onError)
   if (typeof onErrorOrOptions === "function") {
     const onError = onErrorOrOptions;
-    return AsyncResult(
+    return createAsyncResult<T, E>(
       promise
         .then((value) => ({ ok: true as const, value }))
         .catch((error) => {
@@ -308,14 +273,14 @@ export const fromPromise = <T, E = Error>(
 
   // If already aborted, return immediately with AbortError
   if (signal?.aborted) {
-    return AsyncResult(Promise.resolve({ ok: false as const, error: AbortError({}) as AbortError as E }));
+    return createAsyncResult<T, E>(Promise.resolve({ ok: false as const, error: AbortError({}) as E as E }));
   }
 
-  return AsyncResult(
+  return createAsyncResult<T, E>(
     new Promise((resolve) => {
       if (signal) {
         const abortHandler = () => {
-          resolve({ ok: false as const, error: AbortError({}) as AbortError as E });
+          resolve({ ok: false as const, error: AbortError({}) as E });
         };
 
         signal.addEventListener("abort", abortHandler, { once: true });
@@ -347,6 +312,40 @@ export const fromPromiseWithOptions = <T>(
 ): AsyncResultType<T, Error> => fromPromise(promise, options);
 
 /**
+ * Creates an AsyncResult from a Promise<AsyncResultInner>
+ * @param promise - The promise to convert
+ * @returns AsyncResult<T, E>
+ */
+export const from = <T, E>(promise: Promise<AsyncResultInner<T, E>>): AsyncResultType<T, E> =>
+  createAsyncResult<T, E>(promise);
+
+/**
+ * Creates an AsyncResult that resolves after a delay
+ * @param value - The value to resolve with
+ * @param ms - Delay in milliseconds
+ * @returns AsyncResult<T, never>
+ */
+export const fromValue = <T>(value: T, ms = 0): AsyncResultType<T, never> =>
+  createAsyncResult<T, never>(
+    new Promise((resolve) => setTimeout(() => resolve({ ok: true as const, value }), ms))
+  );
+
+/**
+ * Creates an AsyncResult that rejects after a delay
+ * @param error - The error to reject with
+ * @param ms - Delay in milliseconds
+ * @returns AsyncResult<never, E>
+ */
+export const fromError = <E>(error: E, ms = 0): AsyncResultType<never, E> =>
+  createAsyncResult<never, E>(
+    new Promise((resolve) => setTimeout(() => resolve({ ok: false as const, error }), ms))
+  );
+
+// =============================================================================
+// TYPE GUARDS
+// =============================================================================
+
+/**
  * Checks if an error is an AbortError
  * @param error - The error to check
  * @returns true if error is an AbortError
@@ -356,8 +355,6 @@ export const isAbortError = (error: unknown): error is AbortError =>
 
 /**
  * Type guard to check if AsyncResult is AsyncOk
- * @typeParam T - The type of the value
- * @typeParam E - The type of the error
  * @param result - The AsyncResult to check
  * @returns true if AsyncResult is AsyncOk<T>
  */
@@ -366,19 +363,18 @@ export const isOk = <T, E>(result: AsyncResultInner<T, E>): result is AsyncOk<T>
 
 /**
  * Type guard to check if AsyncResult is AsyncErr
- * @typeParam T - The type of the value
- * @typeParam E - The type of the error
  * @param result - The AsyncResult to check
  * @returns true if AsyncResult is AsyncErr<E>
  */
 export const isErr = <T, E>(result: AsyncResultInner<T, E>): result is AsyncErr<E> =>
   result.ok === false;
 
+// =============================================================================
+// TRANSFORMATIONS
+// =============================================================================
+
 /**
  * Maps the value of AsyncResult if AsyncOk (handles both sync and async functions)
- * @typeParam T - The type of the value
- * @typeParam E - The type of the error
- * @typeParam U - The type of the mapped value
  * @param result - The AsyncResult to map
  * @param fn - The mapping function (sync or async)
  * @returns AsyncResult<U, E>
@@ -402,9 +398,6 @@ export const map = <T, E, U>(
 
 /**
  * Chains AsyncResults (handles both sync and async functions)
- * @typeParam T - The type of the value
- * @typeParam E - The type of the error
- * @typeParam U - The type of the chained value
  * @param result - The AsyncResult to chain
  * @param fn - The chaining function (sync or async)
  * @returns AsyncResult of the function if AsyncOk, AsyncErr otherwise
@@ -416,11 +409,19 @@ export const flatMap = <T, E, U>(
   result.flatMap(fn as (value: T) => AsyncResultType<U, E>);
 
 /**
+ * Maps the error of AsyncResult if AsyncErr, returns AsyncOk otherwise
+ * @param result - The AsyncResult to map
+ * @param fn - The error mapping function
+ * @returns AsyncResult<T, F>
+ */
+export const mapErr = <T, E, F>(
+  result: AsyncResultType<T, E>,
+  fn: (error: E) => F
+): AsyncResultType<T, F> => result.mapErr(fn);
+
+/**
  * @deprecated Use `map` instead. `map` now handles both sync and async functions automatically.
  * Maps the value of AsyncResult if AsyncOk, returns AsyncErr otherwise
- * @typeParam T - The type of the value
- * @typeParam E - The type of the error
- * @typeParam U - The type of the mapped value
  * @param result - The AsyncResult to map
  * @param fn - The async mapping function
  * @returns AsyncResult<U, E>
@@ -440,9 +441,6 @@ export const mapAsync = <T, E, U>(
 /**
  * @deprecated Use `flatMap` instead. `flatMap` now handles both sync and async functions automatically.
  * Chains AsyncResults - function if AsyncOk, returns AsyncErr otherwise
- * @typeParam T - The type of the value
- * @typeParam E - The type of the error
- * @typeParam U - The type of the chained value
  * @param result - The AsyncResult to chain
  * @param fn - The async chaining function
  * @returns AsyncResult of the function if AsyncOk, AsyncErr otherwise
@@ -456,10 +454,34 @@ export const flatMapAsync = <T, E, U>(
   }) as unknown as AsyncResultType<U, E>;
 };
 
+// =============================================================================
+// SIDE EFFECTS
+// =============================================================================
+
+/**
+ * Performs a side effect without changing the value
+ * @param result - The AsyncResult to inspect
+ * @param fn - The side effect function
+ * @returns The same AsyncResult
+ */
+export const tap = <T, E>(result: AsyncResultType<T, E>, fn: (value: T) => void): AsyncResultType<T, E> =>
+  result.tap(fn);
+
+/**
+ * Performs a side effect on error without changing the value
+ * @param result - The AsyncResult to inspect
+ * @param fn - The error side effect function
+ * @returns The same AsyncResult
+ */
+export const tapErr = <T, E>(result: AsyncResultType<T, E>, fn: (error: E) => void): AsyncResultType<T, E> =>
+  result.tapErr(fn);
+
+// =============================================================================
+// EXTRACTION
+// =============================================================================
+
 /**
  * Gets the value or a default
- * @typeParam T - The type of the value
- * @typeParam E - The type of the error
  * @param result - The AsyncResult
  * @param defaultValue - The default value
  * @returns The value if AsyncOk, default otherwise
@@ -469,9 +491,6 @@ export const getOrElse = <T, E>(result: AsyncResultType<T, E>, defaultValue: T):
 
 /**
  * Gets the value or computes a default
- * @typeParam T - The type of the value
- * @typeParam E - The type of the error
- * @typeParam U - The type of the computed default
  * @param result - The AsyncResult
  * @param fn - The function to compute default
  * @returns The value if AsyncOk, result of fn otherwise
@@ -485,32 +504,27 @@ export const getOrCompute = async <T, E, U>(
 };
 
 /**
- * Performs a side effect without changing the value
- * @typeParam T - The type of the value
- * @typeParam E - The type of the error
- * @param result - The AsyncResult to inspect
- * @param fn - The side effect function
- * @returns The same AsyncResult
+ * Unwraps the AsyncResult, throwing if error
+ * @param result - The AsyncResult to unwrap
+ * @returns Promise resolving to the value
  */
-export const tap = <T, E>(result: AsyncResultType<T, E>, fn: (value: T) => void): AsyncResultType<T, E> =>
-  result.tap(fn);
+export const unwrap = async <T, E>(result: AsyncResultType<T, E>): Promise<T> => result.unwrap();
 
 /**
- * Performs a side effect on error without changing the value
- * @typeParam T - The type of the value
- * @typeParam E - The type of the error
- * @param result - The AsyncResult to inspect
- * @param fn - The error side effect function
- * @returns The same AsyncResult
+ * Unwraps the AsyncResult, returning default if error
+ * @param result - The AsyncResult to unwrap
+ * @param defaultValue - The default value
+ * @returns Promise resolving to the value or default
  */
-export const tapErr = <T, E>(result: AsyncResultType<T, E>, fn: (error: E) => void): AsyncResultType<T, E> =>
-  result.tapErr(fn);
+export const unwrapOr = <T, E>(result: AsyncResultType<T, E>, defaultValue: T): Promise<T> =>
+  result.unwrapOr(defaultValue);
+
+// =============================================================================
+// PATTERN MATCHING
+// =============================================================================
 
 /**
  * Matches both AsyncOk and AsyncErr cases
- * @typeParam T - The type of the value
- * @typeParam E - The type of the error
- * @typeParam U - The type of the result
  * @param result - The AsyncResult to match
  * @param ok - Function to handle AsyncOk
  * @param err - Function to handle AsyncErr
@@ -522,10 +536,32 @@ export const match = async <T, E, U>(
   err: (error: E) => U
 ): Promise<U> => result.match(ok, err);
 
+// =============================================================================
+// CONVERSION
+// =============================================================================
+
+/**
+ * Converts AsyncResult to a nullable value
+ * @param result - The AsyncResult to convert
+ * @returns Promise<T | null>
+ */
+export const toNullable = <T, E>(result: AsyncResultType<T, E>): Promise<T | null> =>
+  result.toNullable();
+
+/**
+ * Converts AsyncResult to an undefined-able value
+ * @param result - The AsyncResult to convert
+ * @returns Promise<T | undefined>
+ */
+export const toUndefined = <T, E>(result: AsyncResultType<T, E>): Promise<T | undefined> =>
+  result.then((r) => (isOk(r) ? r.value : undefined));
+
+// =============================================================================
+// COMBINATORS
+// =============================================================================
+
 /**
  * Race - resolves to the first result to complete
- * @typeParam T - The type of the value
- * @typeParam E - The type of the error
  * @param results - The AsyncResults to race
  * @returns Promise<T> - The value of the first resolved
  */
@@ -541,13 +577,11 @@ export const race = <T, E>(...results: Array<AsyncResultType<T, E>>): Promise<T>
 
 /**
  * All - runs all async results in parallel
- * @typeParam T - The type of the values
- * @typeParam E - The type of the error
  * @param results - The AsyncResults to run in parallel
  * @returns AsyncResult<T[], E> - Array of values or first error
  */
 export const all = <T, E>(...results: Array<AsyncResultType<T, E>>): AsyncResultType<T[], E> =>
-  AsyncResult<T[], E>(
+  createAsyncResult<T[], E>(
     Promise.all(results).then((rs) => {
       // Check for errors
       const firstErr = rs.find((r) => isErr(r)) as AsyncErr<E> | undefined;
@@ -560,9 +594,6 @@ export const all = <T, E>(...results: Array<AsyncResultType<T, E>>): AsyncResult
 
 /**
  * Traverse - runs async function for each item in parallel
- * @typeParam T - The type of the input items
- * @typeParam U - The type of the output items
- * @typeParam E - The type of the error
  * @param items - The items to traverse
  * @param fn - The async function to run for each item
  * @returns AsyncResult<U[], E> - Array of results or first error
@@ -574,22 +605,20 @@ export const traverse = async <T, U, E>(
   const results = await Promise.all(items.map(fn));
   const firstErr = results.find((r) => isErr(r)) as AsyncErr<E> | undefined;
   if (firstErr) {
-    return AsyncResult<U[], E>(Promise.resolve({ ok: false as const, error: firstErr.error }));
+    return createAsyncResult<U[], E>(Promise.resolve({ ok: false as const, error: firstErr.error }));
   }
-  return AsyncResult<U[], E>(Promise.resolve({ ok: true as const, value: results.map((r) => (r as AsyncOk<U>).value) }));
+  return createAsyncResult<U[], E>(Promise.resolve({ ok: true as const, value: results.map((r) => (r as AsyncOk<U>).value) }));
 };
 
 /**
  * AllSettled - runs all async results in parallel, collecting all errors
- * @typeParam T - The type of the values
- * @typeParam E - The type of the error
  * @param results - The AsyncResults to run in parallel
  * @returns AsyncResult<[T[], E[]], E[]> - Tuple of [values, errors]
  */
 export const allSettled = <T, E>(
   ...results: Array<AsyncResultType<T, E>>
 ): AsyncResultType<[T[], E[]], E[]> =>
-  AsyncResult<[T[], E[]], E[]>(
+  createAsyncResult<[T[], E[]], E[]>(
     Promise.all(results).then((rs) => {
       const values: T[] = [];
       const errors: E[] = [];
@@ -607,25 +636,9 @@ export const allSettled = <T, E>(
     })
   );
 
-/**
- * Converts AsyncResult to a nullable value
- * @typeParam T - The type of the value
- * @typeParam E - The type of the error
- * @param result - The AsyncResult to convert
- * @returns Promise<T | null>
- */
-export const toNullable = <T, E>(result: AsyncResultType<T, E>): Promise<T | null> =>
-  result.toNullable();
-
-/**
- * Converts AsyncResult to an undefined-able value
- * @typeParam T - The type of the value
- * @typeParam E - The type of the error
- * @param result - The AsyncResult to convert
- * @returns Promise<T | undefined>
- */
-export const toUndefined = <T, E>(result: AsyncResultType<T, E>): Promise<T | undefined> =>
-  result.then((r) => (isOk(r) ? r.value : undefined));
+// =============================================================================
+// SIGNAL HANDLING
+// =============================================================================
 
 /**
  * Wraps an AsyncResult chain to abort when signal is triggered
@@ -639,13 +652,13 @@ export const withSignal = <T, E = Error>(
 ): AsyncResultType<T, E | AbortError> => {
   // If already aborted, return immediately with AbortError
   if (signal.aborted) {
-    return AsyncResult(Promise.resolve({ ok: false as const, error: AbortError({}) as AbortError }));
+    return createAsyncResult<T, E | AbortError>(Promise.resolve({ ok: false as const, error: AbortError({}) as E | AbortError }));
   }
 
-  return AsyncResult(
+  return createAsyncResult<T, E | AbortError>(
     new Promise((resolve) => {
       const abortHandler = () => {
-        resolve({ ok: false as const, error: AbortError({}) as AbortError });
+        resolve({ ok: false as const, error: AbortError({}) as E | AbortError });
       };
 
       signal.addEventListener("abort", abortHandler, { once: true });
@@ -658,37 +671,3 @@ export const withSignal = <T, E = Error>(
     })
   );
 };
-
-/**
- * Maps the error of AsyncResult if AsyncErr, returns AsyncOk otherwise
- * @typeParam T - The type of the value
- * @typeParam E - The type of the error
- * @typeParam F - The type of the mapped error
- * @param result - The AsyncResult to map
- * @param fn - The error mapping function
- * @returns AsyncResult<T, F>
- */
-export const mapErr = <T, E, F>(
-  result: AsyncResultType<T, E>,
-  fn: (error: E) => F
-): AsyncResultType<T, F> => result.mapErr(fn);
-
-/**
- * Unwraps the AsyncResult, throwing if error
- * @typeParam T - The type of the value
- * @typeParam E - The type of the error
- * @param result - The AsyncResult to unwrap
- * @returns Promise resolving to the value
- */
-export const unwrap = async <T, E>(result: AsyncResultType<T, E>): Promise<T> => result.unwrap();
-
-/**
- * Unwraps the AsyncResult, returning default if error
- * @typeParam T - The type of the value
- * @typeParam E - The type of the error
- * @param result - The AsyncResult to unwrap
- * @param defaultValue - The default value
- * @returns Promise resolving to the value or default
- */
-export const unwrapOr = <T, E>(result: AsyncResultType<T, E>, defaultValue: T): Promise<T> =>
-  result.unwrapOr(defaultValue);
