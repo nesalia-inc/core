@@ -34,6 +34,8 @@ export interface Some<T> {
 
 /**
  * None type - represents an absent value
+ * Note: equals uses Maybe<unknown> because None has no value type T.
+ * This is a deliberate design choice - None.equals only checks if other is also None.
  */
 export interface None {
   readonly ok: false;

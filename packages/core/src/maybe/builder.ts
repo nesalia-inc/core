@@ -266,12 +266,6 @@ export function all<T>(first: Maybe<T> | readonly Maybe<T>[], ...rest: Maybe<T>[
 /**
  * Filters a Maybe based on a predicate
  * @typeParam T - The type of the value
- * @typeParam E - The type of the error when onNone is provided
- * @param maybe - The Maybe to filter
- * @param predicate - The predicate function
- /**
- * Filters a Maybe based on a predicate
- * @typeParam T - The type of the value
  * @param maybe - The Maybe to filter
  * @param predicate - The predicate function
  * @returns Some<T> if predicate passes and maybe is Some, None otherwise
