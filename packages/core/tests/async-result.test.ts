@@ -1,7 +1,5 @@
 import { describe, it, expect } from "vitest";
 import {
-  ok,
-  err,
   okAsync,
   errAsync,
   fromPromise,
