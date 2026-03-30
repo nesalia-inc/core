@@ -127,18 +127,52 @@ const result = ok(5)
   .getOrElse(0);               // 11
 ```
 
+### Never Break the Rail
+
+In railway-oriented programming, errors should travel through the Result without breaking the flow. Never use `throw` or `raise()` for expected failures:
+
+```typescript
+// Bad - breaks the rail
+const divide = (a: number, b: number): Result<number, Error> => {
+  if (b === 0) throw new Error("Division by zero");
+  return ok(a / b);
+};
+
+// Good - error travels through the rail
+const divide = (a: number, b: number): Result<number, Error> => {
+  if (b === 0) return err(new Error("Division by zero"));
+  return ok(a / b);
+};
+```
+
+Use `err()` to propagate errors, not `throw`. The only exception is for unrecoverable programmer errors where you want to halt execution.
+
 ### flatMap for Fallible Operations
 
 ```typescript
+import { error } from "@deessejs/core";
+
+const ParseError = error({
+  name: "ParseError",
+  message: (args: { value: string }) => `Cannot parse "${args.value}"`,
+});
+
+const NegativeError = error({
+  name: "NegativeError",
+  message: () => "Value must be positive",
+});
+
 const parseNumber = (s: string): Result<number, Error> => {
   const n = parseInt(s, 10);
-  return isNaN(n) ? err(new Error("Not a number")) : ok(n);
+  return isNaN(n) ? err(ParseError({ value: s })) : ok(n);
 };
 
 const result = ok("42")
   .flatMap(parseNumber)         // Ok(42)
-  .flatMap((n) => n > 0 ? ok(n) : err(new Error("Negative")));  // Ok(42)
+  .flatMap((n) => n > 0 ? ok(n) : err(NegativeError({})));  // Ok(42)
 ```
+
+Note: Use `err()` to propagate errors, not `throw`. Errors should always travel through the Result rail.
 
 ### Matching
 
@@ -169,14 +203,50 @@ const withFailure = all(
 );  // Err(new Error("fail")) - fail-fast
 ```
 
+### Never Break the Rail
+
+Errors should propagate through the Result type, not be thrown. This keeps the rail intact and allows proper error enrichment:
+
+```typescript
+import { error } from "@deessejs/core";
+
+const ValidationError = error({
+  name: "ValidationError",
+  message: (args: { field: string }) => `"${args.field}" is invalid`,
+});
+
+// Good - error travels through the rail
+const validateInput = (input: string): Result<string, Error> => {
+  if (!input) return err(ValidationError({ field: "input" }));
+  return ok(input);
+};
+
+// Bad - breaks the rail for expected failures
+const validateInputBad = (input: string): Result<string, Error> => {
+  if (!input) throw new Error("Empty input");  // Never do this!
+  return ok(input);
+};
+```
+
+Use `err()` to carry errors forward. Reserve `throw`/`raise()` only for unrecoverable programmer errors.
+
 ### Error Transformation
 
 ```typescript
+import { error } from "@deessejs/core";
+
+const CustomError = error({
+  name: "CustomError",
+  message: (args: { message: string }) => args.message,
+});
+
 const result = err(new Error("original"));
 
-result.mapErr((e) => new CustomError(e.message));
-// Err(CustomError("original"))
+result.mapErr((e) => CustomError({ message: e.message }));
+// Err(CustomError({ message: "original" }))
 ```
+
+Use the Error system for structured errors with enrichment support (`addNotes()`, `from()`).
 
 ## API Reference
 
