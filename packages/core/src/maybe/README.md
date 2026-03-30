@@ -116,19 +116,28 @@ some(5).tap(x => console.log(x)); // logs 5, returns Some(5)
 When you need to convert a `Maybe` to a `Result` (e.g., for error handling):
 
 ```typescript
+import { some, error } from "@deessejs/core";
+
+const TooYoungError = error({
+  name: "TooYoungError",
+  message: () => "Too young",
+});
+
 const age = some(25);
 
-// Convert to Result with custom error
+// Convert to Result with structured error
 const result = age
   .filter(a => a >= 18)  // Some(25) if predicate passes, None otherwise
-  .toResult(() => new Error("Too young")); // Ok(25) or Err(Error)
+  .toResult(() => TooYoungError({})); // Ok(25) or Err(TooYoungError)
 
 // Chain with Result operations
 const validated = age
   .filter(a => a >= 18)
-  .toResult(() => "TOO_YOUNG")
-  .map(a => a * 2); // Ok(50) or Err("TOO_YOUNG")
+  .toResult(() => TooYoungError({}))
+  .map(a => a * 2); // Ok(50) or Err(TooYoungError)
 ```
+
+When converting Maybe to Result, use the Error system for structured errors with enrichment support.
 
 ### Type Narrowing
 
