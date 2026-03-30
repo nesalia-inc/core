@@ -146,6 +146,9 @@ Call the error builder:
 // With schema - validates arguments
 const domainError = SizeError({ current: 3, wanted: 5 });
 
+// Without schema - still requires {} even with no args
+const simpleError = SimpleError({});  // Always pass {} as args
+
 // domainError is just an Error, not a Result
 domainError.name === "SizeError";      // true
 domainError.args.current === 3;        // true
@@ -155,6 +158,8 @@ const result = err(domainError);
 result.ok === false;                    // true
 result.error === domainError;           // reference, not self
 ```
+
+Note: Even when an error type has no schema (no args), you must still call it with `{}` since the builder function signature requires an argument.
 
 ### Using with Result
 
