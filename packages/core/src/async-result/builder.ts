@@ -9,7 +9,7 @@ import type {
   AsyncErr,
   AbortError,
   FromPromiseOptions,
-  AsyncResult as AsyncResultType,
+  AsyncResult,
 } from "./types";
 
 import { error, type Error, isError } from "../error";
@@ -45,7 +45,7 @@ const AbortError = error({
  * Creates a new AsyncResult from a promise
  * Internal function - exposed through ok(), err(), fromPromise(), etc.
  */
-function createAsyncResult<T, E>(promise: Promise<AsyncResultInner<T, E>>): AsyncResultType<T, E> {
+function createAsyncResult<T, E>(promise: Promise<AsyncResultInner<T, E>>): AsyncResult<T, E> {
   const obj = {
     ok: undefined as boolean | undefined,
     get value(): T {
@@ -202,7 +202,7 @@ function createAsyncResult<T, E>(promise: Promise<AsyncResultInner<T, E>>): Asyn
     },
   };
 
-  return obj as AsyncResultType<T, E>;
+  return obj as AsyncResult<T, E>;
 }
 
 // =============================================================================
@@ -214,7 +214,7 @@ function createAsyncResult<T, E>(promise: Promise<AsyncResultInner<T, E>>): Asyn
  * @param value - The success value
  * @returns AsyncResult<T, never>
  */
-export const ok = <T>(value: T): AsyncResultType<T, never> =>
+export const ok = <T>(value: T): AsyncResult<T, never> =>
   createAsyncResult<T, never>(
     Promise.resolve({
       ok: true as const,
@@ -227,7 +227,7 @@ export const ok = <T>(value: T): AsyncResultType<T, never> =>
  * @param error - The error value
  * @returns AsyncResult<never, E>
  */
-export const err = <E>(error: E): AsyncResultType<never, E> =>
+export const err = <E>(error: E): AsyncResult<never, E> =>
   createAsyncResult<never, E>(
     Promise.resolve({
       ok: false as const,
@@ -255,7 +255,7 @@ export const fromPromise = <T, E = Error>(
   promise: Promise<T>,
   onErrorOrOptions?: ((error: unknown) => E) | FromPromiseOptions,
   options?: FromPromiseOptions
-): AsyncResultType<T, E> => {
+): AsyncResult<T, E> => {
   // Handle function overload: fromPromise(promise, onError)
   if (typeof onErrorOrOptions === "function") {
     const onError = onErrorOrOptions;
@@ -309,14 +309,14 @@ export const fromPromise = <T, E = Error>(
 export const fromPromiseWithOptions = <T>(
   promise: Promise<T>,
   options: FromPromiseOptions = {}
-): AsyncResultType<T, Error> => fromPromise(promise, options);
+): AsyncResult<T, Error> => fromPromise(promise, options);
 
 /**
  * Creates an AsyncResult from a Promise<AsyncResultInner>
  * @param promise - The promise to convert
  * @returns AsyncResult<T, E>
  */
-export const from = <T, E>(promise: Promise<AsyncResultInner<T, E>>): AsyncResultType<T, E> =>
+export const from = <T, E>(promise: Promise<AsyncResultInner<T, E>>): AsyncResult<T, E> =>
   createAsyncResult<T, E>(promise);
 
 /**
@@ -325,7 +325,7 @@ export const from = <T, E>(promise: Promise<AsyncResultInner<T, E>>): AsyncResul
  * @param ms - Delay in milliseconds
  * @returns AsyncResult<T, never>
  */
-export const fromValue = <T>(value: T, ms = 0): AsyncResultType<T, never> =>
+export const fromValue = <T>(value: T, ms = 0): AsyncResult<T, never> =>
   createAsyncResult<T, never>(
     new Promise((resolve) => setTimeout(() => resolve({ ok: true as const, value }), ms))
   );
@@ -336,7 +336,7 @@ export const fromValue = <T>(value: T, ms = 0): AsyncResultType<T, never> =>
  * @param ms - Delay in milliseconds
  * @returns AsyncResult<never, E>
  */
-export const fromError = <E>(error: E, ms = 0): AsyncResultType<never, E> =>
+export const fromError = <E>(error: E, ms = 0): AsyncResult<never, E> =>
   createAsyncResult<never, E>(
     new Promise((resolve) => setTimeout(() => resolve({ ok: false as const, error }), ms))
   );
@@ -380,9 +380,9 @@ export const isErr = <T, E>(result: AsyncResultInner<T, E>): result is AsyncErr<
  * @returns AsyncResult<U, E>
  */
 export const map = <T, E, U>(
-  result: AsyncResultType<T, E>,
+  result: AsyncResult<T, E>,
   fn: (value: T) => U | Promise<U>
-): AsyncResultType<U, E> => {
+): AsyncResult<U, E> => {
   // Use instance method for sync functions, wrap for async
   const isAsync = fn.length > 0 || fn.constructor.name === "AsyncFunction";
   if (!isAsync) {
@@ -393,7 +393,7 @@ export const map = <T, E, U>(
     if (!isOk(r)) return r;
     const mapped = await Promise.resolve(fn(r.value));
     return { ok: true as const, value: mapped };
-  }) as unknown as AsyncResultType<U, E>;
+  }) as unknown as AsyncResult<U, E>;
 };
 
 /**
@@ -403,10 +403,10 @@ export const map = <T, E, U>(
  * @returns AsyncResult of the function if AsyncOk, AsyncErr otherwise
  */
 export const flatMap = <T, E, U>(
-  result: AsyncResultType<T, E>,
-  fn: (value: T) => AsyncResultType<U, E> | Promise<AsyncResultInner<U, E>>
-): AsyncResultType<U, E> =>
-  result.flatMap(fn as (value: T) => AsyncResultType<U, E>);
+  result: AsyncResult<T, E>,
+  fn: (value: T) => AsyncResult<U, E> | Promise<AsyncResultInner<U, E>>
+): AsyncResult<U, E> =>
+  result.flatMap(fn as (value: T) => AsyncResult<U, E>);
 
 /**
  * Maps the error of AsyncResult if AsyncErr, returns AsyncOk otherwise
@@ -415,9 +415,9 @@ export const flatMap = <T, E, U>(
  * @returns AsyncResult<T, F>
  */
 export const mapErr = <T, E, F>(
-  result: AsyncResultType<T, E>,
+  result: AsyncResult<T, E>,
   fn: (error: E) => F
-): AsyncResultType<T, F> => result.mapErr(fn);
+): AsyncResult<T, F> => result.mapErr(fn);
 
 /**
  * @deprecated Use `map` instead. `map` now handles both sync and async functions automatically.
@@ -427,15 +427,15 @@ export const mapErr = <T, E, F>(
  * @returns AsyncResult<U, E>
  */
 export const mapAsync = <T, E, U>(
-  result: AsyncResultType<T, E>,
+  result: AsyncResult<T, E>,
   fn: (value: T) => Promise<U>
-): AsyncResultType<U, E> => {
+): AsyncResult<U, E> => {
   return result.then(async (r) => {
     if (isOk(r)) {
       return { ok: true as const, value: await fn(r.value) };
     }
     return r;
-  }) as unknown as AsyncResultType<U, E>;
+  }) as unknown as AsyncResult<U, E>;
 };
 
 /**
@@ -446,12 +446,12 @@ export const mapAsync = <T, E, U>(
  * @returns AsyncResult of the function if AsyncOk, AsyncErr otherwise
  */
 export const flatMapAsync = <T, E, U>(
-  result: AsyncResultType<T, E>,
-  fn: (value: T) => AsyncResultType<U, E>
-): AsyncResultType<U, E> => {
+  result: AsyncResult<T, E>,
+  fn: (value: T) => AsyncResult<U, E>
+): AsyncResult<U, E> => {
   return result.then((r) => {
     return isOk(r) ? fn(r.value) : r;
-  }) as unknown as AsyncResultType<U, E>;
+  }) as unknown as AsyncResult<U, E>;
 };
 
 // =============================================================================
@@ -464,7 +464,7 @@ export const flatMapAsync = <T, E, U>(
  * @param fn - The side effect function
  * @returns The same AsyncResult
  */
-export const tap = <T, E>(result: AsyncResultType<T, E>, fn: (value: T) => void): AsyncResultType<T, E> =>
+export const tap = <T, E>(result: AsyncResult<T, E>, fn: (value: T) => void): AsyncResult<T, E> =>
   result.tap(fn);
 
 /**
@@ -473,7 +473,7 @@ export const tap = <T, E>(result: AsyncResultType<T, E>, fn: (value: T) => void)
  * @param fn - The error side effect function
  * @returns The same AsyncResult
  */
-export const tapErr = <T, E>(result: AsyncResultType<T, E>, fn: (error: E) => void): AsyncResultType<T, E> =>
+export const tapErr = <T, E>(result: AsyncResult<T, E>, fn: (error: E) => void): AsyncResult<T, E> =>
   result.tapErr(fn);
 
 // =============================================================================
@@ -486,7 +486,7 @@ export const tapErr = <T, E>(result: AsyncResultType<T, E>, fn: (error: E) => vo
  * @param defaultValue - The default value
  * @returns The value if AsyncOk, default otherwise
  */
-export const getOrElse = <T, E>(result: AsyncResultType<T, E>, defaultValue: T): Promise<T> =>
+export const getOrElse = <T, E>(result: AsyncResult<T, E>, defaultValue: T): Promise<T> =>
   result.getOrElse(defaultValue);
 
 /**
@@ -496,7 +496,7 @@ export const getOrElse = <T, E>(result: AsyncResultType<T, E>, defaultValue: T):
  * @returns The value if AsyncOk, result of fn otherwise
  */
 export const getOrCompute = async <T, E, U>(
-  result: AsyncResultType<T, E>,
+  result: AsyncResult<T, E>,
   fn: () => Promise<U>
 ): Promise<T | U> => {
   const r = await result;
@@ -508,7 +508,7 @@ export const getOrCompute = async <T, E, U>(
  * @param result - The AsyncResult to unwrap
  * @returns Promise resolving to the value
  */
-export const unwrap = async <T, E>(result: AsyncResultType<T, E>): Promise<T> => result.unwrap();
+export const unwrap = async <T, E>(result: AsyncResult<T, E>): Promise<T> => result.unwrap();
 
 /**
  * Unwraps the AsyncResult, returning default if error
@@ -516,7 +516,7 @@ export const unwrap = async <T, E>(result: AsyncResultType<T, E>): Promise<T> =>
  * @param defaultValue - The default value
  * @returns Promise resolving to the value or default
  */
-export const unwrapOr = <T, E>(result: AsyncResultType<T, E>, defaultValue: T): Promise<T> =>
+export const unwrapOr = <T, E>(result: AsyncResult<T, E>, defaultValue: T): Promise<T> =>
   result.unwrapOr(defaultValue);
 
 // =============================================================================
@@ -531,7 +531,7 @@ export const unwrapOr = <T, E>(result: AsyncResultType<T, E>, defaultValue: T): 
  * @returns Promise of result of the handler function
  */
 export const match = async <T, E, U>(
-  result: AsyncResultType<T, E>,
+  result: AsyncResult<T, E>,
   ok: (value: T) => U,
   err: (error: E) => U
 ): Promise<U> => result.match(ok, err);
@@ -545,7 +545,7 @@ export const match = async <T, E, U>(
  * @param result - The AsyncResult to convert
  * @returns Promise<T | null>
  */
-export const toNullable = <T, E>(result: AsyncResultType<T, E>): Promise<T | null> =>
+export const toNullable = <T, E>(result: AsyncResult<T, E>): Promise<T | null> =>
   result.toNullable();
 
 /**
@@ -553,7 +553,7 @@ export const toNullable = <T, E>(result: AsyncResultType<T, E>): Promise<T | nul
  * @param result - The AsyncResult to convert
  * @returns Promise<T | undefined>
  */
-export const toUndefined = <T, E>(result: AsyncResultType<T, E>): Promise<T | undefined> =>
+export const toUndefined = <T, E>(result: AsyncResult<T, E>): Promise<T | undefined> =>
   result.then((r) => (isOk(r) ? r.value : undefined));
 
 // =============================================================================
@@ -565,7 +565,7 @@ export const toUndefined = <T, E>(result: AsyncResultType<T, E>): Promise<T | un
  * @param results - The AsyncResults to race
  * @returns Promise<T> - The value of the first resolved
  */
-export const race = <T, E>(...results: Array<AsyncResultType<T, E>>): Promise<T> =>
+export const race = <T, E>(...results: Array<AsyncResult<T, E>>): Promise<T> =>
   Promise.race(results).then((r) => {
     if (isOk(r)) {
       return r.value;
@@ -580,7 +580,7 @@ export const race = <T, E>(...results: Array<AsyncResultType<T, E>>): Promise<T>
  * @param results - The AsyncResults to run in parallel
  * @returns AsyncResult<T[], E> - Array of values or first error
  */
-export const all = <T, E>(...results: Array<AsyncResultType<T, E>>): AsyncResultType<T[], E> =>
+export const all = <T, E>(...results: Array<AsyncResult<T, E>>): AsyncResult<T[], E> =>
   createAsyncResult<T[], E>(
     Promise.all(results).then((rs) => {
       // Check for errors
@@ -600,8 +600,8 @@ export const all = <T, E>(...results: Array<AsyncResultType<T, E>>): AsyncResult
  */
 export const traverse = async <T, U, E>(
   items: T[],
-  fn: (item: T) => AsyncResultType<U, E>
-): Promise<AsyncResultType<U[], E>> => {
+  fn: (item: T) => AsyncResult<U, E>
+): Promise<AsyncResult<U[], E>> => {
   const results = await Promise.all(items.map(fn));
   const firstErr = results.find((r) => isErr(r)) as AsyncErr<E> | undefined;
   if (firstErr) {
@@ -616,8 +616,8 @@ export const traverse = async <T, U, E>(
  * @returns AsyncResult<[T[], E[]], E[]> - Tuple of [values, errors]
  */
 export const allSettled = <T, E>(
-  ...results: Array<AsyncResultType<T, E>>
-): AsyncResultType<[T[], E[]], E[]> =>
+  ...results: Array<AsyncResult<T, E>>
+): AsyncResult<[T[], E[]], E[]> =>
   createAsyncResult<[T[], E[]], E[]>(
     Promise.all(results).then((rs) => {
       const values: T[] = [];
@@ -647,9 +647,9 @@ export const allSettled = <T, E>(
  * @returns AsyncResult that will abort when signal is triggered
  */
 export const withSignal = <T, E = Error>(
-  result: AsyncResultType<T, E>,
+  result: AsyncResult<T, E>,
   signal: AbortSignal
-): AsyncResultType<T, E | AbortError> => {
+): AsyncResult<T, E | AbortError> => {
   // If already aborted, return immediately with AbortError
   if (signal.aborted) {
     return createAsyncResult<T, E | AbortError>(Promise.resolve({ ok: false as const, error: AbortError() as E | AbortError }));

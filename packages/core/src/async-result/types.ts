@@ -19,7 +19,7 @@ export interface FromPromiseOptions {
 }
 
 /**
- * AsyncOk type - represents a successful async result
+ * AsyncOk type - represents a successful async result (raw data, no methods)
  * @typeParam T - The type of the value
  */
 export type AsyncOk<T> = {
@@ -28,7 +28,7 @@ export type AsyncOk<T> = {
 };
 
 /**
- * AsyncErr type - represents a failed async result
+ * AsyncErr type - represents a failed async result (raw data, no methods)
  * @typeParam E - The type of the error
  */
 export type AsyncErr<E> = {
@@ -37,30 +37,33 @@ export type AsyncErr<E> = {
 };
 
 /**
- * Inner type for AsyncResult
+ * Raw result type - just the data without methods
  */
 export type AsyncResultInner<T, E> = AsyncOk<T> | AsyncErr<E>;
 
 /**
- * Type for AsyncResult instance methods
+ * AsyncResult type - Thenable wrapper for async operations
+ * Provides fluent chaining without intermediate await calls
+ *
+ * @typeParam T - The type of the success value
+ * @typeParam E - The type of the error
  */
-export interface AsyncResultInstance<T, E> {
+export interface AsyncResult<T, E = Error> {
   /** Check if AsyncOk (always undefined before resolution) */
   readonly ok: boolean | undefined;
   /** Get the value (throws before resolution) */
   readonly value: T;
   /** Get the error (throws before resolution) */
   readonly error: E;
-  /** Thenable implementation - allows using await directly */
+  /** Internal promise for Thenable implementation - allows using await directly */
+  [Symbol.toStringTag]: "AsyncResult";
   then<TResult1 = AsyncResultInner<T, E>, TResult2 = never>(
     onfulfilled?: (value: AsyncResultInner<T, E>) => TResult1 | PromiseLike<TResult1>,
     onrejected?: (reason: E) => TResult2 | PromiseLike<TResult2>
   ): Promise<TResult1 | TResult2>;
-  /** Catch handler */
   catch<U = AsyncResultInner<T, E>>(
     onrejected?: (error: E) => U | PromiseLike<U>
   ): Promise<AsyncResultInner<T, E> | U>;
-  /** Finally handler */
   finally(onfinally?: () => void): Promise<AsyncResultInner<T, E>>;
   /** Maps the value if AsyncOk, returns AsyncErr otherwise */
   map<U>(fn: (value: T) => U | Promise<U>): AsyncResult<U, E>;
@@ -90,34 +93,4 @@ export interface AsyncResultInstance<T, E> {
   unwrapOr(defaultValue: T): Promise<T>;
   /** Converts to the underlying Promise */
   toPromise(): Promise<AsyncResultInner<T, E>>;
-}
-
-/**
- * AsyncResult type - Thenable wrapper for async operations
- * Provides fluent chaining without intermediate await calls
- * @typeParam T - The type of the success value
- * @typeParam E - The type of the error
- */
-export type AsyncResult<T, E = Error> = AsyncResultInstance<T, E> & {
-  /** Internal promise for Thenable implementation */
-  readonly [Symbol.toStringTag]: "AsyncResult";
-};
-
-/**
- * AsyncResult factory type (callable with static methods)
- */
-export interface AsyncResultFactory {
-  <T, E = Error>(promise: Promise<AsyncResultInner<T, E>>): AsyncResult<T, E>;
-  /** Creates an async Ok (success result) */
-  ok<T>(value: T): AsyncResult<T, never>;
-  /** Creates an async Err (error result) */
-  err<E>(error: E): AsyncResult<never, E>;
-  /** Creates an AsyncResult from a Promise */
-  fromPromise<T>(promise: Promise<T>): AsyncResult<T, Error>;
-  /** Creates AsyncResult from a Promise that may already have the Result shape */
-  from<T, E>(promise: Promise<AsyncResultInner<T, E>>): AsyncResult<T, E>;
-  /** Creates AsyncResult that resolves after delay */
-  fromValue<T>(value: T, ms?: number): AsyncResult<T, never>;
-  /** Creates AsyncResult that rejects after delay */
-  fromError<E>(error: E, ms?: number): AsyncResult<never, E>;
 }

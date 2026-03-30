@@ -10,7 +10,6 @@ export type {
   AsyncOk,
   AsyncErr,
   AsyncResultInner,
-  AsyncResultInstance,
 } from "./types";
 
 // Factory functions
