@@ -1,0 +1,303 @@
+---
+title: Troubleshooting
+description: Common issues and how to solve them
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Accordions, Accordion } from 'fumadocs-ui/components/accordion';
+
+This page covers common issues you might encounter when using `@deessejs/core` and how to solve them.
+
+## Type Errors
+
+<Accordions>
+<Accordion title="TypeScript is not narrowing the type after isOk()">
+
+If TypeScript is not recognizing the type narrowing after `isOk()`, make sure you're using the type guard correctly:
+
+```typescript
+// Wrong: result is still Result<number, string>
+const result = divide(10, 2);
+if (isOk(result)) {
+  console.log(result.value); // Error if not properly narrowed
+}
+
+// Correct: use isOk from the library
+import { ok, err, isOk } from '@deessejs/core';
+
+const result = divide(10, 2);
+if (isOk(result)) {
+  console.log(result.value); // TypeScript knows result.value exists
+}
+```
+
+Also ensure you're using TypeScript's strict mode for proper type inference.
+
+</Accordion>
+<Accordion title="Error type is inferred as 'unknown'">
+
+When using `err()`, if TypeScript infers the error type as `unknown`, you need to explicitly type it:
+
+```typescript
+// TypeScript infers Err<unknown>
+const r1 = err(new Error('message'));
+
+// Explicitly type the error
+const r2: Result<number, Error> = err(new Error('message'));
+
+// Or use a type alias
+type MyError = { code: string; message: string };
+const r3: Result<number, MyError> = err({ code: 'ERR', message: 'oops' });
+```
+
+</Accordion>
+<Accordion title="FlatMap is not chaining correctly">
+
+When `flatMap` doesn't chain as expected, check that your function returns a Result:
+
+```typescript
+// Wrong: flatMap expects a function that returns Result
+flatMap(ok(10), (x) => x * 2); // Error: number is not a Result
+
+// Correct: the function must return a Result
+flatMap(ok(10), (x) => ok(x * 2)); // Ok(20)
+
+// For operations that might fail
+const safeDivide = (a: number, b: number): Result<number, string> => {
+  if (b === 0) return err('Division by zero');
+  return ok(a / b);
+};
+
+flatMap(ok(10), safeDivide); // Works correctly
+```
+
+</Accordion>
+</Accordions>
+
+## AsyncResult Issues
+
+<Accordions>
+<Accordion title="AsyncResult methods require await">
+
+All AsyncResult methods are async and must be awaited:
+
+```typescript
+// Wrong: methods return promises
+const result = okAsync(10).map(x => x * 2); // Returns a Promise
+
+// Correct: await the result
+const result = await okAsync(10).map(x => x * 2); // Ok(20)
+
+// Or use the static functions
+const result = await map(okAsync(10), x => x * 2);
+```
+
+</Accordion>
+<Accordion title="fromPromise rejects with non-Error values">
+
+When a promise rejects with a non-Error value (like a string or object), `fromPromise` wraps it in an Error:
+
+```typescript
+// String rejection becomes Error
+const r1 = await fromPromise(Promise.reject('oops'));
+// AsyncErr(Error: 'oops')
+
+// Object rejection is also wrapped
+const r2 = await fromPromise(Promise.reject({ code: 500 }));
+// AsyncErr(Error: '[object Object]')
+
+// For better error handling, wrap manually:
+const fromPromiseCustom = <T, E>(
+  promise: Promise<T>,
+  onError: (error: unknown) => E
+): AsyncResult<T, E> =>
+  promise
+    .then(value => ({ ok: true as const, value }))
+    .catch(error => ({ ok: false as const, error: onError(error) }));
+```
+
+</Accordion>
+<Accordion title="all() throws on first error">
+
+The `all()` function throws if any AsyncResult fails:
+
+```typescript
+// This throws if any promise rejects
+const [a, b, c] = await all(
+  fetchUser(1),
+  fetchUser(2),
+  fetchUser(3)
+);
+
+// For fail-safe behavior, use flatMapAsync:
+const safeAll = async <T, E>(...results: AsyncResult<T, E>[]): AsyncResult<T[], E> => {
+  const values: T[] = [];
+  for (const result of results) {
+    const r = await result;
+    if (!r.ok) return errAsync(r.error);
+    values.push(r.value);
+  }
+  return okAsync(values);
+};
+```
+
+</Accordion>
+</Accordions>
+
+## Maybe Issues
+
+<Accordions>
+<Accordion title="some(null) creates a Some with null value">
+
+The `some()` function does not check for null or undefined:
+
+```typescript
+// Creates Some<null> - this might not be what you want
+const r1 = some(null); // Some(null)
+
+// For nullable values, use fromNullable instead
+const r2 = fromNullable(null); // None
+
+// If you really need some(null), check manually:
+const safeSome = <T>(value: T): Maybe<T> =>
+  value === null || value === undefined ? none() : some(value);
+```
+
+</Accordion>
+<Accordion title="Chained property access returns Maybe<Maybe<T>>">
+
+When accessing nested optional properties, you may get a nested Maybe:
+
+```typescript
+interface Company {
+  address?: {
+    city?: string;
+  };
+}
+
+// This returns Maybe<Maybe<string>>
+const city1 = flatMap(company, c =>
+  flatMap(fromNullable(c.address), a =>
+    fromNullable(a.city)
+  )
+);
+
+// Use the flatten utility to simplify:
+import { flatten } from '@deessejs/core';
+
+const city2 = flatten(city1); // Maybe<string>
+
+// Or use flatten with flatMap
+const city3 = flatMap(company, c =>
+  flatMap(fromNullable(c.address), a =>
+    fromNullable(a.city)
+  )
+).ok ? /* ... */ : /* ... */;
+```
+
+</Accordion>
+</Accordions>
+
+## Error System Issues
+
+<Accordions>
+<Accordion title="Zod validation errors have strange messages">
+
+When Zod validation fails, the error message is combined with the error name:
+
+```typescript
+const SizeError = error({
+  name: 'SizeError',
+  schema: z.object({ current: z.number() })
+});
+
+SizeError({ current: 'not a number' });
+// Error name becomes: 'SizeErrorValidationError'
+// This is a known limitation
+```
+
+For cleaner error messages, use the message function:
+
+```typescript
+const SizeError = error({
+  name: 'SizeError',
+  schema: z.object({ current: z.number() }),
+  message: (args) => `Size error: current is ${args.current}`
+});
+```
+
+</Accordion>
+<Accordion title="Error cause chain is not showing">
+
+The `cause` field is a Maybe, so you need to unwrap it properly:
+
+```typescript
+const NetworkError = error({
+  name: 'NetworkError',
+  args: {} as { url: string }
+});
+
+const SizeError = error({
+  name: 'SizeError',
+  args: {} as { current: number; wanted: number }
+});
+
+const err1 = NetworkError({ url: 'example.com' });
+const err2 = SizeError({ current: 3, wanted: 5 }).from(err1);
+
+// Access the cause correctly:
+err2.cause.map(c => c.name).getOrElse('no cause'); // 'NetworkError'
+
+// Or check explicitly:
+if (err2.cause.isSome()) {
+  console.log(err2.cause.value.name); // 'NetworkError'
+}
+```
+
+</Accordion>
+</Accordions>
+
+## Import Issues
+
+<Accordions>
+<Accordion title="Cannot find module '@deessejs/core'">
+
+Make sure the package is installed:
+
+```bash
+pnpm add @deessejs/core
+# or
+npm install @deessejs/core
+```
+
+If you're in a monorepo, you might need to ensure the workspace is properly configured.
+
+</Accordion>
+<Accordion title="ESM import errors in CommonJS projects">
+
+If you're using CommonJS and getting import errors:
+
+```typescript
+// Use the .js extension for ESM imports
+import { ok } from '@deessejs/core/index.js';
+
+// Or configure your package.json
+{
+  "type": "module"
+}
+```
+
+</Accordion>
+</Accordions>
+
+## General Advice
+
+<Callout type="warning">
+If you're still having issues after trying these solutions, please open an issue on GitHub with a minimal reproduction. This helps us improve the documentation and library.
+</Callout>
+
+## Getting Help
+
+- Check the [FAQ](./faq.mdx) for common questions
+- Look at the [Reference](./reference/result.mdx) documentation for API details
+- Search existing GitHub issues for similar problems
