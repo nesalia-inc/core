@@ -32,16 +32,18 @@ try {
 
 ### The Result Solution
 
-With Result, **errors become explicit in the type**:
+With Result, **errors become explicit in the type**. The `err()` function wraps errors, and the `error` type `E` can be anything from simple strings to rich domain objects.
+
+For structured domain errors with enrichment capabilities (notes, cause chaining, Zod validation), see the [Error](./error.mdx) documentation.
 
 ```typescript
 import { ok, err, isOk, Result } from '@deessejs/core';
 
-function parseUser(data: string): Result<User, ParseError> {
+function parseUser(data: string): Result<User, Error> {
   try {
     return ok(JSON.parse(data));
   } catch (e) {
-    return err({ type: 'parse', message: e.message });
+    return err(new Error('Failed to parse user'));
   }
 }
 
@@ -50,9 +52,17 @@ const result = parseUser(data);
 if (isOk(result)) {
   console.log(result.value.name);
 } else {
-  console.error('Failed:', result.error);
+  console.error('Failed:', result.error.message);
 }
 ```
+
+Key concepts:
+
+- **`Result<User, Error>`** - Two generic types: success value (`User`) and error type (`Error`)
+- **`ok(value)`** - Wraps success: `{ ok: true, value: T }`
+- **`err(error)`** - Wraps failure: `{ ok: false, error: E }`
+- **`isOk()`** - Type guard that narrows to the success branch
+- **`result.error`** - Access the error (for rich errors with notes and cause, see [Error](./error.mdx))
 
 
 ## Core Concepts
