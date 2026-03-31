@@ -1,13 +1,11 @@
----
 title: Result
 description: Explicit success and failure with typed errors
----
 
 The `Result` type represents a value that can be either a success (`Ok`) or a failure (`Err`). It's the foundation of explicit error handling in `@deessejs/core`.
 
 ## Why Result?
 
-TypeScript promises type safety, but traditional error handling with exceptions breaks that promise. When a function can throw, the type system can't help you handle errors — they're invisible until runtime.
+TypeScript promises type safety, but traditional error handling with exceptions breaks that promise. When a function can throw, the type system can't help you handle errors, they're invisible until runtime.
 
 ### The Problem with Exceptions
 
@@ -54,7 +52,6 @@ if (isOk(result)) {
 }
 ```
 
----
 
 ## Core Concepts
 
@@ -92,8 +89,6 @@ const r2 = err({ code: 'NOT_FOUND', message: 'User not found' });
 const r3 = err(new Error('something failed'));
 ```
 
----
-
 ## Reference
 
 ### Creating Results
@@ -110,8 +105,6 @@ ok('hello');   // Ok('hello')
 ok({ id: 1 }); // Ok({ id: 1 })
 ```
 
----
-
 #### `err(error)`
 
 Creates a failure result.
@@ -122,8 +115,6 @@ import { err } from '@deessejs/core';
 err('error');                              // Err('error')
 err({ code: 404, message: 'Not found' }); // Err({ code: 404, message: 'Not found' })
 ```
-
----
 
 ### Type Guards
 
@@ -141,8 +132,6 @@ if (isOk(result)) {
 }
 ```
 
----
-
 #### `isErr(result)`
 
 Type guard that narrows to the failure branch.
@@ -156,8 +145,6 @@ if (isErr(result)) {
   console.log(result.error); // 'oops'
 }
 ```
-
----
 
 ### Transformation
 
@@ -177,8 +164,6 @@ Also available as a method:
 ```typescript
 ok(2).map(x => x * 2); // Ok(4)
 ```
-
----
 
 #### `flatMap(result, fn)`
 
@@ -204,8 +189,6 @@ Also available as a method:
 ok(1).flatMap(findUser); // Ok({ id: 1, name: 'John' })
 ```
 
----
-
 #### `mapErr(result, fn)`
 
 Transforms the error. Passes success through unchanged.
@@ -222,8 +205,6 @@ Also available as a method:
 ```typescript
 err('not found').mapErr(e => new Error(e)); // Err(Error: 'not found')
 ```
-
----
 
 ### Extraction
 
@@ -245,8 +226,6 @@ ok(42).getOrElse(0);      // 42
 err('oops').getOrElse(0); // 0
 ```
 
----
-
 #### `getOrCompute(result, fn)`
 
 Returns the success value, or computes one lazily if Err. Useful for expensive fallbacks.
@@ -265,8 +244,6 @@ Also available as a method:
 ```typescript
 err('oops').getOrCompute(() => 0); // 0
 ```
-
----
 
 ### Side Effects
 
@@ -287,8 +264,6 @@ Also available as a method:
 ok(42).tap(x => console.log(x)); // Ok(42)
 ```
 
----
-
 #### `tapErr(result, fn)`
 
 Executes a function on the error without changing it.
@@ -305,8 +280,6 @@ Also available as a method:
 ```typescript
 err('oops').tapErr(e => console.error(e)); // Err('oops')
 ```
-
----
 
 ### Pattern Matching
 
@@ -338,8 +311,6 @@ ok(42).match({ onSuccess: x => x * 2, onError: () => 0 }); // 84
 err('oops').match({ onSuccess: x => x * 2, onError: () => -1 }); // -1
 ```
 
----
-
 ### Combination
 
 #### `all(...results)`
@@ -352,8 +323,6 @@ import { ok, err, all } from '@deessejs/core';
 all(ok(1), ok(2), ok(3));              // Ok([1, 2, 3])
 all(ok(1), err('error'), ok(3));       // Err('error')
 ```
-
----
 
 ### Swapping
 
@@ -374,8 +343,6 @@ Also available as a method:
 ok(42).swap(); // Err(42)
 err('oops').swap(); // Ok('oops')
 ```
-
----
 
 ### Unwrapping
 
@@ -399,8 +366,6 @@ err('oops').unwrap(); // throws 'oops'
 
 > **Warning:** Use with caution. Throws defeat the purpose of explicit error handling.
 
----
-
 ### Conversions
 
 #### `toNullable(result)`
@@ -414,8 +379,6 @@ toNullable(ok(42));   // 42
 toNullable(err('x')); // null
 ```
 
----
-
 #### `toUndefined(result)`
 
 Converts to `T | undefined`.
@@ -426,8 +389,6 @@ import { ok, err, toUndefined } from '@deessejs/core';
 toUndefined(ok(42));   // 42
 toUndefined(err('x')); // undefined
 ```
-
----
 
 ## Method Chaining
 
@@ -441,8 +402,6 @@ const result = ok(5)
   .map(x => x + 1)                      // Ok(11)
   .flatMap(x => x > 10 ? ok(x) : err('too small')); // Err('too small')
 ```
-
----
 
 ## Real-World Examples
 
@@ -516,8 +475,6 @@ const handleError = (error: AppError): string => {
 };
 ```
 
----
-
 ## Comparison with Alternatives
 
 | Feature | @deessejs/core | fp-ts | neverthrow |
@@ -526,11 +483,9 @@ const handleError = (error: AppError): string => {
 | Learning curve | Low | High | Medium |
 | Dependencies | 0 | Many | 0 |
 
----
-
 ## See Also
 
-- [Maybe](./maybe.mdx) — For optional values (null/undefined)
-- [Try](./try.mdx) — For wrapping sync functions that might throw
-- [AsyncResult](./async-result.mdx) — For async operations with error handling
-- [Error](./error.mdx) — For structured errors with enrichment
+- [Maybe](./maybe.mdx) - For optional values (null/undefined)
+- [Try](./try.mdx) - For wrapping sync functions that might throw
+- [AsyncResult](./async-result.mdx) - For async operations with error handling
+- [Error](./error.mdx) - For structured errors with enrichment
