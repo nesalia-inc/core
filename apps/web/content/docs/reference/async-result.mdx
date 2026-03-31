@@ -1,0 +1,639 @@
+---
+title: AsyncResult
+description: Async error handling with Thenable interface for chained async operations
+---
+
+The `AsyncResult` type is the asynchronous version of Result. It provides a Thenable interface that allows chaining async operations without intermediate await calls, while maintaining proper error handling.
+
+## Why AsyncResult?
+
+Async/await is great, but error handling with try/catch is error-prone. AsyncResult makes async errors explicit in your types.
+
+### The Problem with Try/Catch
+
+```typescript
+// Easy to forget to catch errors
+const user = await fetchUser(id);
+// If fetchUser throws, we have an unhandled rejection
+```
+
+### The AsyncResult Solution
+
+```typescript
+import { fromPromise, isOk } from '@deessejs/core';
+
+const result = fromPromise(fetchUser(id));
+
+if (isOk(result)) {
+  console.log(result.value);
+} else {
+  console.error(result.error);
+}
+```
+
+Key concepts:
+
+- **`AsyncResult<T, E>`** - Async success/failure with Thenable interface
+- **`fromPromise(promise)`** - Wraps a Promise, catching rejections as `PanicError`
+- **`await` directly** - AsyncResult is Thenable, so use `await` directly on it
+- **`map`, `flatMap`** - Handle both sync and async transformation functions
+- **`all`, `race`, `traverse`** - Combine multiple async operations
+
+
+## Core Concepts
+
+### AsyncOk and AsyncErr
+
+`AsyncResult<T, E>` has two possible states:
+
+| State | Description | Properties |
+|-------|-------------|------------|
+| `AsyncOk<T>` | Async success | `ok: true`, `value: T` |
+| `AsyncErr<E>` | Async failure | `ok: false`, `error: E` |
+
+```typescript
+import { okAsync, errAsync } from '@deessejs/core';
+
+// Success
+const success = await okAsync({ id: 1, name: 'John' });
+// { ok: true, value: { id: 1, name: 'John' } }
+
+// Failure
+const failure = await errAsync({ code: 'NOT_FOUND', message: 'User not found' });
+// { ok: false, error: { code: 'NOT_FOUND', message: 'User not found' } }
+```
+
+### Thenable Interface
+
+AsyncResult implements the Thenable pattern, allowing direct `await` and chaining:
+
+```typescript
+import { fromPromise } from '@deessejs/core';
+
+// Direct await
+const result = await fromPromise(fetch('/api/user'));
+
+// Thenable chaining without intermediate await
+fromPromise(fetch('/api/user'))
+  .then(result => result.ok ? result.value : null)
+  .catch(error => null);
+```
+
+### Error Wrapping
+
+When using `fromPromise`, rejections are automatically wrapped:
+
+- Error objects are wrapped in `PanicError` with the original error as cause
+- Non-Error values are stringified and wrapped in `PanicError`
+
+```typescript
+// String rejections are wrapped
+fromPromise(Promise.reject('oops'));
+// AsyncErr(PanicError({ message: 'oops' }))
+
+// Error rejections are preserved as cause
+fromPromise(Promise.reject(new Error('failed')));
+// AsyncErr(PanicError({ message: 'failed' }).from(originalError))
+```
+
+
+## Reference
+
+### Creating AsyncResults
+
+#### `ok(value)` / `okAsync(value)`
+
+Creates an async success result.
+
+```typescript
+import { ok, okAsync } from '@deessejs/core';
+
+ok(42);        // AsyncOk(42)
+okAsync('hello'); // AsyncOk('hello')
+```
+
+#### `err(error)` / `errAsync(error)`
+
+Creates an async error result.
+
+```typescript
+import { err, errAsync } from '@deessejs/core';
+
+err('Something went wrong');           // AsyncErr('Something went wrong')
+errAsync({ code: 'NOT_FOUND' });      // AsyncErr({ code: 'NOT_FOUND' })
+```
+
+#### `fromPromise(promise)`
+
+Wraps a Promise. Resolves to AsyncOk if the promise succeeds, AsyncErr if it rejects.
+
+```typescript
+import { fromPromise } from '@deessejs/core';
+
+const result = await fromPromise(fetch('/api/user'));
+```
+
+#### `fromPromise(promise, onError)`
+
+Wraps a Promise with a custom error handler.
+
+```typescript
+import { fromPromise, error } from '@deessejs/core';
+import { z } from 'zod';
+
+const NetworkError = error({
+  name: 'NetworkError',
+  schema: z.object({ url: z.string() }),
+  message: (args) => `Failed to fetch: ${args.url}`,
+});
+
+const result = fromPromise(
+  fetch('/api/user'),
+  (err) => NetworkError({ url: '/api/user' })
+);
+```
+
+#### `fromPromise(promise, { signal })`
+
+Wraps a Promise with AbortSignal support.
+
+```typescript
+import { fromPromise } from '@deessejs/core';
+
+const controller = new AbortController();
+const result = fromPromise(
+  fetch('/api/user', { signal: controller.signal }),
+  { signal: controller.signal }
+);
+```
+
+#### `fromValue(value, ms)`
+
+Creates an AsyncResult that resolves after a delay.
+
+```typescript
+import { fromValue } from '@deessejs/core';
+
+fromValue(42, 1000); // Resolves to AsyncOk(42) after 1 second
+```
+
+#### `fromError(error, ms)`
+
+Creates an AsyncResult that rejects after a delay.
+
+```typescript
+import { fromError } from '@deessejs/core';
+
+fromError({ code: 'TIMEOUT' }, 1000); // Resolves to AsyncErr({ code: 'TIMEOUT' }) after 1 second
+```
+
+### Type Guards
+
+#### `isOk(result)`
+
+Type guard that narrows to the AsyncOk branch.
+
+```typescript
+import { fromPromise, isOk } from '@deessejs/core';
+
+const result = await fromPromise(Promise.resolve(42));
+
+if (isOk(result)) {
+  console.log(result.value); // 42
+}
+```
+
+#### `isErr(result)`
+
+Type guard that narrows to the AsyncErr branch.
+
+```typescript
+import { fromPromise, isErr } from '@deessejs/core';
+
+const result = await fromPromise(Promise.reject('oops'));
+
+if (isErr(result)) {
+  console.log(result.error); // 'oops'
+}
+```
+
+#### `isAbortError(error)`
+
+Checks if an error is an AbortError.
+
+```typescript
+import { isAbortError } from '@deessejs/core';
+
+if (isAbortError(error)) {
+  console.log('Operation was aborted');
+}
+```
+
+### Transformation
+
+#### `map(result, fn)`
+
+Transforms the value if AsyncOk. Handles both sync and async functions. Passes errors through unchanged.
+
+```typescript
+import { fromPromise, map } from '@deessejs/core';
+
+// Sync transformation
+map(ok(2), x => x * 2); // AsyncOk(4)
+
+// Async transformation (map handles async functions automatically)
+map(ok(2), async x => {
+  const data = await fetchData(x);
+  return data.value * 2;
+});
+```
+
+Also available as a method:
+
+```typescript
+ok(2).map(x => x * 2); // AsyncOk(4)
+```
+
+#### `flatMap(result, fn)`
+
+Chains AsyncResults. If AsyncOk, applies the function. If AsyncErr, returns AsyncErr. Handles both sync and async functions.
+
+```typescript
+import { ok, flatMap } from '@deessejs/core';
+
+const fetchUser = (id: number) =>
+  id > 0 ? ok({ id, name: 'John' }) : err('Invalid id');
+
+flatMap(ok(1), fetchUser);  // AsyncOk({ id: 1, name: 'John' })
+flatMap(ok(-1), fetchUser); // AsyncErr('Invalid id')
+```
+
+Also available as a method:
+
+```typescript
+ok(1).flatMap(fetchUser); // AsyncOk({ id: 1, name: 'John' })
+```
+
+#### `mapErr(result, fn)`
+
+Transforms the error. Passes success through unchanged.
+
+```typescript
+import { err, mapErr } from '@deessejs/core';
+
+mapErr(err('not found'), e => ({ ...e, code: 'NOT_FOUND' }));
+// AsyncErr({ ...original error, code: 'NOT_FOUND' })
+```
+
+Also available as a method:
+
+```typescript
+err('not found').mapErr(e => ({ ...e, code: 'NOT_FOUND' }));
+```
+
+### Extraction
+
+#### `getOrElse(result, defaultValue)`
+
+Returns the value if AsyncOk, or a default if AsyncErr.
+
+```typescript
+import { ok, err, getOrElse } from '@deessejs/core';
+
+getOrElse(ok(42), 0);  // 42
+getOrElse(err('oops'), 0); // 0
+```
+
+Also available as a method:
+
+```typescript
+ok(42).getOrElse(0); // 42
+```
+
+#### `getOrCompute(result, fn)`
+
+Returns the value if AsyncOk, or computes one lazily if AsyncErr.
+
+```typescript
+import { ok, err, getOrCompute } from '@deessejs/core';
+
+const expensive = () => { console.log('computing...'); return 0; };
+
+getOrCompute(ok(42), expensive); // 42 (never logs)
+getOrCompute(err('oops'), expensive); // logs 'computing...', returns 0
+```
+
+Also available as a method:
+
+```typescript
+err('oops').getOrCompute(() => 0); // 0
+```
+
+#### `unwrap(result)`
+
+Extracts the value if AsyncOk, throws the error if AsyncErr.
+
+```typescript
+import { ok, err, unwrap } from '@deessejs/core';
+
+unwrap(ok(42));      // 42
+unwrap(err('oops')); // throws 'oops'
+```
+
+Also available as a method:
+
+```typescript
+ok(42).unwrap(); // 42
+```
+
+#### `unwrapOr(result, defaultValue)`
+
+Extracts the value if AsyncOk, returns default if AsyncErr.
+
+```typescript
+import { ok, err, unwrapOr } from '@deessejs/core';
+
+unwrapOr(ok(42), 0);  // 42
+unwrapOr(err('oops'), 0); // 0
+```
+
+### Side Effects
+
+#### `tap(result, fn)`
+
+Executes a function on the value without changing it. Useful for logging.
+
+```typescript
+import { ok, tap } from '@deessejs/core';
+
+tap(ok(42), x => console.log('Got:', x)); // Logs: 'Got: 42', returns AsyncOk(42)
+tap(err('oops'), x => console.log('Got:', x)); // Nothing logged, returns AsyncErr('oops')
+```
+
+Also available as a method:
+
+```typescript
+ok(42).tap(x => console.log(x)); // AsyncOk(42)
+```
+
+#### `tapErr(result, fn)`
+
+Executes a function on the error without changing it.
+
+```typescript
+import { err, tapErr } from '@deessejs/core';
+
+tapErr(ok(42), e => console.error('Error:', e));                 // Nothing logged
+tapErr(err('oops'), e => console.error('Error:', e));            // Logs: 'Error: oops'
+```
+
+Also available as a method:
+
+```typescript
+err('oops').tapErr(e => console.error(e)); // AsyncErr('oops')
+```
+
+### Pattern Matching
+
+#### `match(result, okFn, errFn)`
+
+Handles both AsyncOk and AsyncErr cases, returning a single Promise value.
+
+```typescript
+import { ok, match } from '@deessejs/core';
+
+match(
+  ok(42),
+  value => `Success: ${value}`,
+  error => `Failed: ${error}`
+); // Promise<'Success: 42'>
+```
+
+### Conversions
+
+#### `toNullable(result)`
+
+Converts to `Promise<T | null>`.
+
+```typescript
+import { ok, err, toNullable } from '@deessejs/core';
+
+toNullable(ok(42));   // Promise<42>
+toNullable(err('x')); // Promise<null>
+```
+
+#### `toUndefined(result)`
+
+Converts to `Promise<T | undefined>`.
+
+```typescript
+import { ok, err, toUndefined } from '@deessejs/core';
+
+toUndefined(ok(42));   // Promise<42>
+toUndefined(err('x')); // Promise<undefined>
+```
+
+### Combination
+
+#### `all(...results)`
+
+Runs multiple AsyncResults in parallel. Returns AsyncOk with array of values if all succeed, or the first AsyncErr (fail-fast).
+
+```typescript
+import { fromPromise, all } from '@deessejs/core';
+
+all(
+  fromPromise(fetch('/api/user/1')),
+  fromPromise(fetch('/api/user/2')),
+  fromPromise(fetch('/api/user/3'))
+); // AsyncOk([user1, user2, user3]) or AsyncErr(firstError)
+```
+
+#### `allSettled(...results)`
+
+Runs multiple AsyncResults in parallel. Returns AsyncOk with tuple of values and errors, regardless of success or failure.
+
+```typescript
+import { fromPromise, allSettled } from '@deessejs/core';
+
+allSettled(
+  fromPromise(fetch('/api/user/1')),
+  fromPromise(fetch('/api/user/2'))
+); // AsyncOk({ values: [user1, user2], errors: [] })
+// or if both fail: AsyncOk({ values: [], errors: [err1, err2] })
+```
+
+#### `race(...results)`
+
+Returns the value of the first AsyncResult to resolve. Throws if the first one rejects.
+
+```typescript
+import { fromPromise, race, errAsync } from '@deessejs/core';
+
+race(
+  fromPromise(fetch('/api/fast')),
+  fromPromise(fetch('/api/slow'))
+); // Resolves to the fastest response, or throws if first rejects
+```
+
+#### `traverse(items, fn)`
+
+Maps over items in parallel, running an async function for each.
+
+```typescript
+import { fromPromise, traverse } from '@deessejs/core';
+
+const ids = [1, 2, 3];
+
+traverse(ids, id =>
+  fromPromise(fetch(`/api/users/${id}`).then(r => r.json()))
+); // AsyncOk([user1, user2, user3]) or AsyncErr(firstError)
+```
+
+### Signal Handling
+
+#### `withSignal(result, signal)`
+
+Wraps an AsyncResult to abort when the AbortSignal is triggered.
+
+```typescript
+import { fromPromise, withSignal } from '@deessejs/core';
+
+const controller = new AbortController();
+
+const result = withSignal(
+  fromPromise(fetch('/api/user', { signal: controller.signal })),
+  controller.signal
+);
+
+// To abort:
+controller.abort();
+```
+
+## Method Chaining
+
+AsyncResult supports fluent chaining through its Thenable interface:
+
+```typescript
+import { fromPromise } from '@deessejs/core';
+
+const result = await fromPromise(fetchUser(id))
+  .map(user => ({ ...user, fullName: user.name.toUpperCase() }))
+  .flatMap(user => fromPromise(saveUser(user)))
+  .tap(user => console.log('Saved:', user))
+  .mapErr(error => ({ ...error, timestamp: Date.now() }));
+```
+
+## Real-World Examples
+
+### Chained API Calls
+
+```typescript
+import { fromPromise, ok, flatMap, isOk } from '@deessejs/core';
+
+interface User { id: number; name: string; }
+interface Post { id: number; title: string; }
+
+const fetchUser = (id: number) =>
+  fromPromise(
+    fetch(`/api/users/${id}`).then(r => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json() as Promise<User>;
+    })
+  );
+
+const fetchPosts = (userId: number) =>
+  fromPromise(
+    fetch(`/api/users/${userId}/posts`).then(r => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json() as Promise<Post[]>;
+    })
+  );
+
+// Chain them
+const getUserWithPosts = (id: number) =>
+  flatMap(fetchUser(id), user =>
+    flatMap(fetchPosts(user.id), posts =>
+      ok({ user, posts })
+    )
+  );
+
+const result = await getUserWithPosts(1);
+
+if (isOk(result)) {
+  console.log(result.value.user.name, result.value.posts.length);
+}
+```
+
+### Parallel Data Fetching
+
+```typescript
+import { fromPromise, all, traverse } from '@deessejs/core';
+
+const fetchDashboard = async (userId: number) => {
+  const [user, stats, notifications] = await all(
+    fromPromise(fetch(`/api/users/${userId}`).then(r => r.json())),
+    fromPromise(fetch(`/api/users/${userId}/stats`).then(r => r.json())),
+    fromPromise(fetch(`/api/users/${userId}/notifications`).then(r => r.json()))
+  );
+
+  return { user, stats, notifications };
+};
+
+const processItems = async (ids: number[]) => {
+  const results = await traverse(ids, async id => {
+    const data = await fetchItem(id);
+    return transformItem(data);
+  });
+  return results;
+};
+```
+
+### Error Recovery
+
+```typescript
+import { fromPromise, ok, err, isOk } from '@deessejs/core';
+
+const fetchWithFallback = async (primaryUrl: string, fallbackUrl: string) => {
+  const primary = await fromPromise(fetch(primaryUrl));
+
+  if (isOk(primary)) {
+    return ok(await primary.value.json());
+  }
+
+  const fallback = await fromPromise(fetch(fallbackUrl));
+
+  if (isOk(fallback)) {
+    return ok(await fallback.value.json());
+  }
+
+  return err(new Error('Both primary and fallback failed'));
+};
+```
+
+## AsyncResult vs Result vs Try
+
+| Aspect | AsyncResult | Result | Try |
+|--------|-------------|--------|-----|
+| Operations | Async | Sync | Sync |
+| Error handling | Explicit errors | Explicit errors | Catches exceptions |
+| API | Thenable | Direct | Direct |
+| Cancellation | AbortSignal | N/A | N/A |
+
+```typescript
+// AsyncResult: async operations with explicit errors
+const user = await fromPromise(fetch('/api/user'));
+
+// Result: sync operations with explicit errors
+const parsed = parseUser(input); // Result<User, ParseError>
+
+// Try: sync operations that might throw
+const parsed = attempt(() => JSON.parse(input));
+```
+
+## See Also
+
+- [Result](./result.mdx) - For synchronous operations with explicit error types
+- [Maybe](./maybe.mdx) - For optional values (null/undefined)
+- [Try](./try.mdx) - For wrapping sync functions that might throw
+- [Error](./error.mdx) - For structured errors with enrichment
