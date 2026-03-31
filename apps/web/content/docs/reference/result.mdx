@@ -37,13 +37,20 @@ With Result, **errors become explicit in the type**. The `err()` function wraps 
 For structured domain errors with enrichment capabilities (notes, cause chaining, Zod validation), see the [Error](./error.mdx) documentation.
 
 ```typescript
-import { ok, err, isOk, Result } from '@deessejs/core';
+import { ok, err, isOk, Result, error } from '@deessejs/core';
+import { z } from 'zod';
 
-function parseUser(data: string): Result<User, Error> {
+const ParseError = error({
+  name: 'ParseError',
+  schema: z.object({ message: z.string() }),
+  message: (args) => `Parse failed: ${args.message}`,
+});
+
+function parseUser(data: string): Result<User, Error<{ message: string }>> {
   try {
     return ok(JSON.parse(data));
   } catch (e) {
-    return err(new Error('Failed to parse user'));
+    return err(ParseError({ message: e instanceof Error ? e.message : 'Unknown' }));
   }
 }
 
@@ -53,6 +60,7 @@ if (isOk(result)) {
   console.log(result.value.name);
 } else {
   console.error('Failed:', result.error.message);
+  // Access enrichment: result.error.notes, result.error.cause, etc.
 }
 ```
 
@@ -62,7 +70,7 @@ Key concepts:
 - **`ok(value)`** - Wraps success: `{ ok: true, value: T }`
 - **`err(error)`** - Wraps failure: `{ ok: false, error: E }`
 - **`isOk()`** - Type guard that narrows to the success branch
-- **`result.error`** - Access the error (for rich errors with notes and cause, see [Error](./error.mdx))
+- **`result.error`** - Access the error with its notes and cause chain (see [Error](./error.mdx))
 
 
 ## Core Concepts
