@@ -37,7 +37,7 @@ With Result, **errors become explicit in the type**. The `err()` function wraps 
 For structured domain errors with enrichment capabilities (notes, cause chaining, Zod validation), see the [Error](./error.mdx) documentation.
 
 ```typescript
-import { ok, err, isOk, Result, error } from '@deessejs/core';
+import { ok, err, isOk, Result, error, ExtractError } from '@deessejs/core';
 import { z } from 'zod';
 
 const ParseError = error({
@@ -46,7 +46,7 @@ const ParseError = error({
   message: (args) => `Parse failed: ${args.message}`,
 });
 
-function parseUser(data: string): Result<User, Error<{ message: string }>> {
+function parseUser(data: string): Result<User, ExtractError<typeof ParseError>> {
   try {
     return ok(JSON.parse(data));
   } catch (e) {
