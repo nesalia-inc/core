@@ -306,6 +306,16 @@ describe("Result", () => {
       expect(okResult).toBe(5);
       expect(errResult).toBe(0);
     });
+
+    it("should call onSuccess when Ok with object form", () => {
+      const result = ok(5).match({ onSuccess: (v) => v * 2, onError: () => 0 });
+      expect(result).toBe(10);
+    });
+
+    it("should call onError when Err with object form", () => {
+      const result = err("error").match({ onSuccess: (v) => v * 2, onError: (e) => e.length });
+      expect(result).toBe(5);
+    });
   });
 
   describe("toNullable", () => {

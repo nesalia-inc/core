@@ -60,6 +60,30 @@ describe("Maybe", () => {
       const n2 = none();
       expect(n1).toBe(n2);
     });
+
+    it("getOrElse should return default value", () => {
+      const result = none().getOrElse(42);
+      expect(result).toBe(42);
+    });
+
+    it("getOrCompute should call function and return result", () => {
+      let called = false;
+      const result = none().getOrCompute(() => {
+        called = true;
+        return 42;
+      });
+      expect(called).toBe(true);
+      expect(result).toBe(42);
+    });
+
+    it("tap should not call function and return None", () => {
+      let called = false;
+      const result = none().tap(() => {
+        called = true;
+      });
+      expect(called).toBe(false);
+      expect(result.ok).toBe(false);
+    });
   });
 
   describe("fromNullable", () => {
