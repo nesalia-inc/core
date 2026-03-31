@@ -465,6 +465,38 @@ await retryAsync(fn, {
 });
 ```
 
+### Standalone Backoff Functions
+
+Instead of using the string options, you can import and use the standalone backoff functions directly. This is useful when you want to reuse the same strategy across multiple retries or compose them with other delay modifiers:
+
+```typescript
+import { retryAsync, exponentialBackoff, linearBackoff, constantBackoff } from '@deessejs/core';
+
+// Exponential backoff: 1s, 2s, 4s, 8s...
+retryAsync(fn, { delay: 1000, backoff: exponentialBackoff });
+
+// Linear backoff: 1s, 2s, 3s, 4s...
+retryAsync(fn, { delay: 1000, backoff: linearBackoff });
+
+// Constant backoff: 1s, 1s, 1s, 1s...
+retryAsync(fn, { delay: 1000, backoff: constantBackoff });
+```
+
+These functions match the behavior of their string equivalents but can be composed or modified:
+
+```typescript
+import { retryAsync, exponentialBackoff } from '@deessejs/core';
+
+// Combine with jitter using a custom backoff
+retryAsync(fn, {
+  delay: 1000,
+  backoff: (attempt, delay) => {
+    const jitter = Math.random() * 200;
+    return exponentialBackoff(attempt, delay) + jitter;
+  }
+});
+```
+
 ### Selective Retry with Predicate
 
 Not all errors should trigger a retry:
