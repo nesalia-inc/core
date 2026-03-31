@@ -78,7 +78,7 @@ const failure: Result<number, string> = err('Something went wrong');
 
 ### The Error Type
 
-The error type `E` is completely flexible:
+The error type `E` is completely flexible. For rich domain errors with enrichment, see the [Error](./error.mdx) documentation.
 
 ```typescript
 // String errors
@@ -408,6 +408,8 @@ const result = ok(5)
 ## Real-World Examples
 
 ### Input Validation
+
+For richer error handling with domain-specific errors, notes, and cause chaining, see the [Error](./error.mdx) documentation.
 
 ```typescript
 import { ok, err, flatMap, Result } from '@deessejs/core';
