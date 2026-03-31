@@ -13,7 +13,7 @@ A skill that evaluates documentation quality from a user's perspective and provi
 
 ```bash
 /doc-score
-/doc-score --path=apps/web
+/doc-score --path=apps/web/content/docs
 /doc-score --report
 /doc-score --categories=clarity,examples,navigation
 ```
@@ -35,10 +35,69 @@ This skill scores documentation on user-friendliness dimensions:
 
 | Flag | Description |
 |------|-------------|
-| `--path=<dir>` | Documentation path to score (default: apps/web) |
+| `--path=<dir>` | Documentation path to score (default: apps/web/content/docs) |
 | `--report` | Generate detailed scoring report |
 | `--categories=<cats>` | Comma-separated: all,clarity,completeness,structure,examples,navigation,accessibility,tone,visual |
 | `--format=<type>` | Output format: markdown, json |
+
+## Documentation Structure
+
+This project uses a Fumadocs-based documentation system with MDX files.
+
+### Key Paths
+
+| Path | Description |
+|------|-------------|
+| `apps/web/content/docs/` | Primary user-facing documentation (MDX) |
+| `apps/web/content/docs/meta.json` | Navigation structure (auto-generates ToC) |
+| `docs/` | Feature documentation (additional reference) |
+| `packages/core/` | API-level READMEs |
+
+### Navigation Structure
+
+The `meta.json` file defines the table of contents. Structure:
+
+```json
+{
+  "title": "Documentation",
+  "pages": [
+    "---Getting Started---",
+    "index",
+    "installation",
+    "comparison",
+    "---Reference---",
+    "reference/result",
+    "reference/maybe",
+    ...
+  ]
+}
+```
+
+**Important:** When scoring navigation, verify that:
+1. All pages listed in `meta.json` exist
+2. The structure is logical (Getting Started before Advanced)
+3. Related topics are grouped together
+4. The navigation is comprehensive (no orphaned pages)
+
+### MDX Components
+
+The documentation uses Fumadocs UI components. Recognize these patterns:
+
+```mdx
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Cards, Card } from 'fumadocs-ui/components/card';
+import { Accordions, Accordion } from 'fumadocs-ui/components/accordion';
+
+<Callout type="warning">Warning text</Callout>
+
+<Cards>
+  <Card title="Title" href="/link">Description</Card>
+</Cards>
+
+<Accordions>
+<Accordion title="Question">Answer</Accordion>
+</Accordions>
+```
 
 ## Scoring Dimensions
 
@@ -299,12 +358,15 @@ Expected response:
 
 Measures how easy it is to find information.
 
+**For Fumadocs/MDX documentation:**
+
 | Check | Weight | Description |
 |-------|--------|-------------|
-| Clear URL structure | 3 | Logical paths |
-| Search functionality | 3 | Can search content |
-| Internal links | 2 | Related content linked |
-| Anchor links | 2 | Can link to sections |
+| meta.json structure | 3 | All pages defined, logical grouping |
+| Section headers in meta.json | 2 | "---Section Name---" separators used correctly |
+| Cross-links between pages | 2 | Cards/links to related content |
+| Anchor links within pages | 2 | Can link to specific sections |
+| Search (built-in Fumadocs) | 1 | Search functionality available |
 
 **Scoring Criteria:**
 
@@ -315,6 +377,12 @@ Measures how easy it is to find information.
 | 5-6 | Some navigation issues |
 | 3-4 | Hard to find things |
 | <3 | Can't navigate |
+
+**Meta.json Validation Checklist:**
+- [ ] All page paths in meta.json exist as actual files
+- [ ] Sections are logically ordered (Getting Started before Advanced)
+- [ ] No orphaned pages (pages not listed in meta.json)
+- [ ] Section headers use "---Name---" format
 
 ### 6. Accessibility (5%)
 
@@ -362,12 +430,17 @@ Measures helpfulness and friendliness.
 
 Measures use of visual aids.
 
+**For MDX/Fumadocs documentation:**
+
 | Check | Weight | Description |
 |-------|--------|-------------|
-| Code blocks | 2 | Syntax highlighted |
+| Code blocks | 2 | Syntax highlighted with language tags |
+| Callout components | 1 | `<Callout>` for warnings, tips, info |
+| Card components | 1 | `<Cards><Card>` for related links |
+| Accordion components | 1 | `<Accordions><Accordion>` for FAQs |
 | Diagrams | 1 | Visual explanations |
 | Tables | 1 | Data organized |
-| Warnings/notes | 1 | Callout boxes |
+| Other MDX components | 1 | Custom visual enhancements |
 
 **Scoring Criteria:**
 
@@ -378,6 +451,28 @@ Measures use of visual aids.
 | 3 | Some visuals |
 | 2 | Minimal visuals |
 | 1 | No visuals |
+
+**Fumadocs Component Examples:**
+
+```mdx
+// Warning/Info callouts
+<Callout type="warning">This is a warning</Callout>
+<Callout type="success">This is a success message</Callout>
+
+// Navigation cards
+<Cards>
+  <Card title="Getting Started" href="/docs">
+    Learn the basics
+  </Card>
+</Cards>
+
+// Expandable FAQ sections
+<Accordions>
+<Accordion title="What is this?">
+  Answer here
+</Accordion>
+</Accordions>
+```
 
 ## Overall Score Calculation
 
@@ -546,32 +641,79 @@ Overall Score = (Clarity x 0.20) + (Completeness x 0.20) + (Structure x 0.15) +
 
 ### Stage 1: Document Inventory
 
+**For Fumadocs/MDX projects:**
+
 ```bash
-# List all documentation files
-find apps/web -name "*.md" -type f
+# List all MDX documentation files
+find apps/web/content/docs -name "*.mdx" -type f
 
 # Count total docs
-find apps/web -name "*.md" | wc -l
+find apps/web/content/docs -name "*.mdx" | wc -l
 
-# Get total word count
-find apps/web -name "*.md" -exec wc -w {} + | tail -1
+# Read meta.json for navigation structure
+cat apps/web/content/docs/meta.json
+
+# List all pages defined in meta.json
+jq '.pages[]' apps/web/content/docs/meta.json
+
+# Verify all meta.json pages exist
+# (extract page paths and check they have corresponding files)
 ```
 
 ### Stage 2: Automated Checks
 
 ```bash
-# Check for code blocks
-grep -r "```" apps/web --include="*.md" | wc -l
+# Check for code blocks in MDX
+grep -r "```" apps/web/content/docs --include="*.mdx" | wc -l
 
 # Check for headings
-grep -rh "^#" apps/web --include="*.md" | sort | uniq
+grep -rh "^#" apps/web/content/docs --include="*.mdx" | sort | uniq
+
+# Check for Callout components
+grep -rh "<Callout" apps/web/content/docs --include="*.mdx" | wc -l
+
+# Check for Card components
+grep -rh "<Card" apps/web/content/docs --include="*.mdx" | wc -l
 
 # Check for internal links
-grep -rh "](/" apps/web --include="*.md" | wc -l
+grep -rh "](/" apps/web/content/docs --include="*.mdx" | wc -l
 
 # Check for TODOs
-grep -rh "TODO\|FIXME" apps/web --include="*.md"
+grep -rh "TODO\|FIXME" apps/web/content/docs --include="*.mdx"
 ```
+
+### Stage 2.5: Navigation Structure Validation
+
+**Validate meta.json against actual files:**
+
+```bash
+# Parse meta.json and verify all pages exist
+node -e "
+const meta = require('./apps/web/content/docs/meta.json');
+const fs = require('fs');
+const path = require('path');
+
+meta.pages.forEach(page => {
+  if (page.startsWith('---')) {
+    console.log('Section:', page);
+    return;
+  }
+  const filePath = './apps/web/content/docs/' + page + '.mdx';
+  if (fs.existsSync(filePath)) {
+    console.log('OK:', page);
+  } else {
+    console.log('MISSING:', page);
+  }
+});
+"
+```
+
+**Navigation checklist:**
+- [ ] All pages in meta.json exist as `.mdx` files
+- [ ] Sections are in logical order (Getting Started → Reference → Advanced)
+- [ ] Every page has a clear section grouping
+- [ ] No duplicate pages
+- [ ] Section headers (---Name---) are used consistently
 
 ### Stage 3: Content Analysis
 
