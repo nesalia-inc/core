@@ -10,6 +10,7 @@
     "reference/maybe",
     "reference/try",
     "reference/async-result",
+    "reference/conversions",
     "reference/utilities",
     "reference/error",
     "---Advanced---",
