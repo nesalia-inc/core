@@ -20,7 +20,7 @@ const createOk = <T, E extends Error = Error>(value: T): Ok<T, E> => {
     isErr() { return false; },
     map(fn) { return createOk(fn(value)); },
     flatMap<U>(fn: (value: T) => Result<U, E>) { return fn(value) as Result<U, E>; },
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     mapErr(_fn) { return self; },
     getOrElse() { return value; },
     getOrCompute() { return value; },
@@ -50,14 +50,14 @@ const createErr = <E extends Error>(error: E): Err<E> => {
     error,
     isOk() { return false; },
     isErr() { return true; },
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     map(_fn) { return self; },
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     flatMap(_fn) { return self; },
     mapErr<F extends Error>(fn: (error: E) => F): Err<F> { return createErr(fn(error)); },
     getOrElse(defaultValue) { return defaultValue; },
     getOrCompute(fn) { return fn(); },
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     tap(_fn) { return self; },
     tapErr(fn) { fn(error); return self; },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

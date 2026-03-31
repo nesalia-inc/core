@@ -246,7 +246,7 @@ export const equalsWith = <T>(
  * @param maybes - The Maybes to combine
  * @returns Some<[T1, T2, ...]> if all are Some, None otherwise
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export function all<T extends readonly []>(...maybes: T): Some<[]>;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function all<T extends [Maybe<any>, ...Maybe<any>[]]>(...maybes: T): Maybe<{ [K in keyof T]: T[K] extends Maybe<infer U> ? U : never }>;
@@ -264,12 +264,6 @@ export function all<T>(first: Maybe<T> | readonly Maybe<T>[], ...rest: Maybe<T>[
 }
 
 /**
- * Filters a Maybe based on a predicate
- * @typeParam T - The type of the value
- * @typeParam E - The type of the error when onNone is provided
- * @param maybe - The Maybe to filter
- * @param predicate - The predicate function
- /**
  * Filters a Maybe based on a predicate
  * @typeParam T - The type of the value
  * @param maybe - The Maybe to filter

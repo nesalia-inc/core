@@ -146,6 +146,10 @@ Call the error builder:
 // With schema - validates arguments
 const domainError = SizeError({ current: 3, wanted: 5 });
 
+// Without schema - args are optional
+const simpleError = SimpleError();    // No args needed
+const alsoWorks = SimpleError({});    // Also valid
+
 // domainError is just an Error, not a Result
 domainError.name === "SizeError";      // true
 domainError.args.current === 3;        // true
@@ -155,6 +159,8 @@ const result = err(domainError);
 result.ok === false;                    // true
 result.error === domainError;           // reference, not self
 ```
+
+Note: Errors without a schema can be called with or without `{}`. Both `SimpleError()` and `SimpleError({})` work.
 
 ### Using with Result
 
@@ -297,20 +303,46 @@ filterErrorsByName(group, "SizeError");  // SizeError[]
 
 ## raise() - Functional Throw
 
-Throw errors in a functional style for early exit:
+`raise()` throws the error and returns `never`. It should only be used for **unrecoverable programmer errors** - situations where you intentionally want to halt execution because continuing would be a bug, not an expected failure.
 
 ```typescript
 import { raise } from "@deessejs/core";
 
+// Only for unrecoverable errors - things that indicate a bug
 const process = (size: number): Result<Data, Error> => {
   if (size > MAX_SIZE) {
-    raise(SizeError({ current: size, wanted: MAX_SIZE }));
+    raise(SizeError({ current: size, wanted: MAX_SIZE })); // Halts execution
   }
   return ok({ size });
 };
 ```
 
-`raise()` throws the error and returns `never`, making it suitable for early exit in Result-returning functions.
+### When NOT to use raise()
+
+For expected failures (validation, business rules, network errors), use `err()` to propagate errors through the Result rail:
+
+```typescript
+import { error, err } from "@deessejs/core";
+
+const EmptyInputError = error({
+  name: "EmptyInputError",
+  message: () => "Empty input",
+});
+
+// Bad - breaks the rail for expected failures
+const validateBad = (input: string): Result<string, Error> => {
+  if (!input) raise(EmptyInputError({}));  // Never do this!
+  return ok(input);
+};
+
+// Good - error travels through the rail
+const validate = (input: string): Result<string, Error> => {
+  if (!input) return err(EmptyInputError({}));
+  return ok(input);
+};
+```
+
+**Summary**: Use `err()` for expected failures. Reserve `raise()` only for unrecoverable programmer errors.
 
 ## API Reference
 

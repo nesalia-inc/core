@@ -77,17 +77,17 @@ export {
 
 // AsyncResult
 export type { AsyncResultInner, AsyncOk, AsyncErr, AbortError, FromPromiseOptions } from "./async-result";
-export { AsyncResult } from "./async-result";
 export {
-  okAsync,
-  errAsync,
+  ok as okAsync,
+  err as errAsync,
   fromPromise,
   fromPromiseWithOptions,
+  from,
+  fromValue,
+  fromError,
   isOk as isAsyncOk,
   isErr as isAsyncErr,
   isAbortError,
-  mapAsync,
-  flatMapAsync,
   map as mapAsyncResult,
   flatMap as flatMapAsyncResult,
   mapErr as mapErrAsyncResult,

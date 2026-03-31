@@ -100,12 +100,12 @@ const extractCause = (input: Error | Maybe<Error>): Maybe<Error> => {
 export const error = <T>(options: ErrorOptions<T>): ErrorBuilder<T> => {
   const { name, schema, message: messageFn } = options;
 
-  return (args: T): Error<T> => {
+  return (args?: T): Error<T> => {
     // If no schema provided, skip validation and use args directly
     if (!schema) {
-      const customMessage = messageFn ? messageFn(args) : `${name}: ${JSON.stringify(args)}`;
+      const customMessage = messageFn ? messageFn(args as T) : `${name}: ${JSON.stringify(args)}`;
       return createErrorObject<T>(
-        name, args,
+        name, args as T,
         Object.freeze([]),
         none(),
         customMessage,
@@ -120,7 +120,7 @@ export const error = <T>(options: ErrorOptions<T>): ErrorBuilder<T> => {
       // Zod validation failed - create validation error
       const validationMessage = parsed.error.message;
       return createErrorObject<T>(
-        name, args,
+        name, args as T,
         Object.freeze([validationMessage]),
         none(),
         validationMessage,
@@ -130,7 +130,7 @@ export const error = <T>(options: ErrorOptions<T>): ErrorBuilder<T> => {
     }
 
     // Valid args - create normal error
-    const customMessage = messageFn ? messageFn(args) : `${name}: ${JSON.stringify(parsed.data)}`;
+    const customMessage = messageFn ? messageFn(args as T) : `${name}: ${JSON.stringify(parsed.data)}`;
     return createErrorObject<T>(
       name, parsed.data,
       Object.freeze([]),

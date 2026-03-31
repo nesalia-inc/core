@@ -80,7 +80,7 @@ export const calculateDelay = (
         break;
       default: {
         // Exhaustive check: ensures all backoff strings are handled at compile time
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+         
         const _exhaustiveCheck: never = backoff;
         void _exhaustiveCheck;
         calculatedDelay = exponentialBackoff(attempt, delay); // Fallback for runtime safety
