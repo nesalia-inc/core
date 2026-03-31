@@ -98,6 +98,10 @@ const NONE: None = Object.freeze({
   },
 });
 
+/**
+ * Creates a None (absent value)
+ * @returns None
+ */
 export const none = (): None => NONE;
 
 /**
@@ -234,6 +238,14 @@ export const getOrCompute = <T, U>(maybe: Maybe<T>, fn: () => U): T | U =>
 export const equals = <T>(a: Maybe<T>, b: Maybe<T>): boolean =>
   a.equals(b);
 
+/**
+ * Compares two Maybe values using a custom comparator
+ * @typeParam T - The type of the value
+ * @param a - The first Maybe
+ * @param b - The second Maybe
+ * @param comparator - Custom comparator function
+ * @returns true if both are Some with equal values according to comparator, or both are None
+ */
 export const equalsWith = <T>(
   a: Maybe<T>,
   b: Maybe<T>,
