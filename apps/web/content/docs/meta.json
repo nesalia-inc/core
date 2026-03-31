@@ -8,6 +8,7 @@
     "---Reference---",
     "reference/result",
     "reference/maybe",
+    "reference/try",
     "reference/error",
     "---Advanced---",
     "examples",
