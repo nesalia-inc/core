@@ -1,0 +1,121 @@
+---
+title: Unit
+description: The singleton void type for operations that don't return meaningful values
+---
+
+The `Unit` type represents a void value. It's a singleton pattern used to indicate that an operation completed successfully but has no meaningful return value.
+
+## Why Unit?
+
+JavaScript functions that don't explicitly return a value return `undefined`. This is problematic because `undefined` can mean:
+
+- The function completed successfully with no value
+- The function failed and returned nothing
+- The programmer forgot to return a value
+
+Unit provides semantic clarity. When you see `Unit` as a return type, you know the function intentionally has no value to return.
+
+```typescript
+// Without Unit - unclear what this means
+const closeConnection = (): void => { /* ... */ };
+
+// With Unit - explicit intent
+const closeConnection = (): Unit => {
+  /* ... */
+  return unit;
+};
+```
+
+## The Problem with void
+
+In TypeScript, `void` and `undefined` are largely interchangeable, but they have subtle differences:
+
+```typescript
+// void allows the function to return anything (or nothing)
+const logAndReturn = (msg: string): void => {
+  console.log(msg);
+  return undefined; // Valid
+  return 123; // Also valid (but weird)
+};
+
+// Unit is a specific value - you must return unit
+const logAndReturn = (msg: string): Unit => {
+  console.log(msg);
+  return unit; // Only valid return
+};
+```
+
+## Creating Unit
+
+The `unit` singleton is already created. You just use it:
+
+```typescript
+import { unit } from '@deessejs/core';
+
+const noValue: Unit = unit;
+```
+
+## Checking for Unit
+
+Use `isUnit` to check if a value is Unit:
+
+```typescript
+import { unit, isUnit } from '@deessejs/core';
+
+isUnit(unit);     // true
+isUnit(undefined); // false
+isUnit(null);      // false
+isUnit('hello');   // false
+```
+
+## When to Use Unit
+
+### Function Return Types
+
+Use Unit when a function performs an action but has no meaningful result:
+
+```typescript
+import { unit, isUnit, Unit } from '@deessejs/core';
+
+const flushLogBuffer = (): Unit => {
+  // Flush the buffer to disk
+  return unit;
+};
+
+const sendEmail = (to: string, body: string): Unit => {
+  // Send email
+  return unit;
+};
+```
+
+### Result with No Value
+
+Combine with Result for operations that either succeed with no value or fail:
+
+```typescript
+import { ok, err, Result, unit } from '@deessejs/core';
+
+type CloseResult = Result<Unit, Error>;
+
+const closeConnection = (): CloseResult => {
+  try {
+    connection.close();
+    return ok(unit); // Explicit success with no value
+  } catch (e) {
+    return err(e instanceof Error ? e : new Error(String(e)));
+  }
+};
+```
+
+### Compared with undefined
+
+| Aspect | Unit | undefined |
+|--------|------|-----------|
+| Semantic meaning | Intentional absence | Accidental or missing |
+| Return statement | Must return unit | Can return anything |
+| Type safety | More explicit | Less explicit |
+
+## See Also
+
+- [Result](./result.mdx) - For success/failure with values
+- [Maybe](./maybe.mdx) - For optional values

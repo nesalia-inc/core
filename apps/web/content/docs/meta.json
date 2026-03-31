@@ -12,6 +12,8 @@
     "reference/async-result",
     "reference/conversions",
     "reference/utilities",
+    "reference/unit",
+    "reference/yield",
     "reference/error",
     "---Advanced---",
     "examples",
