@@ -1,0 +1,433 @@
+---
+title: Utilities
+description: Pipe, flow, retry, sleep, and other utility functions for functional composition
+---
+
+This module provides utility functions for functional composition, resilience patterns, and timing operations.
+
+## Pipe and Flow
+
+### `pipe(value, ...fns)`
+
+Pipes a value through a sequence of functions. Each function receives the result of the previous one.
+
+```typescript
+import { pipe } from '@deessejs/core';
+
+const result = pipe(
+  'hello',
+  s => s.toUpperCase(),
+  s => s + '!'
+);
+// result: 'HELLO!'
+```
+
+### `flow(...fns)`
+
+Creates a reusable function that composes multiple functions. Unlike pipe, flow returns a function you can call later.
+
+```typescript
+import { flow } from '@deessejs/core';
+
+const processString = flow(
+  (s: string) => s.toUpperCase(),
+  s => s + '!'
+);
+
+processString('hello'); // 'HELLO!'
+processString('world'); // 'WORLD!'
+```
+
+The first function in flow can accept multiple arguments:
+
+```typescript
+import { flow } from '@deessejs/core';
+
+const addAndStringify = flow(
+  (a: number, b: number) => a + b,
+  sum => sum.toString()
+);
+
+addAndStringify(5, 10); // '15'
+```
+
+### `pipeAsync(value, ...fns)`
+
+Pipes a value through functions, awaiting each step if it returns a Promise.
+
+```typescript
+import { pipeAsync } from '@deessejs/core';
+
+const result = await pipeAsync(
+  fetchUser(id),
+  async user => await validateUser(user),
+  user => user.profile
+);
+```
+
+### `flowAsync(...fns)`
+
+Creates a reusable async function that composes multiple functions.
+
+```typescript
+import { flowAsync } from '@deessejs/core';
+
+const processUser = flowAsync(
+  async (id: string) => await fetchUser(id),
+  async user => await validateUser(user),
+  user => user.profile
+);
+
+const profile = await processUser('123');
+```
+
+## Tap (Side Effects)
+
+### `tap(fn)`
+
+Executes a side effect function and returns the original value unchanged. Useful for debugging or logging.
+
+```typescript
+import { pipe, tap } from '@deessejs/core';
+
+const result = pipe(
+  { name: 'test' },
+  tap(user => console.log('User:', user)),
+  user => user.name.toUpperCase()
+);
+// Logs: 'User: { name: "test" }'
+// result: 'TEST'
+```
+
+### `tapAsync(fn)`
+
+Executes an async side effect function and returns the original value unchanged.
+
+```typescript
+import { pipeAsync, tapAsync } from '@deessejs/core';
+
+const result = await pipeAsync(
+  { userId: '123' },
+  tapAsync(user => sendAnalytics(user.userId)),
+  fetchUser
+);
+```
+
+### `tapSafe(fn, onError?)`
+
+Safe version of tap that catches errors in the side effect. If the side effect throws, the error is passed to onError (if provided) but the value is still returned.
+
+```typescript
+import { pipe, tapSafe } from '@deessejs/core';
+
+const result = pipe(
+  { name: 'test' },
+  tapSafe(
+    user => riskyLogging(user),
+    err => console.error('Logging failed:', err)
+  ),
+  user => user.name.toUpperCase()
+);
+// If riskyLogging throws, error is logged but result is still 'TEST'
+```
+
+## Sleep
+
+### `sleep(ms, options?)`
+
+Creates a Promise that resolves after the specified delay.
+
+```typescript
+import { sleep } from '@deessejs/core';
+
+await sleep(1000); // Waits 1 second
+```
+
+Options:
+
+```typescript
+interface SleepOptions {
+  /** Add jitter to prevent thundering herd */
+  jitter?: boolean | number;
+}
+```
+
+### `sleepWithSignal(ms, options?)`
+
+Sleep with AbortSignal support for cancellation.
+
+```typescript
+import { sleepWithSignal } from '@deessejs/core';
+
+const controller = new AbortController();
+
+sleepWithSignal(5000, { signal: controller.signal })
+  .catch(err => console.log('Sleep aborted'));
+
+controller.abort(); // Sleep is cancelled
+```
+
+### `withTimeout(promise, ms, options?)`
+
+Adds a timeout to a Promise. Throws TimeoutError if the timeout is reached.
+
+```typescript
+import { withTimeout } from '@deessejs/core';
+
+try {
+  const result = await withTimeout(fetchData(), 5000);
+} catch (error) {
+  if (error.name === 'TIMEOUT') {
+    console.log('Operation timed out');
+  }
+}
+```
+
+Options:
+
+```typescript
+interface TimeoutOptions {
+  /** Custom error message */
+  message?: string;
+  /** Custom error name */
+  name?: string;
+  /** Include elapsed time in error data */
+  includeElapsed?: boolean;
+  /** AbortController to abort the operation on timeout */
+  abortController?: AbortController;
+}
+```
+
+TimeoutError includes:
+
+```typescript
+interface TimeoutError extends Error {
+  name: 'TIMEOUT';
+  timeout: number;   // The timeout value in ms
+  elapsed?: number; // Actual time elapsed before timeout
+}
+```
+
+### Signal Injection Mode
+
+For fine-grained abort control, pass a function that accepts an AbortSignal:
+
+```typescript
+import { withTimeout } from '@deessejs/core';
+
+const { promise, cleanup } = withTimeout(
+  (signal) => fetch('/api/data', { signal }),
+  5000
+);
+
+try {
+  const result = await promise;
+} finally {
+  cleanup(); // Call to abort and clean up
+}
+```
+
+### `addJitter(delay, jitter?)`
+
+Adds jitter to a delay to prevent thundering herd in distributed systems.
+
+```typescript
+import { addJitter } from '@deessejs/core';
+
+// Full jitter (0.5 to 1.5 range)
+addJitter(1000, true);  // Returns 500-1500
+
+// Specific variance (0.2 = 0.8 to 1.2 range)
+addJitter(1000, 0.2);   // Returns 800-1200
+
+// No jitter
+addJitter(1000);        // Returns 1000
+```
+
+## Retry
+
+### `retry(fn, options?)`
+
+Retries a synchronous function on failure. Uses busy-wait for delays, which blocks the event loop.
+
+```typescript
+import { retry } from '@deessejs/core';
+
+const result = retry(
+  () => riskyOperation(),
+  { attempts: 3, delay: 1000 }
+);
+```
+
+### `retryAsync(fn, options?)`
+
+Retries an async function on failure. Use this in production code instead of `retry`.
+
+```typescript
+import { retryAsync } from '@deessejs/core';
+
+const result = await retryAsync(
+  async () => await fetchWithPotentialFailure(),
+  { attempts: 3, delay: 1000 }
+);
+```
+
+Options:
+
+```typescript
+interface RetryOptions {
+  /** Number of attempts (default: 3) */
+  attempts?: number;
+  /** Initial delay in ms (default: 1000) */
+  delay?: number;
+  /** Backoff strategy (default: 'exponential') */
+  backoff?: 'exponential' | 'linear' | 'constant' | ((attempt: number, delay: number) => number);
+  /** Maximum delay in ms */
+  maxDelay?: number;
+  /** Predicate to determine if error is retryable */
+  predicate?: (error: Error) => boolean;
+  /** Callback on each retry */
+  onRetry?: (error: Error, attempt: number) => void;
+  /** Add jitter to prevent thundering herd (default: false) */
+  jitter?: boolean;
+  /** AbortSignal to cancel retries */
+  signal?: AbortSignal;
+}
+```
+
+### Backoff Strategies
+
+```typescript
+import { retryAsync, exponentialBackoff, linearBackoff, constantBackoff } from '@deessejs/core';
+
+// Exponential (default): 1s, 2s, 4s, 8s...
+await retryAsync(fn, { delay: 1000, backoff: 'exponential' });
+
+// Linear: 1s, 2s, 3s, 4s...
+await retryAsync(fn, { delay: 1000, backoff: 'linear' });
+
+// Constant: 1s, 1s, 1s, 1s...
+await retryAsync(fn, { delay: 1000, backoff: 'constant' });
+
+// Custom function
+await retryAsync(fn, {
+  delay: 1000,
+  backoff: (attempt, delay) => delay * Math.pow(2, attempt - 1) + Math.random() * 100
+});
+```
+
+### Selective Retry with Predicate
+
+```typescript
+import { retryAsync } from '@deessejs/core';
+
+// Only retry on network errors, not on validation errors
+await retryAsync(
+  async () => await riskyOperation(),
+  {
+    predicate: (error) => error.message.includes('network')
+  }
+);
+```
+
+### Retry with Callbacks
+
+```typescript
+import { retryAsync } from '@deessejs/core';
+
+await retryAsync(
+  async () => await riskyOperation(),
+  {
+    attempts: 5,
+    onRetry: (error, attempt) => {
+      console.log(`Attempt ${attempt} failed: ${error.message}`);
+    }
+  }
+);
+```
+
+### Retry with AbortSignal
+
+```typescript
+import { retryAsync } from '@deessejs/core';
+
+const controller = new AbortController();
+
+try {
+  await retryAsync(
+    async () => await fetchWithPotentialFailure(),
+    { signal: controller.signal }
+  );
+} catch (error) {
+  if (error.name === 'RetryAbortedError') {
+    console.log('Retry was aborted');
+  }
+}
+
+// To abort:
+controller.abort();
+```
+
+## Real-World Examples
+
+### Pipeline with Validation
+
+```typescript
+import { pipe, flow, tapSafe } from '@deessejs/core';
+
+const processUser = flow(
+  (data: unknown) => JSON.parse(data as string),
+  tapSafe(
+    (user) => validateUserSchema(user),
+    (err) => console.error('Validation warning:', err)
+  ),
+  (user) => normalizeUser(user),
+  tapSafe(
+    (user) => console.log('Processed:', user.id),
+    (err) => console.error('Logging failed:', err)
+  )
+);
+
+const user = processUser('{"id": "123", "name": "Alice"}');
+```
+
+### Fetch with Retry and Timeout
+
+```typescript
+import { retryAsync, withTimeout } from '@deessejs/core';
+
+const fetchWithRetry = (url: string) =>
+  retryAsync(
+    () => withTimeout(
+      fetch(url),
+      5000,
+      { name: 'FetchTimeout' }
+    ),
+    {
+      attempts: 3,
+      delay: 1000,
+      backoff: 'exponential',
+      predicate: (error) => error.message.includes('network')
+    }
+  );
+```
+
+### Async Pipeline
+
+```typescript
+import { pipeAsync, tapAsync } from '@deessejs/core';
+
+const processOrder = pipeAsync(
+  fetchOrder(orderId),
+  tapAsync(order => saveToCache(order)),
+  async order => await validateInventory(order),
+  tapAsync(order => sendNotification(order)),
+  order => enrichOrder(order)
+);
+```
+
+## See Also
+
+- [Result](./result.mdx) - For error handling in sync operations
+- [AsyncResult](./async-result.mdx) - For error handling in async operations
+- [Maybe](./maybe.mdx) - For optional values
