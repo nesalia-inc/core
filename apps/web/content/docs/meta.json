@@ -9,6 +9,7 @@
     "reference/result",
     "reference/maybe",
     "reference/try",
+    "reference/async-result",
     "reference/error",
     "---Advanced---",
     "examples",
