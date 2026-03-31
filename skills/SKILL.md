@@ -1,3 +1,10 @@
+---
+name: deessejs-core
+description: Functional programming patterns for TypeScript - Result, Maybe, Try, AsyncResult, and structured error handling
+metadata:
+  tags: typescript, functional-programming, error-handling, result, maybe, try, asyncresult
+---
+
 # @deessejs/core Skill
 
 Functional programming patterns for TypeScript: Result, Maybe, Try, AsyncResult, and structured error handling.
