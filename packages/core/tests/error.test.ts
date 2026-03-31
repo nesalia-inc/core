@@ -331,6 +331,42 @@ describe("error() with Zod schema validation", () => {
 
       expect(e.cause.map(c => c.name).getOrElse(undefined)).toBe("NetworkError");
     });
+
+    it("should handle None-like cause (ok: false without value/error)", () => {
+      const SizeError = error({
+        name: "SizeError",
+        schema: z.object({
+          current: z.number(),
+          wanted: z.number(),
+        }),
+      });
+
+      // Pass a None-like object (ok: false but no value or error property)
+      // @ts-expect-error - intentionally testing invalid input
+      const noneLike = { ok: false };
+      const e = SizeError({ current: 3, wanted: 5 }).from(noneLike);
+
+      // Should result in None (no cause)
+      expect(e.cause.isNone()).toBe(true);
+    });
+
+    it("should handle invalid cause and return None", () => {
+      const SizeError = error({
+        name: "SizeError",
+        schema: z.object({
+          current: z.number(),
+          wanted: z.number(),
+        }),
+      });
+
+      // Pass an invalid object
+      // @ts-expect-error - intentionally testing invalid input
+      const invalid = {};
+      const e = SizeError({ current: 3, wanted: 5 }).from(invalid);
+
+      // Should result in None (no valid cause)
+      expect(e.cause.isNone()).toBe(true);
+    });
   });
 
   describe("combined addNotes and from", () => {
@@ -496,6 +532,16 @@ describe("isError()", () => {
 
   it("should return false for plain native error", () => {
     expect(isError(new globalThis.Error("string error"))).toBe(false);
+  });
+
+  it("should return false for cause with ok property that is not boolean true", () => {
+    // cause.ok is truthy but not exactly true
+    expect(isError({ name: "Test", notes: [], args: {}, cause: { ok: "true", value: {} } })).toBe(false);
+  });
+
+  it("should return false for cause with message and name but no args", () => {
+    // Native error-like object without our Error's required args
+    expect(isError({ name: "Test", notes: [], cause: { message: "msg", name: "Err" } })).toBe(false);
   });
 });
 
