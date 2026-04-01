@@ -28,7 +28,7 @@ import {
   withSignal,
   mapErr,
   unwrapOr,
-} from "../src/async-result";
+} from "../../src/async-result";
 
 describe("AsyncResult", () => {
   describe("okAsync", () => {

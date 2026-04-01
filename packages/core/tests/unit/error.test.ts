@@ -13,7 +13,7 @@ import {
   err,
   isOk,
   isErr,
-} from "../src";
+} from "../../src";
 
 describe("error() with Zod schema validation", () => {
   describe("Zod schema validation", () => {

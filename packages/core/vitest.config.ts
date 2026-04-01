@@ -16,5 +16,10 @@ export default defineConfig({
         statements: 85,
       },
     },
+    // Type testing configuration
+    typecheck: {
+      enabled: true,
+      tsconfig: "./tsconfig.types.json",
+    },
   },
 });

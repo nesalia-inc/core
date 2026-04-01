@@ -237,7 +237,11 @@ export const match = <T, E extends Error, U>(
  * @typeParam E - The type of the error
  * @param result - The Result to swap
  * @returns Err if Ok, Ok if Err
- * @note This function has type limitations with E extends Error constraint
+ * @note This function has type limitations because:
+ *   - Ok<T, E> swapped becomes Err<T>, but Err requires its type to extend Error
+ *   - Err<E> swapped becomes Ok<E>, but Ok's second param must extend Error
+ *   TypeScript cannot express "T becomes the error" or "E becomes the value"
+ *   without circular type constraints. The any is unavoidable for this operation.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const swap = (result: any): any =>

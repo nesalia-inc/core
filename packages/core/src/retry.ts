@@ -141,7 +141,7 @@ export const retryAsync = async <T>(fn: () => Promise<T>, options: RetryOptions 
     }
   }
 
-  // Unreachable - TypeScript safety
+  // istanbul ignore next - TypeScript exhaustive check, unreachable at runtime
   throw lastError!;
 };
 
@@ -199,6 +199,6 @@ export const retry = <T>(fn: () => T, options: RetryOptions = {}): T => {
     }
   }
 
-  // Unreachable - TypeScript safety
+  // istanbul ignore next - TypeScript exhaustive check, unreachable at runtime
   throw lastError!;
 };
