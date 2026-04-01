@@ -115,7 +115,7 @@ export type { TimeoutOptions, TimeoutError, SleepOptions, TimeoutCleanup, Timeou
 export { yieldControl as yield, immediate } from "./yield";
 
 // Retry
-export { retry, retryAsync, exponentialBackoff, linearBackoff, constantBackoff } from "./retry";
+export { retryAsync, exponentialBackoff, linearBackoff, constantBackoff } from "./retry";
 export type { RetryOptions, RetryAbortedError } from "./retry";
 
 // Conversions
