@@ -95,6 +95,61 @@ const extractCause = (input: Error | Maybe<Error>): Maybe<Error> => {
 };
 
 /**
+ * List of field names that are considered sensitive and should be redacted
+ * from error messages to prevent accidental credential exposure.
+ */
+const SENSITIVE_FIELD_NAMES = [
+  'password',
+  'passwd',
+  'secret',
+  'token',
+  'accesstoken',
+  'access_token',
+  'refreshtoken',
+  'refresh_token',
+  'apikey',
+  'api_key',
+  'apikey',
+  'privatekey',
+  'private_key',
+  'credential',
+  'auth',
+  'authorization',
+  'bearertoken',
+  'bearer',
+];
+
+/**
+ * Checks if a field name is sensitive (case-insensitive check)
+ */
+const isSensitiveField = (fieldName: string): boolean => {
+  const lowerFieldName = fieldName.toLowerCase();
+  return SENSITIVE_FIELD_NAMES.some(sensitive =>
+    lowerFieldName.includes(sensitive)
+  );
+};
+
+/**
+ * Redacts sensitive fields from an object for safe logging
+ */
+const redactSensitive = <T extends Record<string, unknown>>(obj: T): T => {
+  const redacted: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(obj)) {
+    if (isSensitiveField(key)) {
+      redacted[key] = '[REDACTED]';
+    } else if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+      // Recursively redact nested objects
+      redacted[key] = redactSensitive(value as Record<string, unknown>);
+    } else {
+      redacted[key] = value;
+    }
+  }
+
+  return redacted as T;
+};
+
+/**
  * Creates an Error type builder with optional Zod validation
  */
 export const error = <T>(options: ErrorOptions<T>): ErrorBuilder<T> => {
@@ -103,7 +158,9 @@ export const error = <T>(options: ErrorOptions<T>): ErrorBuilder<T> => {
   return (args?: T): Error<T> => {
     // If no schema provided, skip validation and use args directly
     if (!schema) {
-      const customMessage = messageFn ? messageFn(args as T) : `${name}: ${JSON.stringify(args)}`;
+      // Redact sensitive fields to prevent credential leakage in error messages
+      const safeArgs = args ? redactSensitive(args as Record<string, unknown>) : args;
+      const customMessage = messageFn ? messageFn(args as T) : `${name}: ${JSON.stringify(safeArgs)}`;
       return createErrorObject<T>(
         name, args as T,
         Object.freeze([]),
@@ -130,7 +187,9 @@ export const error = <T>(options: ErrorOptions<T>): ErrorBuilder<T> => {
     }
 
     // Valid args - create normal error
-    const customMessage = messageFn ? messageFn(args as T) : `${name}: ${JSON.stringify(parsed.data)}`;
+    // Redact sensitive fields to prevent credential leakage in error messages
+    const safeData = redactSensitive(parsed.data as Record<string, unknown>);
+    const customMessage = messageFn ? messageFn(args as T) : `${name}: ${JSON.stringify(safeData)}`;
     return createErrorObject<T>(
       name, parsed.data,
       Object.freeze([]),

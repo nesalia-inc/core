@@ -797,3 +797,146 @@ describe("integration with Result", () => {
     expect(result.error).toBe(domainError); // result.error === domainError (reference, not self)
   });
 });
+
+describe("sensitive data redaction", () => {
+  it("should redact password field", () => {
+    const CredentialsError = error({ name: "CredentialsError" });
+
+    const e = CredentialsError({
+      username: "user@example.com",
+      password: "super_secret_password",
+    });
+
+    expect(e.message).toContain("username");
+    expect(e.message).toContain("user@example.com");
+    expect(e.message).toContain("password");
+    expect(e.message).toContain("[REDACTED]");
+    expect(e.message).not.toContain("super_secret_password");
+  });
+
+  it("should redact token field", () => {
+    const AuthError = error({ name: "AuthError" });
+
+    const e = AuthError({
+      userId: 12345,
+      token: "sk_live_abc123",
+    });
+
+    expect(e.message).toContain("userId");
+    expect(e.message).toContain("12345");
+    expect(e.message).toContain("token");
+    expect(e.message).toContain("[REDACTED]");
+    expect(e.message).not.toContain("sk_live_abc123");
+  });
+
+  it("should redact secret field", () => {
+    const SecretError = error({ name: "SecretError" });
+
+    const e = SecretError({ apiSecret: "my_secret_key" });
+
+    expect(e.message).toContain("apiSecret");
+    expect(e.message).toContain("[REDACTED]");
+    expect(e.message).not.toContain("my_secret_key");
+  });
+
+  it("should redact api_key field", () => {
+    const ConfigError = error({ name: "ConfigError" });
+
+    const e = ConfigError({ api_key: "key_12345" });
+
+    expect(e.message).toContain("api_key");
+    expect(e.message).toContain("[REDACTED]");
+    expect(e.message).not.toContain("key_12345");
+  });
+
+  it("should redact credential field", () => {
+    const ServiceError = error({ name: "ServiceError" });
+
+    const e = ServiceError({ credential: "my_credential" });
+
+    expect(e.message).toContain("credential");
+    expect(e.message).toContain("[REDACTED]");
+    expect(e.message).not.toContain("my_credential");
+  });
+
+  it("should redact nested sensitive fields", () => {
+    const ComplexError = error({ name: "ComplexError" });
+
+    const e = ComplexError({
+      user: {
+        name: "John",
+        password: "secret123",
+      },
+    });
+
+    expect(e.message).toContain("user");
+    expect(e.message).toContain("name");
+    expect(e.message).toContain("John");
+    expect(e.message).not.toContain("secret123");
+    expect(e.message).toContain("[REDACTED]");
+  });
+
+  it("should not redact non-sensitive fields", () => {
+    const ValidationError = error({ name: "ValidationError" });
+
+    const e = ValidationError({
+      field: "email",
+      value: "not_an_email",
+    });
+
+    expect(e.message).toContain("email");
+    expect(e.message).toContain("not_an_email");
+    expect(e.message).not.toContain("[REDACTED]");
+  });
+
+  it("should preserve args with sensitive fields intact", () => {
+    const CredentialsError = error({ name: "CredentialsError" });
+
+    const e = CredentialsError({
+      username: "user@example.com",
+      password: "super_secret_password",
+    });
+
+    // Args should NOT be modified - only the message is redacted
+    expect(e.args).toEqual({
+      username: "user@example.com",
+      password: "super_secret_password",
+    });
+  });
+
+  it("should redact with Zod schema validation", () => {
+    const SecureError = error({
+      name: "SecureError",
+      schema: z.object({
+        userId: z.number(),
+        apiKey: z.string(),
+      }),
+    });
+
+    const e = SecureError({
+      userId: 123,
+      apiKey: "secret_api_key",
+    });
+
+    expect(e.message).toContain("userId");
+    expect(e.message).toContain("123");
+    expect(e.message).toContain("apiKey");
+    expect(e.message).toContain("[REDACTED]");
+    expect(e.message).not.toContain("secret_api_key");
+  });
+
+  it("should be case-insensitive for sensitive field detection", () => {
+    const TestError = error({ name: "TestError" });
+
+    const e = TestError({
+      PASSWORD: "secret1",
+      Token: "secret2",
+      SECRET: "secret3",
+    });
+
+    expect(e.message).toContain("[REDACTED]");
+    expect(e.message).not.toContain("secret1");
+    expect(e.message).not.toContain("secret2");
+    expect(e.message).not.toContain("secret3");
+  });
+});
