@@ -14,8 +14,8 @@ import {
   toNullable,
   toUndefined,
   Try,
-} from "../src/try";
-import { error } from "../src/error";
+} from "../../src/try";
+import { error } from "../../src/error";
 
 describe("Try", () => {
   describe("attempt", () => {
