@@ -3,7 +3,7 @@
  */
 
 import { ok, err, Result, isOk } from "./result";
-import { some, none, Maybe, isSome } from "./maybe";
+import { none, fromNullable, Maybe, isSome } from "./maybe";
 import type { Error } from "./error/types";
 
 /**
@@ -37,7 +37,7 @@ export const fromMaybe = toResult;
  * @returns Maybe<T> (loses error info)
  */
 export const toMaybeFromResult = <T, E extends Error>(result: Result<T, E>): Maybe<T> =>
-  isOk(result) ? some(result.value as NonNullable<T>) : none();
+  isOk(result) ? fromNullable(result.value) : none();
 
 /**
  * Alias for toMaybeFromResult - converts Result to Maybe
