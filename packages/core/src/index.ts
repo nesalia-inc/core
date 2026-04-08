@@ -1,5 +1,5 @@
 /**
- * @deessejs/core - Functional programming patterns for TypeScript
+ * @deessejs/fp - Functional programming patterns for TypeScript
  *
  * Types: Result, Maybe
  * Constructs: Unit

@@ -50,7 +50,7 @@ const logAndReturn = (msg: string): Unit => {
 The `unit` singleton is already created. You just use it:
 
 ```typescript
-import { unit } from '@deessejs/core';
+import { unit } from '@deessejs/fp';
 
 const noValue: Unit = unit;
 ```
@@ -60,7 +60,7 @@ const noValue: Unit = unit;
 Use `isUnit` to check if a value is Unit:
 
 ```typescript
-import { unit, isUnit } from '@deessejs/core';
+import { unit, isUnit } from '@deessejs/fp';
 
 isUnit(unit);     // true
 isUnit(undefined); // false
@@ -75,7 +75,7 @@ isUnit('hello');   // false
 Use Unit when a function performs an action but has no meaningful result:
 
 ```typescript
-import { unit, isUnit, Unit } from '@deessejs/core';
+import { unit, isUnit, Unit } from '@deessejs/fp';
 
 const flushLogBuffer = (): Unit => {
   // Flush the buffer to disk
@@ -93,7 +93,7 @@ const sendEmail = (to: string, body: string): Unit => {
 Combine with Result for operations that either succeed with no value or fail:
 
 ```typescript
-import { ok, err, Result, unit } from '@deessejs/core';
+import { ok, err, Result, unit } from '@deessejs/fp';
 
 type CloseResult = Result<Unit, Error>;
 

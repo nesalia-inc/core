@@ -1,14 +1,14 @@
 /**
  * Database Operations Example
  *
- * This example demonstrates how to use @deessejs/core for:
+ * This example demonstrates how to use @deessejs/fp for:
  * - Wrapping database queries with AsyncResult
  * - Using Try for error-prone operations
  * - Composing multiple database operations
  * - Transaction-like behavior with flatMap
  */
 
-import { ok, err, attempt, fromPromise, okAsync, errAsync, some, none, Maybe } from "@deessejs/core";
+import { ok, err, attempt, fromPromise, okAsync, errAsync, some, none, Maybe } from "@deessejs/fp";
 
 // ============================================================================
 // Types
@@ -384,7 +384,7 @@ const createMultiplePosts = async (userId: number, postDataList: Array<{ title: 
 
 const main = async () => {
   console.log("╔════════════════════════════════════════════════════════════╗");
-  console.log("║   Database Operations with @deessejs/core                ║");
+  console.log("║   Database Operations with @deessejs/fp                ║");
   console.log("╚════════════════════════════════════════════════════════════╝");
 
   try {

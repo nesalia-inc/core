@@ -1,7 +1,7 @@
 # Type Testing Quality Report
 
 **Generated:** 2026-04-01
-**Project:** @deessejs/core
+**Project:** @deessejs/fp
 **Package analyzed:** packages/core
 
 ## Overall Score: 15/100 (F - Failing)

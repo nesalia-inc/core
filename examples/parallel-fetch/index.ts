@@ -1,14 +1,14 @@
 /**
  * Parallel Data Fetching Example
  *
- * This example demonstrates how to use @deessejs/core for:
+ * This example demonstrates how to use @deessejs/fp for:
  * - Running multiple async operations in parallel with AsyncResult.all
  * - Racing multiple requests with AsyncResult.race
  * - Mapping over arrays with AsyncResult.traverse
  * - Combining multiple data sources
  */
 
-import { fromPromise, okAsync, errAsync, race, all, traverse } from "@deessejs/core";
+import { fromPromise, okAsync, errAsync, race, all, traverse } from "@deessejs/fp";
 
 // ============================================================================
 // Types
@@ -293,7 +293,7 @@ const buildUserDashboard = async (userId: number) => {
 
 const main = async () => {
   console.log("╔════════════════════════════════════════════════════════════╗");
-  console.log("║   Parallel Data Fetching with @deessejs/core              ║");
+  console.log("║   Parallel Data Fetching with @deessejs/fp              ║");
   console.log("╚════════════════════════════════════════════════════════════╝");
 
   try {

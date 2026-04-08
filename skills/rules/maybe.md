@@ -23,7 +23,7 @@ const city = flatMap(getUser(id), u => fromNullable(u.address).flatMap(a => from
 ## Creating Maybe
 
 ```typescript
-import { some, none, fromNullable } from '@deessejs/core';
+import { some, none, fromNullable } from '@deessejs/fp';
 
 // Some - value is present
 const present: Maybe<number> = some(42);
@@ -45,7 +45,7 @@ fromNullable(false); // Some(false)
 ## Type Guards
 
 ```typescript
-import { some, none, isSome, isNone } from '@deessejs/core';
+import { some, none, isSome, isNone } from '@deessejs/fp';
 
 const maybe = some(42);
 
@@ -61,7 +61,7 @@ if (isNone(maybe)) {
 ## Transforming
 
 ```typescript
-import { some, none, map, flatMap, filter } from '@deessejs/core';
+import { some, none, map, flatMap, filter } from '@deessejs/fp';
 
 // map transforms the value if Some
 const doubled = map(some(21), x => x * 2); // Some(42)
@@ -78,7 +78,7 @@ const positive = filter(some(42), x => x > 0); // Some(42)
 const notPositive = filter(some(-5), x => x > 0); // None
 
 // flatten unwraps nested Maybe
-import { flatten } from '@deessejs/core';
+import { flatten } from '@deessejs/fp';
 flatten(some(some(42))); // Some(42)
 flatten(some(none())); // None
 flatten(none()); // None
@@ -87,7 +87,7 @@ flatten(none()); // None
 ## Extraction
 
 ```typescript
-import { some, none, getOrElse, getOrCompute } from '@deessejs/core';
+import { some, none, getOrElse, getOrCompute } from '@deessejs/fp';
 
 // getOrElse returns default if None
 const value = getOrElse(some(42), 0); // 42
@@ -100,7 +100,7 @@ const computed = getOrElseCompute(none(), () => expensiveOperation());
 ## Pattern Matching
 
 ```typescript
-import { some, none, match } from '@deessejs/core';
+import { some, none, match } from '@deessejs/fp';
 
 const maybe = some(42);
 
@@ -116,7 +116,7 @@ const message = match(
 The Maybe pattern shines for safe property access:
 
 ```typescript
-import { some, fromNullable, flatMap, getOrElse } from '@deessejs/core';
+import { some, fromNullable, flatMap, getOrElse } from '@deessejs/fp';
 
 interface User {
   address?: {
@@ -137,7 +137,7 @@ const city = getCity(some(user)).getOrElse('Unknown');
 ## Combining Multiple Maybes
 
 ```typescript
-import { some, none, all } from '@deessejs/core';
+import { some, none, all } from '@deessejs/fp';
 
 // all succeeds only if all are Some (fail-fast)
 const combined = all(some(1), some(2), some(3)); // Some([1, 2, 3])
@@ -147,7 +147,7 @@ const failed = all(some(1), none(), some(3)); // None
 ## Conversions
 
 ```typescript
-import { some, toNullable, toUndefined, toResult } from '@deessejs/core';
+import { some, toNullable, toUndefined, toResult } from '@deessejs/fp';
 
 // To nullable
 toNullable(some(42)); // 42
@@ -158,7 +158,7 @@ toUndefined(some(42)); // 42
 toUndefined(none()); // undefined
 
 // To Result with error
-import { toResult, error } from '@deessejs/core';
+import { toResult, error } from '@deessejs/fp';
 
 const NotFoundError = error({ name: 'NotFoundError', message: () => 'Not found' });
 toResult(some(42), () => NotFoundError()); // Ok(42)
@@ -168,7 +168,7 @@ toResult(none(), () => NotFoundError()); // Err(NotFoundError)
 ## Comparison
 
 ```typescript
-import { some, none, equals, equalsWith } from '@deessejs/core';
+import { some, none, equals, equalsWith } from '@deessejs/fp';
 
 // Structural equality
 equals(some(42), some(42)); // true

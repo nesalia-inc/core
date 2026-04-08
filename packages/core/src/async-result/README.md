@@ -68,7 +68,7 @@ type AsyncResultInner<T, E> = AsyncOk<T> | AsyncErr<E>;
 ### Creating AsyncResults
 
 ```typescript
-import { ok, err, okAsync, errAsync, fromPromise } from "@deessejs/core";
+import { ok, err, okAsync, errAsync, fromPromise } from "@deessejs/fp";
 
 // From a value (immediately resolved)
 const result = ok(42);
@@ -101,7 +101,7 @@ if (result.ok) {
 ### Chaining Operations
 
 ```typescript
-import { map, mapErr, fromPromise, err, error } from "@deessejs/core";
+import { map, mapErr, fromPromise, err, error } from "@deessejs/fp";
 
 // Define a custom error for HTTP errors
 const HttpError = error({
@@ -148,7 +148,7 @@ result.mapErr(e => {
 ### Combining Multiple AsyncResults
 
 ```typescript
-import { race, all, allSettled } from "@deessejs/core";
+import { race, all, allSettled } from "@deessejs/fp";
 
 // Race - first to complete wins
 const fastest = await race(asyncResult1, asyncResult2, asyncResult3);
@@ -170,7 +170,7 @@ const { values, errors } = await allSettled(
 ### Cancellation with AbortSignal
 
 ```typescript
-import { withSignal, fromPromise } from "@deessejs/core";
+import { withSignal, fromPromise } from "@deessejs/fp";
 
 const controller = new AbortController();
 
@@ -289,7 +289,7 @@ async function getUserProfile(id: string) {
 ### After
 
 ```typescript
-import { fromPromise, map, mapErr, all, err, error } from "@deessejs/core";
+import { fromPromise, map, mapErr, all, err, error } from "@deessejs/fp";
 
 // Define custom errors for HTTP operations
 const HttpError = error({

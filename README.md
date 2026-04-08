@@ -6,14 +6,14 @@
   </picture>
 </p>
 
-<h1 align="center">@deessejs/core</h1>
+<h1 align="center">@deessejs/fp</h1>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@deessejs/core">
-    <img src="https://img.shields.io/npm/v/@deessejs/core" alt="npm Version">
+  <a href="https://www.npmjs.com/package/@deessejs/fp">
+    <img src="https://img.shields.io/npm/v/@deessejs/fp" alt="npm Version">
   </a>
-  <a href="https://www.npmjs.com/package/@deessejs/core">
-    <img src="https://img.shields.io/bundlejs/size/@deessejs/core" alt="Bundle Size">
+  <a href="https://www.npmjs.com/package/@deessejs/fp">
+    <img src="https://img.shields.io/bundlejs/size/@deessejs/fp" alt="Bundle Size">
   </a>
   <a href="https://github.com/nesalia-inc/core/actions">
     <img src="https://img.shields.io/github/actions/workflow/status/nesalia-inc/core/ci?label=tests" alt="Tests">
@@ -32,7 +32,7 @@
 
 | Package | Description | Version |
 |---------|-------------|---------|
-| `@deessejs/core` | Functional programming patterns | [![](https://img.shields.io/npm/v/@deessejs/core)](https://www.npmjs.com/package/@deessejs/core) |
+| `@deessejs/fp` | Functional programming patterns | [![](https://img.shields.io/npm/v/@deessejs/fp)](https://www.npmjs.com/package/@deessejs/fp) |
 
 ## Requirements
 
@@ -43,13 +43,13 @@
 
 ```bash
 # Install core
-npm install @deessejs/core
+npm install @deessejs/fp
 
 # Or using pnpm
-pnpm add @deessejs/core
+pnpm add @deessejs/fp
 
 # Or using yarn
-yarn add @deessejs/core
+yarn add @deessejs/fp
 ```
 
 ## Documentation
@@ -59,7 +59,7 @@ For full documentation, visit [core.deessejs.com](https://core.deessejs.com).
 ## Quick Start
 
 ```typescript
-import { ok, err, isOk, isErr, Result } from '@deessejs/core'
+import { ok, err, isOk, isErr, Result } from '@deessejs/fp'
 
 // Ok - Normal Operation Result
 const ok = ok({ id: 1, name: 'John' })
@@ -96,7 +96,7 @@ import {
   fromNullable, isSome, isNone,
   map, flatMap, getOrElse, getOrCompute,
   tap, match, toNullable, toUndefined
-} from '@deessejs/core'
+} from '@deessejs/fp'
 
 // Creation
 const present = some(42)           // Some<number>

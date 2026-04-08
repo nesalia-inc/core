@@ -1,13 +1,13 @@
 ---
 name: simplify-code
-description: Analyze code complexity and propose simplifications to minimize branching using @deessejs/core patterns. Use @deessejs/core Error, Result, Maybe, Try to replace conditionals with functional transformations. Use when reviewing PRs, refactoring, or asked "how can we simplify this code?". Proposes GitHub issues with actionable suggestions. Supports --path, --focus, --report flags.
+description: Analyze code complexity and propose simplifications to minimize branching using @deessejs/fp patterns. Use @deessejs/fp Error, Result, Maybe, Try to replace conditionals with functional transformations. Use when reviewing PRs, refactoring, or asked "how can we simplify this code?". Proposes GitHub issues with actionable suggestions. Supports --path, --focus, --report flags.
 disable-model-invocation: true
 allowed-tools: Read,Grep,Glob,Bash
 ---
 
 # Code Simplification Skill
 
-Minimize branches using @deessejs/core functional patterns with structured domain errors.
+Minimize branches using @deessejs/fp functional patterns with structured domain errors.
 
 ## Quick Usage
 
@@ -53,9 +53,9 @@ Input -> Processing -> Output
 
 No branches. No conditionals. No exceptions to track in your head.
 
-### @deessejs/core: The Tool for Branch Minimization
+### @deessejs/fp: The Tool for Branch Minimization
 
-@deessejs/core provides functional types that **eliminate branches**:
+@deessejs/fp provides functional types that **eliminate branches**:
 
 | Type | Use WHEN | Replaces |
 |------|----------|----------|
@@ -67,9 +67,9 @@ No branches. No conditionals. No exceptions to track in your head.
 
 These types transform **branching logic** into **functional composition**.
 
-## The @deessejs/core Error System
+## The @deessejs/fp Error System
 
-The `Error` type from @deessejs/core provides **structured domain errors** with:
+The `Error` type from @deessejs/fp provides **structured domain errors** with:
 
 - **Structured args** - domain-specific error data with Zod validation
 - **Notes** - additional context for debugging
@@ -82,7 +82,7 @@ The `Error` type from @deessejs/core provides **structured domain errors** with:
 // Native Error - limited information
 throw new Error('Processing failed');
 
-// @deessejs/core Error - structured with context
+// @deessejs/fp Error - structured with context
 const error = ProcessingError({ input: 'user data' })
   .addNotes('Attempted to process at 14:32:00', 'User: john')
   .from(causeError);
@@ -91,7 +91,7 @@ const error = ProcessingError({ input: 'user data' })
 ### Creating Domain Errors with Zod
 
 ```typescript
-import { error } from '@deessejs/core';
+import { error } from '@deessejs/fp';
 import { z } from 'zod';
 
 // Define error with schema validation
@@ -111,7 +111,7 @@ err.args;     // { field: 'email', reason: 'missing @' }
 err.message;  // '"email" is invalid: missing @'
 ```
 
-## Simplification Patterns with @deessejs/core
+## Simplification Patterns with @deessejs/fp
 
 ### 1. Replace Null Checks with Maybe
 
@@ -129,7 +129,7 @@ function getCity(user: User | null): string {
 **After (Maybe - no branches):**
 
 ```typescript
-import { some, fromNullable, flatMap } from '@deessejs/core';
+import { some, fromNullable, flatMap } from '@deessejs/fp';
 
 function getCity(user: Maybe<User>): Maybe<string> {
   return flatMap(user, u =>
@@ -167,7 +167,7 @@ function readConfig(): Config {
 **After (Try with Error enrichment - no branches):**
 
 ```typescript
-import { attempt, getOrElse, error } from '@deessejs/core';
+import { attempt, getOrElse, error } from '@deessejs/fp';
 import { z } from 'zod';
 
 const ConfigError = error({
@@ -219,7 +219,7 @@ function calculateDiscount(user: User, cart: Cart): number {
 **After (Data-driven with Result + Error - no branches):**
 
 ```typescript
-import { ok, err, flatMap, error } from '@deessejs/core';
+import { ok, err, flatMap, error } from '@deessejs/fp';
 import { z } from 'zod';
 
 const DiscountError = error({
@@ -278,7 +278,7 @@ function getStatusLabel(status: string): string {
 **After (Lookup table - no switch):**
 
 ```typescript
-import { fromNullable } from '@deessejs/core';
+import { fromNullable } from '@deessejs/fp';
 
 const STATUS_LABELS: Record<string, string> = {
   pending: 'Awaiting review',
@@ -315,7 +315,7 @@ async function fetchUser(id: string): Promise<User> {
 **After (AsyncResult with Error - no try/catch):**
 
 ```typescript
-import { fromPromise, ok, err, isOk, error } from '@deessejs/core';
+import { fromPromise, ok, err, isOk, error } from '@deessejs/fp';
 import { z } from 'zod';
 
 const NetworkError = error({
@@ -372,7 +372,7 @@ function processOrder(orderId: string): OrderResult {
 **After (flatMap chain with Error cause chaining - linear flow):**
 
 ```typescript
-import { ok, err, flatMap, error, fromNullable } from '@deessejs/core';
+import { ok, err, flatMap, error, fromNullable } from '@deessejs/fp';
 import { z } from 'zod';
 
 const OrderError = error({
@@ -415,7 +415,7 @@ const processOrder = (orderId: string): Result<OrderSuccess, ReturnType<typeof O
 **Error enrichment adds context without creating branches:**
 
 ```typescript
-import { error, err, ok } from '@deessejs/core';
+import { error, err, ok } from '@deessejs/fp';
 import { z } from 'zod';
 
 const ValidationError = error({
@@ -476,7 +476,7 @@ function validateAndParse(input: string) {
 | 20 | 20 | 20 |
 | 50 | 50 | 50 (impractical) |
 
-### @deessejs/core Impact on Complexity
+### @deessejs/fp Impact on Complexity
 
 | Pattern | Branches Reduced | Complexity Reduction |
 |---------|------------------|----------------------|
@@ -517,7 +517,7 @@ grep -c "switch\|case" src/**/*.ts
 
 ### Step 2: Categorize Simplification Opportunities
 
-| Pattern | @deessejs/core Solution | Impact |
+| Pattern | @deessejs/fp Solution | Impact |
 |---------|-------------------------|--------|
 | Null checks | Maybe | High |
 | try/catch | Try + Error | High |
@@ -543,7 +543,7 @@ grep -c "switch\|case" src/**/*.ts
 
 ## Executive Summary
 
-**Goal:** Use @deessejs/core to eliminate branches using Error, Result, Maybe, and Try.
+**Goal:** Use @deessejs/fp to eliminate branches using Error, Result, Maybe, and Try.
 
 | Metric | Current | Target | Improvement |
 |--------|---------|--------|-------------|
@@ -610,7 +610,7 @@ const readConfig = (path: string): Try<Config> =>
 ## GitHub Issue Draft
 
 ```markdown
-## Simplify error handling with @deessejs/core Error system
+## Simplify error handling with @deessejs/fp Error system
 
 ### Problem
 
@@ -623,7 +623,7 @@ Every branch is a potential bug shelter requiring tests.
 
 ### Solution
 
-Use @deessejs/core types with Error to eliminate branches:
+Use @deessejs/fp types with Error to eliminate branches:
 
 1. **Maybe** for null checks (89 -> 20)
 2. **Try + Error** for exceptions with cause chaining (24 -> 5)
@@ -667,7 +667,7 @@ Use @deessejs/core types with Error to eliminate branches:
 |--------------|---------|-----------|
 | Nested ifs | Creates 2^n paths | Maybe, early returns |
 | try/catch everywhere | Hides errors in types | Try + Error |
-| Custom Error classes | Boilerplate, no Zod | @deessejs/core Error |
+| Custom Error classes | Boilerplate, no Zod | @deessejs/fp Error |
 | Error as string | No structured data | Error with Zod schema |
 | Swallowing errors | Lost context | Error with cause chaining |
 | Switch for lookup | OCP violation | Lookup table |
@@ -677,7 +677,7 @@ Use @deessejs/core types with Error to eliminate branches:
 
 > "Every branch you add is a promise to test it. Every test you skip is a bug waiting to happen."
 
-> "@deessejs/core is not about functional programming dogma. It's about eliminating branches that hide bugs."
+> "@deessejs/fp is not about functional programming dogma. It's about eliminating branches that hide bugs."
 
 > "The best code has no branches. Error, Result, Maybe, and Try exist to make that possible."
 
@@ -691,12 +691,12 @@ Use @deessejs/core types with Error to eliminate branches:
 
 > "Dumb-simple code is the hardest to write. It requires understanding the problem deeply enough that the solution becomes obvious."
 
-## @deessejs/core API Reference
+## @deessejs/fp API Reference
 
 ### Error
 
 ```typescript
-import { error, err } from '@deessejs/core';
+import { error, err } from '@deessejs/fp';
 import { z } from 'zod';
 
 // Create Error builder with Zod schema
@@ -729,7 +729,7 @@ result.error.cause;    // Maybe<Error> - the chained error
 ### Result
 
 ```typescript
-import { ok, err, isOk, isErr, map, flatMap, getOrElse, match } from '@deessejs/core';
+import { ok, err, isOk, isErr, map, flatMap, getOrElse, match } from '@deessejs/fp';
 
 // Create
 ok(value): Result<T, never>
@@ -748,7 +748,7 @@ match(result, onOk, onErr): R
 ### Maybe
 
 ```typescript
-import { some, none, fromNullable, isSome, isNone, flatMap, getOrElse } from '@deessejs/core';
+import { some, none, fromNullable, isSome, isNone, flatMap, getOrElse } from '@deessejs/fp';
 
 // Create
 some(value): Maybe<T>
@@ -767,7 +767,7 @@ getOrElse(maybe, default): T
 ### Try
 
 ```typescript
-import { attempt, isOk, isErr, map, getOrElse } from '@deessejs/core';
+import { attempt, isOk, isErr, map, getOrElse } from '@deessejs/fp';
 
 // Create
 attempt(fn): Try<T>
@@ -785,7 +785,7 @@ unwrap(try): T
 ### AsyncResult
 
 ```typescript
-import { fromPromise, okAsync, errAsync, all, race, isOk, map, flatMap } from '@deessejs/core';
+import { fromPromise, okAsync, errAsync, all, race, isOk, map, flatMap } from '@deessejs/fp';
 
 // Create
 fromPromise(promise): AsyncResult<T, Error>
@@ -803,7 +803,7 @@ flatMap(result, fn): AsyncResult
 
 ## Additional Resources
 
-- @deessejs/core documentation: https://github.com/deessejs/core
+- @deessejs/fp documentation: https://github.com/deessejs/core
 - For architecture review, see [senior-review-skill](../senior-review-skill/SKILL.md)
 - For dead code detection, see [dead-code-skill](../dead-code-skill/SKILL.md)
 - For documentation scoring, see [doc-score-skill](../doc-score-skill/SKILL.md)

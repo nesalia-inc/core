@@ -2,7 +2,7 @@
 
 ## Getting Help
 
-Welcome to the `@deessejs/core` community! Here are some ways to get help:
+Welcome to the `@deessejs/fp` community! Here are some ways to get help:
 
 ### Questions & Discussions
 

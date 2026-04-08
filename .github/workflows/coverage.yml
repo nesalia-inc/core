@@ -41,7 +41,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build
-        run: pnpm turbo build --filter=@deessejs/core
+        run: pnpm turbo build --filter=@deessejs/fp
 
   coverage:
     name: Coverage

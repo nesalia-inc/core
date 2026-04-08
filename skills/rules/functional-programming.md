@@ -1,6 +1,6 @@
 # Functional Programming Rules
 
-Functional programming principles for @deessejs/core.
+Functional programming principles for @deessejs/fp.
 
 ## Core Principles
 
@@ -49,7 +49,7 @@ All operations are standalone functions:
 
 ```typescript
 // Good - standalone functions
-import { map, flatMap } from '@deessejs/core';
+import { map, flatMap } from '@deessejs/fp';
 const doubled = map(ok(21), x => x * 2);
 
 // Bad - methods on objects
@@ -93,7 +93,7 @@ const log = <T>(v: T): T => { console.log(v); return v; }; // Explicit logging
 Build complex behavior from simple functions:
 
 ```typescript
-import { pipe, map, flatMap } from '@deessejs/core';
+import { pipe, map, flatMap } from '@deessejs/fp';
 
 const processUser = (data: unknown): Result<User, Error> =>
   pipe(
@@ -108,7 +108,7 @@ const processUser = (data: unknown): Result<User, Error> =>
 When appropriate:
 
 ```typescript
-import { map } from '@deessejs/core';
+import { map } from '@deessejs/fp';
 
 // Less ideal - explicit parameter
 const doubled = map((x: number) => x * 2);
@@ -141,7 +141,7 @@ const doubled = mapCurried(x => x * 2)(ok(21));
 Replace conditionals with `match`:
 
 ```typescript
-import { match } from '@deessejs/core';
+import { match } from '@deessejs/fp';
 
 // Bad - if/else chains
 const message = result.ok
@@ -161,7 +161,7 @@ const message = match(
 Errors stay on the failure track:
 
 ```typescript
-import { ok, err, map, flatMap } from '@deessejs/core';
+import { ok, err, map, flatMap } from '@deessejs/fp';
 
 const divide = (a: number, b: number): Result<number, Error> =>
   b === 0 ? err(new Error('Division by zero')) : ok(a / b);
@@ -184,7 +184,7 @@ const result = pipe(
 Transform data through pipelines:
 
 ```typescript
-import { pipe, map, flatMap } from '@deessejs/core';
+import { pipe, map, flatMap } from '@deessejs/fp';
 
 const transformUser = (raw: unknown): Result<User, Error> =>
   pipe(
@@ -260,7 +260,7 @@ const createCounter = () => {
 
 ```typescript
 // Async composition
-import { fromPromise, map, flatMap } from '@deessejs/core';
+import { fromPromise, map, flatMap } from '@deessejs/fp';
 
 const fetchAndProcess = (id: string) =>
   flatMap(
@@ -272,7 +272,7 @@ const fetchAndProcess = (id: string) =>
   );
 
 // Parallel with all
-import { all } from '@deessejs/core';
+import { all } from '@deessejs/fp';
 
 const [user, posts, comments] = await all(
   fetchUser(id),

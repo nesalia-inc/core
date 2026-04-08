@@ -11,7 +11,7 @@ JavaScript's built-in `Error` class is too limited for production applications:
 throw new Error('Failed');  // What failed? Why?
 
 // Solution: Structured errors with context
-import { error } from '@deessejs/core';
+import { error } from '@deessejs/fp';
 const SizeError = error({
   name: 'SizeError',
   schema: z.object({ current: z.number(), wanted: z.number() })
@@ -25,7 +25,7 @@ throw SizeError({ current: 3, wanted: 5 });
 ## Quick Start
 
 ```typescript
-import { error, exceptionGroup, ok, err, isErr } from '@deessejs/core';
+import { error, exceptionGroup, ok, err, isErr } from '@deessejs/fp';
 import { z } from 'zod';
 
 // Define error types (with optional Zod validation)
@@ -62,7 +62,7 @@ const result = ok(10).flatMap(n => {
 #### With Zod schema (recommended)
 
 ```typescript
-import { error } from '@deessejs/core';
+import { error } from '@deessejs/fp';
 import { z } from 'zod';
 
 const SizeError = error({
@@ -85,7 +85,7 @@ const invalid = SizeError({ current: 'not a number', wanted: 5 });
 #### Without validation
 
 ```typescript
-import { error } from '@deessejs/core';
+import { error } from '@deessejs/fp';
 
 const ValidationError = error({
   name: 'ValidationError',
@@ -113,7 +113,7 @@ interface Error<T = unknown> {
 #### `addNotes(...notes)` - Add context
 
 ```typescript
-import { error } from '@deessejs/core';
+import { error } from '@deessejs/fp';
 
 const ValidationError = error({
   name: 'ValidationError',
@@ -128,7 +128,7 @@ const e = ValidationError({ field: 'email' })
 #### `from(cause)` - Chain errors
 
 ```typescript
-import { error } from '@deessejs/core';
+import { error } from '@deessejs/fp';
 
 const NetworkError = error({
   name: 'NetworkError',
@@ -150,7 +150,7 @@ const e = SizeError({ current: 3, wanted: 5 }).from(cause.error);
 You can also add notes and causes before creating the error:
 
 ```typescript
-import { error } from '@deessejs/core';
+import { error } from '@deessejs/fp';
 
 const ValidationError = error({
   name: 'ValidationError',
@@ -174,7 +174,7 @@ const e3 = ValidationError.addNotes('Context').from(causeError)({ field: 'email'
 ### `exceptionGroup(exceptions)` - Group multiple errors
 
 ```typescript
-import { error, exceptionGroup } from '@deessejs/core';
+import { error, exceptionGroup } from '@deessejs/fp';
 
 const SizeError = error({
   name: 'SizeError',
@@ -201,7 +201,7 @@ const group = exceptionGroup([
 ### `raise(error)` - Return error in transformations
 
 ```typescript
-import { error, raise, ok } from '@deessejs/core';
+import { error, raise, ok } from '@deessejs/fp';
 
 const SizeError = error({
   name: 'SizeError',
@@ -224,7 +224,7 @@ const result = ok(10).flatMap(n => {
 #### `isError(value)` - Check if value is Error
 
 ```typescript
-import { isError } from '@deessejs/core';
+import { isError } from '@deessejs/fp';
 
 const e = SizeError({ value: 10 });
 isError(e.error); // true
@@ -234,7 +234,7 @@ isError('string'); // false
 #### `isErrorGroup(value)` - Check if value is ErrorGroup
 
 ```typescript
-import { isErrorGroup } from '@deessejs/core';
+import { isErrorGroup } from '@deessejs/fp';
 
 const group = exceptionGroup([SizeError({ value: 10 })]);
 isErrorGroup(group); // true
@@ -243,7 +243,7 @@ isErrorGroup(group); // true
 #### `isErrWithError(result)` - Check if Result contains Error
 
 ```typescript
-import { isErrWithError } from '@deessejs/core';
+import { isErrWithError } from '@deessejs/fp';
 
 const e = SizeError({ value: 10 });
 const result = err(e.error);
@@ -259,7 +259,7 @@ isErrWithError(ok(42)); // false
 #### `getErrorMessage(error)` - Get human-readable message
 
 ```typescript
-import { getErrorMessage } from '@deessejs/core';
+import { getErrorMessage } from '@deessejs/fp';
 
 const e = SizeError({ current: 3, wanted: 5 });
 getErrorMessage(e.error);
@@ -273,7 +273,7 @@ getErrorMessage(group);
 #### `flattenErrorGroup(group)` - Flatten nested groups
 
 ```typescript
-import { flattenErrorGroup } from '@deessejs/core';
+import { flattenErrorGroup } from '@deessejs/fp';
 
 const inner = exceptionGroup([SizeError({ value: 10 })]);
 const outer = exceptionGroup([inner, ValidationError({ field: 'x' })]);
@@ -285,7 +285,7 @@ flattenErrorGroup(outer);
 #### `filterErrorsByName(group, name)` - Filter errors by type
 
 ```typescript
-import { filterErrorsByName } from '@deessejs/core';
+import { filterErrorsByName } from '@deessejs/fp';
 
 const group = exceptionGroup([
   SizeError({ value: 10 }),
@@ -304,7 +304,7 @@ filterErrorsByName(group, 'SizeError');
 ### Validation with Zod
 
 ```typescript
-import { error } from '@deessejs/core';
+import { error } from '@deessejs/fp';
 import { z } from 'zod';
 
 const ValidationError = error({
@@ -324,7 +324,7 @@ const e = ValidationError({ field: 123 }); // field must be string
 ### API Error Handling
 
 ```typescript
-import { error, ok, err, isErr } from '@deessejs/core';
+import { error, ok, err, isErr } from '@deessejs/fp';
 
 const NetworkError = error({
   name: 'NetworkError',
@@ -355,7 +355,7 @@ if (isErr(result)) {
 ### Error Grouping
 
 ```typescript
-import { error, exceptionGroup, flattenErrorGroup } from '@deessejs/core';
+import { error, exceptionGroup, flattenErrorGroup } from '@deessejs/fp';
 
 const ValidationError = error({
   name: 'ValidationError',
@@ -381,7 +381,7 @@ allErrors.forEach(e => {
 
 ## Comparison
 
-| Feature | @deessejs/core | Standard Error | fp-ts |
+| Feature | @deessejs/fp | Standard Error | fp-ts |
 |---------|---------------|---------------|-------|
 | Structured args | Yes | No | No |
 | Zod validation | Yes | No | No |
@@ -491,7 +491,7 @@ const SizeError = error({
 **Workaround:** Wrap with `Try` to capture original exceptions:
 
 ```typescript
-import { attempt, getErrorMessage } from '@deessejs/core';
+import { attempt, getErrorMessage } from '@deessejs/fp';
 
 const result = attempt(() => mightThrow());
 if (!result.ok) {

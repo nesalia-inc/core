@@ -23,7 +23,7 @@ const processLargeDataset = (data: Item[]) => {
 By yielding periodically, you allow the event loop to breathe:
 
 ```typescript
-import { yieldControl } from '@deessejs/core';
+import { yieldControl } from '@deessejs/fp';
 
 const processLargeDataset = async (data: Item[]) => {
   const results: Result[] = [];
@@ -42,7 +42,7 @@ const processLargeDataset = async (data: Item[]) => {
 If you have a CPU-intensive loop that processes many items, yield periodically to keep the application responsive:
 
 ```typescript
-import { yieldControl } from '@deessejs/core';
+import { yieldControl } from '@deessejs/fp';
 
 const processItems = async (items: string[]) => {
   const results: ParsedItem[] = [];
@@ -65,7 +65,7 @@ const processItems = async (items: string[]) => {
 Yield allows other async tasks to run between your operations:
 
 ```typescript
-import { yieldControl } from '@deessejs/core';
+import { yieldControl } from '@deessejs/fp';
 
 const taskQueue = [task1, task2, task3];
 
@@ -80,7 +80,7 @@ for (const task of taskQueue) {
 When processing data in response to a user action, yield to allow the browser to repaint between steps:
 
 ```typescript
-import { yieldControl } from '@deessejs/core';
+import { yieldControl } from '@deessejs/fp';
 
 const handleImport = async (rows: Row[]) => {
   for (const row of rows) {
@@ -95,7 +95,7 @@ const handleImport = async (rows: Row[]) => {
 Yields control to the event loop using the best available method:
 
 ```typescript
-import { yieldControl } from '@deessejs/core';
+import { yieldControl } from '@deessejs/fp';
 
 await yieldControl(); // Yields once
 ```
@@ -112,7 +112,7 @@ The function automatically uses the best available mechanism:
 `immediate` is an alias for `yieldControl`. Use whichever reads better in context:
 
 ```typescript
-import { yieldControl, immediate } from '@deessejs/core';
+import { yieldControl, immediate } from '@deessejs/fp';
 
 await yieldControl(); // When explaining what it does
 await immediate();    // When emphasizing immediacy
@@ -130,7 +130,7 @@ await immediate();    // When emphasizing immediacy
 ## Example: Batch Processing
 
 ```typescript
-import { yieldControl } from '@deessejs/core';
+import { yieldControl } from '@deessejs/fp';
 
 const processWithProgress = async (
   items: Item[],

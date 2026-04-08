@@ -25,7 +25,7 @@ JavaScript's native `Error` is limited. It only has a message and stack trace. T
 | With Zod | No validation | Schema validation |
 
 ```typescript
-import { error, err, ok } from '@deessejs/core';
+import { error, err, ok } from '@deessejs/fp';
 
 // Error is a plain error object
 const SizeError = error({
@@ -101,7 +101,7 @@ Creates an ErrorBuilder. Schema is optional.
 
 ```typescript
 import { z } from 'zod';
-import { error } from '@deessejs/core';
+import { error } from '@deessejs/fp';
 
 // With schema - validates arguments
 const SizeError = error({
@@ -211,7 +211,7 @@ const ValidationError = error({
 Group multiple errors together:
 
 ```typescript
-import { exceptionGroup } from '@deessejs/core';
+import { exceptionGroup } from '@deessejs/fp';
 
 const errors = exceptionGroup([
   SizeError({ current: 3, wanted: 5 }),
@@ -229,7 +229,7 @@ errors.exceptions;   // [SizeError, ValidationError]
 Type guard that checks if a value is an Error:
 
 ```typescript
-import { isError } from '@deessejs/core';
+import { isError } from '@deessejs/fp';
 
 isError(SizeError({ current: 3, wanted: 5 })); // true
 isError('not an error');                       // false
@@ -241,7 +241,7 @@ isError(null);                                // false
 Type guard that checks if a value is an ErrorGroup:
 
 ```typescript
-import { isErrorGroup } from '@deessejs/core';
+import { isErrorGroup } from '@deessejs/fp';
 
 isErrorGroup(exceptionGroup([...])); // true
 isErrorGroup(SizeError({...}));     // false
@@ -254,7 +254,7 @@ isErrorGroup(SizeError({...}));     // false
 Assertion function that throws if value is not an Error:
 
 ```typescript
-import { assertIsError } from '@deessejs/core';
+import { assertIsError } from '@deessejs/fp';
 
 assertIsError(value);
 // Throws TypeError if not an Error
@@ -266,7 +266,7 @@ assertIsError(value);
 Assertion function that throws if value is not an ErrorGroup:
 
 ```typescript
-import { assertIsErrorGroup } from '@deessejs/core';
+import { assertIsErrorGroup } from '@deessejs/fp';
 
 assertIsErrorGroup(value);
 // Throws TypeError if not an ErrorGroup
@@ -279,7 +279,7 @@ assertIsErrorGroup(value);
 Extract a human-readable message:
 
 ```typescript
-import { getErrorMessage } from '@deessejs/core';
+import { getErrorMessage } from '@deessejs/fp';
 
 getErrorMessage(SizeError({ current: 3, wanted: 5 }));
 // Returns 'SizeError: {"current":3,"wanted":5}'
@@ -293,7 +293,7 @@ getErrorMessage(exceptionGroup([...]));
 Get all errors from a group (including nested):
 
 ```typescript
-import { flattenErrorGroup } from '@deessejs/core';
+import { flattenErrorGroup } from '@deessejs/fp';
 
 flattenErrorGroup(group); // Error[]
 ```
@@ -303,7 +303,7 @@ flattenErrorGroup(group); // Error[]
 Find errors by name in a group:
 
 ```typescript
-import { filterErrorsByName } from '@deessejs/core';
+import { filterErrorsByName } from '@deessejs/fp';
 
 filterErrorsByName(group, 'SizeError'); // SizeError[]
 filterErrorsByName(group, 'NetworkError'); // NetworkError[]
@@ -316,7 +316,7 @@ filterErrorsByName(group, 'NetworkError'); // NetworkError[]
 Throws the error and returns `never`. Use only for unrecoverable programmer errors:
 
 ```typescript
-import { raise } from '@deessejs/core';
+import { raise } from '@deessejs/fp';
 
 // Only for unrecoverable errors - things that indicate a bug
 const process = (size: number): Result<Data, Error> => {
@@ -348,7 +348,7 @@ const validate = (input: string): Result<string, Error> => {
 Error objects integrate with Result via `err()`:
 
 ```typescript
-import { ok, err } from '@deessejs/core';
+import { ok, err } from '@deessejs/fp';
 
 const result = ok(10).flatMap((x) => {
   if (x > 5) {

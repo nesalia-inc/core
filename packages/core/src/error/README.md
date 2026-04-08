@@ -121,7 +121,7 @@ Use the `error()` factory to create domain-specific error classes:
 
 ```typescript
 import { z } from "zod";
-import { error } from "@deessejs/core";
+import { error } from "@deessejs/fp";
 
 // With schema - validates arguments
 const SizeError = error({
@@ -237,7 +237,7 @@ const e = SizeError({ current: 3, wanted: 5 })
 Group multiple errors together:
 
 ```typescript
-import { exceptionGroup } from "@deessejs/core";
+import { exceptionGroup } from "@deessejs/fp";
 
 const errors = exceptionGroup([
   SizeError({ current: 3, wanted: 5 }),
@@ -252,7 +252,7 @@ const errors = exceptionGroup([
 Type guards for safe narrowing:
 
 ```typescript
-import { isError, isErrorGroup, assertIsError } from "@deessejs/core";
+import { isError, isErrorGroup, assertIsError } from "@deessejs/fp";
 
 isError(someValue);        // Type guard for Error
 isErrorGroup(someValue);   // Type guard for ErrorGroup
@@ -263,7 +263,7 @@ isErrorGroup(someValue);   // Type guard for ErrorGroup
 For control flow without conditional checks:
 
 ```typescript
-import { assertIsError, assertIsErrorGroup } from "@deessejs/core";
+import { assertIsError, assertIsErrorGroup } from "@deessejs/fp";
 
 // Throws if value is not an Error
 assertIsError(value);
@@ -275,7 +275,7 @@ assertIsError(value);
 Extract a human-readable message:
 
 ```typescript
-import { getErrorMessage } from "@deessejs/core";
+import { getErrorMessage } from "@deessejs/fp";
 
 getErrorMessage(error);  // Returns error.message
 getErrorMessage(group);  // Returns "ExceptionGroup: N error(s)"
@@ -286,7 +286,7 @@ getErrorMessage(group);  // Returns "ExceptionGroup: N error(s)"
 Get all errors from a group:
 
 ```typescript
-import { flattenErrorGroup } from "@deessejs/core";
+import { flattenErrorGroup } from "@deessejs/fp";
 
 flattenErrorGroup(group);  // Error[]
 ```
@@ -296,7 +296,7 @@ flattenErrorGroup(group);  // Error[]
 Find errors by name in a group:
 
 ```typescript
-import { filterErrorsByName } from "@deessejs/core";
+import { filterErrorsByName } from "@deessejs/fp";
 
 filterErrorsByName(group, "SizeError");  // SizeError[]
 ```
@@ -306,7 +306,7 @@ filterErrorsByName(group, "SizeError");  // SizeError[]
 `raise()` throws the error and returns `never`. It should only be used for **unrecoverable programmer errors** - situations where you intentionally want to halt execution because continuing would be a bug, not an expected failure.
 
 ```typescript
-import { raise } from "@deessejs/core";
+import { raise } from "@deessejs/fp";
 
 // Only for unrecoverable errors - things that indicate a bug
 const process = (size: number): Result<Data, Error> => {
@@ -322,7 +322,7 @@ const process = (size: number): Result<Data, Error> => {
 For expected failures (validation, business rules, network errors), use `err()` to propagate errors through the Result rail:
 
 ```typescript
-import { error, err } from "@deessejs/core";
+import { error, err } from "@deessejs/fp";
 
 const EmptyInputError = error({
   name: "EmptyInputError",

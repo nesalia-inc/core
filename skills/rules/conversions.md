@@ -9,7 +9,7 @@ Conversions allow seamless transitions between the monadic types, enabling you t
 ## Maybe to Result
 
 ```typescript
-import { some, none, toResult, error } from '@deessejs/core';
+import { some, none, toResult, error } from '@deessejs/fp';
 
 const NotFoundError = error({
   name: 'NotFoundError',
@@ -21,14 +21,14 @@ const result = toResult(some(42), () => NotFoundError()); // Ok(42)
 const failed = toResult(none(), () => NotFoundError()); // Err(NotFoundError)
 
 // with default error
-import { toResult as maybeToResult } from '@deessejs/core';
+import { toResult as maybeToResult } from '@deessejs/fp';
 maybeToResult(some('value'), () => new Error('Not found'));
 ```
 
 ## Result to Maybe
 
 ```typescript
-import { ok, err, toMaybeFromResult } from '@deessejs/core';
+import { ok, err, toMaybeFromResult } from '@deessejs/fp';
 
 // Result<T, E> -> Maybe<T> (errors become None)
 const maybe = toMaybeFromResult(ok(42)); // Some(42)
@@ -38,7 +38,7 @@ const noneResult = toMaybeFromResult(err(new Error('oops'))); // None
 ## Maybe to Result (fromNullable)
 
 ```typescript
-import { fromNullable, toResult, error } from '@deessejs/core';
+import { fromNullable, toResult, error } from '@deessejs/fp';
 
 const ValidationError = error({
   name: 'ValidationError',
@@ -57,7 +57,7 @@ const result = toResult(
 ## Nullable to Result
 
 ```typescript
-import { resultFromNullable, error } from '@deessejs/core';
+import { resultFromNullable, error } from '@deessejs/fp';
 
 const NotFoundError = error({
   name: 'NotFoundError',
@@ -72,7 +72,7 @@ const result = resultFromNullable(user, () => NotFoundError());
 ## Result to Result (error mapping)
 
 ```typescript
-import { ok, err, mapErr } from '@deessejs/core';
+import { ok, err, mapErr } from '@deessejs/fp';
 
 const OriginalError = error({ name: 'OriginalError', message: (args) => args.msg });
 const MappedError = error({ name: 'MappedError', message: (args) => args.reason });
@@ -87,7 +87,7 @@ const mapped: Result<number, ReturnType<typeof MappedError>> =
 ## Throwable to Result
 
 ```typescript
-import { resultFromThrowable } from '@deessejs/core';
+import { resultFromThrowable } from '@deessejs/fp';
 
 // Wrap synchronous functions that might throw
 const parseJSON = resultFromThrowable(
@@ -102,7 +102,7 @@ const failed = parseJSON('invalid'); // Err(Error: 'Parse error: Unexpected toke
 ## Async Conversions
 
 ```typescript
-import { fromPromise, toNullable, toUndefined, okAsync, errAsync } from '@deessejs/core';
+import { fromPromise, toNullable, toUndefined, okAsync, errAsync } from '@deessejs/fp';
 
 // fromPromise wraps Promise, automatically handling rejections
 const result = await fromPromise(fetch('/api/user'));
@@ -119,8 +119,8 @@ const failure = errAsync(new Error('failed'));
 ## Try to Result
 
 ```typescript
-import { attempt, mapErr, ok, err } from '@deessejs/core';
-import { isError } from '@deessejs/core';
+import { attempt, mapErr, ok, err } from '@deessejs/fp';
+import { isError } from '@deessejs/fp';
 
 // Try wraps throwing functions
 const parsed = attempt(() => JSON.parse(input));
@@ -134,7 +134,7 @@ const withCustomError = mapErr(parsed, e =>
 ## Chaining Conversions
 
 ```typescript
-import { some, fromNullable, toResult, flatMap } from '@deessejs/core';
+import { some, fromNullable, toResult, flatMap } from '@deessejs/fp';
 
 const ConfigError = error({ name: 'ConfigError', message: () => 'Config required' });
 
@@ -148,7 +148,7 @@ const processConfig = (key: string) =>
 ## Type-Level Conversions
 
 ```typescript
-import { some, fromNullable } from '@deessejs/core';
+import { some, fromNullable } from '@deessejs/fp';
 
 // NonNullable unwraps Maybe<T> to T (removes null/undefined)
 const value: string | null = 'hello';
@@ -179,7 +179,7 @@ const toResult = <T>(value: T | null, onNull: () => Error): Result<T, Error> =>
   value === null ? err(onNull()) : ok(value);
 
 // Good - use built-in conversions
-import { fromNullable, toResult } from '@deessejs/core';
+import { fromNullable, toResult } from '@deessejs/fp';
 toResult(fromNullable(value), onNull);
 
 // Bad - nested conversions

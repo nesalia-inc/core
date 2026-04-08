@@ -87,7 +87,7 @@ type Success<T> = Result<T, never>;
 ### Creating Results
 
 ```typescript
-import { ok, err, error } from "@deessejs/core";
+import { ok, err, error } from "@deessejs/fp";
 
 // Success
 const result: Result<number, Error> = ok(42);
@@ -108,7 +108,7 @@ Note: Always use the Error system (`error()` factory) for structured errors with
 The error type should extend `Error` from the error system:
 
 ```typescript
-import { ok, err, error } from "@deessejs/core";
+import { ok, err, error } from "@deessejs/fp";
 import { z } from "zod";
 
 const ValidationError = error({
@@ -139,7 +139,7 @@ const result = ok(5)
 In railway-oriented programming, errors should travel through the Result without breaking the flow. Never use `throw` or `raise()` for expected failures:
 
 ```typescript
-import { error } from "@deessejs/core";
+import { error } from "@deessejs/fp";
 
 const DivisionError = error({
   name: "DivisionError",
@@ -164,7 +164,7 @@ Use `err()` to propagate errors, not `throw`. The only exception is for unrecove
 ### flatMap for Fallible Operations
 
 ```typescript
-import { error } from "@deessejs/core";
+import { error } from "@deessejs/fp";
 
 const ParseError = error({
   name: "ParseError",
@@ -202,7 +202,7 @@ const message = result.match(
 ### Combining Results
 
 ```typescript
-import { all, error } from "@deessejs/core";
+import { all, error } from "@deessejs/fp";
 
 const FailError = error({
   name: "FailError",
@@ -227,7 +227,7 @@ const withFailure = all(
 Errors should propagate through the Result type, not be thrown. This keeps the rail intact and allows proper error enrichment:
 
 ```typescript
-import { error } from "@deessejs/core";
+import { error } from "@deessejs/fp";
 
 const ValidationError = error({
   name: "ValidationError",
@@ -252,7 +252,7 @@ Use `err()` to carry errors forward. Reserve `throw`/`raise()` only for unrecove
 ### Error Transformation
 
 ```typescript
-import { error } from "@deessejs/core";
+import { error } from "@deessejs/fp";
 
 const OriginalError = error({
   name: "OriginalError",
@@ -289,7 +289,7 @@ ok(42);  // Ok<number>
 Creates a failed result:
 
 ```typescript
-import { error } from "@deessejs/core";
+import { error } from "@deessejs/fp";
 
 const FailError = error({ name: "FailError", message: () => "failed" });
 err(FailError({}));  // Err<FailError>

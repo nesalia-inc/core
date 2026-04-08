@@ -27,7 +27,7 @@ const isThenable = (value: unknown): value is Thenable =>
  * @returns The final result after applying all functions
  *
  * @example
- * import { pipe } from '@deessejs/core';
+ * import { pipe } from '@deessejs/fp';
  *
  * const result = pipe(
  *   "hello",
@@ -72,7 +72,7 @@ export function pipe(value: unknown, ...fns: AnyFn[]): unknown {
  * @returns A new function that applies all functions in sequence
  *
  * @example
- * import { flow } from '@deessejs/core';
+ * import { flow } from '@deessejs/fp';
  *
  * const processString = flow(
  *   (s: string) => s.toUpperCase(),
@@ -133,7 +133,7 @@ export function flow(...fns: AnyFn[]): (...args: unknown[]) => unknown {
  * @returns A function that executes the side effect and returns the original value
  *
  * @example
- * import { pipe, tap } from '@deessejs/core';
+ * import { pipe, tap } from '@deessejs/fp';
  *
  * const result = pipe(
  *   { name: "test" },
@@ -156,7 +156,7 @@ export const tap = <T>(fn: (value: T) => void) => (value: T): T => {
  * @returns A function that executes the async side effect and returns the original value
  *
  * @example
- * import { pipe, tapAsync } from '@deessejs/core';
+ * import { pipe, tapAsync } from '@deessejs/fp';
  *
  * const result = await pipe(
  *   { userId: "123" },
@@ -178,7 +178,7 @@ export const tapAsync = <T>(fn: (value: T) => Promise<void>) => async (value: T)
  * @returns A function that executes the side effect safely and returns the original value
  *
  * @example
- * import { pipe, tapSafe } from '@deessejs/core';
+ * import { pipe, tapSafe } from '@deessejs/fp';
  *
  * const result = pipe(
  *   { name: "test" },
@@ -217,7 +217,7 @@ export const tapSafe = <T>(
  * @returns The final result after applying all functions
  *
  * @example
- * import { pipeAsync } from '@deessejs/core';
+ * import { pipeAsync } from '@deessejs/fp';
  *
  * const result = await pipeAsync(
  *   fetchUser(id),
@@ -263,7 +263,7 @@ export async function pipeAsync(value: unknown, ...fns: AnyFn[]): Promise<unknow
  * @returns A new async function that applies all functions in sequence
  *
  * @example
- * import { flowAsync } from '@deessejs/core';
+ * import { flowAsync } from '@deessejs/fp';
  *
  * const processUser = flowAsync(
  *   async (id: string) => await fetchUser(id),

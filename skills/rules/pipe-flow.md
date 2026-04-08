@@ -11,7 +11,7 @@ Pipe and flow enable function composition, allowing you to chain transformations
 Pipe passes a value through a series of functions:
 
 ```typescript
-import { pipe } from '@deessejs/core';
+import { pipe } from '@deessejs/fp';
 
 const result = pipe(
   21,
@@ -24,7 +24,7 @@ const result = pipe(
 ### With Result
 
 ```typescript
-import { pipe, ok, map, flatMap } from '@deessejs/core';
+import { pipe, ok, map, flatMap } from '@deessejs/fp';
 
 const result = pipe(
   ok(21),
@@ -37,7 +37,7 @@ const result = pipe(
 ### Error Handling with Pipe
 
 ```typescript
-import { pipe, ok, err, map, flatMap } from '@deessejs/core';
+import { pipe, ok, err, map, flatMap } from '@deessejs/fp';
 
 const process = (n: number) =>
   pipe(
@@ -55,7 +55,7 @@ process(60); // Err(Error: 'Too big')
 Flow creates a composed function without invoking it:
 
 ```typescript
-import { flow } from '@deessejs/core';
+import { flow } from '@deessejs/fp';
 
 const addOne = flow(
   (x: number) => x * 2,
@@ -69,7 +69,7 @@ addOne(21); // "43"
 ### Type Safety with Flow
 
 ```typescript
-import { flow } from '@deessejs/core';
+import { flow } from '@deessejs/fp';
 
 const transform = flow(
   (s: string) => s.trim(),
@@ -85,7 +85,7 @@ transform('  Hello World  '); // ['h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', '
 ### pipeAsync
 
 ```typescript
-import { pipeAsync, okAsync, map } from '@deessejs/core';
+import { pipeAsync, okAsync, map } from '@deessejs/fp';
 
 const result = await pipeAsync(
   okAsync(21),
@@ -97,7 +97,7 @@ const result = await pipeAsync(
 ### flowAsync
 
 ```typescript
-import { flowAsync } from '@deessejs/core';
+import { flowAsync } from '@deessejs/fp';
 
 const asyncTransform = flowAsync(
   async (x: number) => x * 2,
@@ -115,7 +115,7 @@ Tap allows side effects without changing the value:
 ### tap
 
 ```typescript
-import { ok, tap, pipe } from '@deessejs/core';
+import { ok, tap, pipe } from '@deessejs/fp';
 
 const logged = pipe(
   ok(42),
@@ -127,7 +127,7 @@ const logged = pipe(
 ### tapAsync
 
 ```typescript
-import { okAsync, tapAsync, pipeAsync } from '@deessejs/core';
+import { okAsync, tapAsync, pipeAsync } from '@deessejs/fp';
 
 const result = await pipeAsync(
   okAsync(42),
@@ -140,7 +140,7 @@ const result = await pipeAsync(
 For logging without breaking the chain:
 
 ```typescript
-import { ok, err, tapSafe } from '@deessejs/core';
+import { ok, err, tapSafe } from '@deessejs/fp';
 
 // tapSafe catches errors and continues
 const result = tapSafe(
@@ -154,7 +154,7 @@ const result = tapSafe(
 ### Complex Example
 
 ```typescript
-import { pipe, ok, map, flatMap, getOrElse } from '@deessejs/core';
+import { pipe, ok, map, flatMap, getOrElse } from '@deessejs/fp';
 
 const processUser = (data: { name: string; age: string }) =>
   pipe(
@@ -178,7 +178,7 @@ processUser({ name: ' Bob ', age: 'invalid' }); // Err(Error: 'Invalid age')
 ### Parallel Processing
 
 ```typescript
-import { pipe, all } from '@deessejs/core';
+import { pipe, all } from '@deessejs/fp';
 
 // Process multiple values through same pipeline
 const pipeline = flow(
@@ -196,7 +196,7 @@ const [a, b, c] = await all(
 ### Conditional Pipelines
 
 ```typescript
-import { pipe, ok, map, flatMap } from '@deessejs/core';
+import { pipe, ok, map, flatMap } from '@deessejs/fp';
 
 const process = (n: number, shouldDouble: boolean) =>
   pipe(

@@ -20,7 +20,7 @@ tsx examples/auth/index.ts
 ### 1. Business vs System Errors
 
 ```typescript
-import { ok, err, isOk, isErr } from "@deessejs/core";
+import { ok, err, isOk, isErr } from "@deessejs/fp";
 
 // Business error (user-correctable)
 if (!user) {

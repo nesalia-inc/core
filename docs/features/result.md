@@ -38,7 +38,7 @@ try {
 With Result, **errors become explicit in the type**:
 
 ```typescript
-import { ok, err, isOk, isErr } from '@deessejs/core';
+import { ok, err, isOk, isErr } from '@deessejs/fp';
 
 // The type signature tells you this can fail
 function parseUser(data: string): Result<User, ParseError> {
@@ -93,7 +93,7 @@ Use exceptions for **truly unexpected** errors (programmer mistakes, out-of-memo
 ## Quick Start
 
 ```typescript
-import { ok, err, isOk, isErr } from '@deessejs/core';
+import { ok, err, isOk, isErr } from '@deessejs/fp';
 
 // Success
 const success: Result<number, string> = ok(42);
@@ -111,7 +111,7 @@ const failure: Result<number, string> = err('Something went wrong');
 #### `ok(value)` - Create a success
 
 ```typescript
-import { ok } from '@deessejs/core';
+import { ok } from '@deessejs/fp';
 
 const result = ok(42);
 // { ok: true, value: 42 }
@@ -120,7 +120,7 @@ const result = ok(42);
 #### `err(error)` - Create a failure
 
 ```typescript
-import { err } from '@deessejs/core';
+import { err } from '@deessejs/fp';
 
 const result = err('Not found');
 // { ok: false, error: 'Not found' }
@@ -129,7 +129,7 @@ const result = err('Not found');
 > **Tip:** The error type `E` is completely flexible. Use strings, objects, or custom error types:
 
 ```typescript
-import { err } from '@deessejs/core';
+import { err } from '@deessejs/fp';
 
 // Simple string errors
 const r1 = err('error');
@@ -153,7 +153,7 @@ const r3 = err(new NotFoundError('user'));
 #### `isOk(result)` - Check for success
 
 ```typescript
-import { ok, isOk } from '@deessejs/core';
+import { ok, isOk } from '@deessejs/fp';
 
 const result = ok(42);
 
@@ -165,7 +165,7 @@ if (isOk(result)) {
 #### `isErr(result)` - Check for failure
 
 ```typescript
-import { err, isErr } from '@deessejs/core';
+import { err, isErr } from '@deessejs/fp';
 
 const result = err('error');
 
@@ -177,7 +177,7 @@ if (isErr(result)) {
 > **Why type guards?** They narrow the type, so TypeScript knows which branch you're in:
 
 ```typescript
-import { isOk, isErr, Result } from '@deessejs/core';
+import { isOk, isErr, Result } from '@deessejs/fp';
 
 function handle(result: Result<number, string>) {
   if (isOk(result)) {
@@ -199,7 +199,7 @@ function handle(result: Result<number, string>) {
 Transforms the success value, passes errors through unchanged:
 
 ```typescript
-import { ok, err, map } from '@deessejs/core';
+import { ok, err, map } from '@deessejs/fp';
 
 const result = ok(2);
 const doubled = map(result, x => x * 2);
@@ -212,7 +212,7 @@ const failed = map(err('error'), x => x * 2);
 Equivalent to the method on Ok:
 
 ```typescript
-import { ok } from '@deessejs/core';
+import { ok } from '@deessejs/fp';
 
 ok(2).map(x => x * 2); // Ok(4)
 ```
@@ -222,7 +222,7 @@ ok(2).map(x => x * 2); // Ok(4)
 Chains operations that can fail. If Ok, applies the function. If Err, returns Err:
 
 ```typescript
-import { ok, err, flatMap, Result } from '@deessejs/core';
+import { ok, err, flatMap, Result } from '@deessejs/fp';
 
 interface User {
   id: number;
@@ -255,7 +255,7 @@ const result3 = flatMap(ok(1), x => flatMap(findUser(x.id), getEmail));
 Transforms the error, passes success through unchanged:
 
 ```typescript
-import { ok, err, mapErr } from '@deessejs/core';
+import { ok, err, mapErr } from '@deessejs/fp';
 
 const result = mapErr(err('not found'), e => new Error(e));
 // Err(Error: 'not found')
@@ -273,7 +273,7 @@ const success = mapErr(ok(42), e => new Error(e));
 Returns the success value, or a default if Err:
 
 ```typescript
-import { ok, err, getOrElse } from '@deessejs/core';
+import { ok, err, getOrElse } from '@deessejs/fp';
 
 const success = getOrElse(ok(42), 0);  // 42
 const failure = getOrElse(err('oops'), 0); // 0
@@ -284,7 +284,7 @@ const failure = getOrElse(err('oops'), 0); // 0
 Returns the success value, or computes one if Err. Useful for expensive fallbacks:
 
 ```typescript
-import { ok, err, getOrCompute } from '@deessejs/core';
+import { ok, err, getOrCompute } from '@deessejs/fp';
 
 const success = getOrCompute(ok(42), () => expensiveOperation());
 // 42 (expensiveOperation never called)
@@ -302,7 +302,7 @@ const failure = getOrCompute(err('oops'), () => 0);
 Executes a function on the value without changing it. Useful for logging:
 
 ```typescript
-import { ok, err, tap } from '@deessejs/core';
+import { ok, err, tap } from '@deessejs/fp';
 
 tap(ok(42), value => console.log('Got:', value));
 // Logs: "Got: 42"
@@ -318,7 +318,7 @@ tap(err('error'), value => console.log('Got:', value));
 Executes a function on the error without changing it:
 
 ```typescript
-import { ok, err, tapErr } from '@deessejs/core';
+import { ok, err, tapErr } from '@deessejs/fp';
 
 tapErr(ok(42), err => console.error('Error:', err));
 // Nothing logged
@@ -337,7 +337,7 @@ tapErr(err('oops'), err => console.error('Error:', err));
 The most expressive way to handle Result:
 
 ```typescript
-import { ok, match } from '@deessejs/core';
+import { ok, match } from '@deessejs/fp';
 
 const result = ok(42);
 
@@ -352,7 +352,7 @@ const message = match(
 Can return different types:
 
 ```typescript
-import { err, match } from '@deessejs/core';
+import { err, match } from '@deessejs/fp';
 
 const result = err('oops');
 
@@ -371,7 +371,7 @@ const value = match(
 #### `toNullable(result)` - Convert to nullable
 
 ```typescript
-import { ok, err, toNullable } from '@deessejs/core';
+import { ok, err, toNullable } from '@deessejs/fp';
 
 toNullable(ok(42));   // 42
 toNullable(err('x')); // null
@@ -380,7 +380,7 @@ toNullable(err('x')); // null
 #### `toUndefined(result)` - Convert to undefined
 
 ```typescript
-import { ok, err, toUndefined } from '@deessejs/core';
+import { ok, err, toUndefined } from '@deessejs/fp';
 
 toUndefined(ok(42));   // 42
 toUndefined(err('x')); // undefined
@@ -389,7 +389,7 @@ toUndefined(err('x')); // undefined
 #### `toMaybeFromResult(result)` / `fromResult(result)` - Convert to Maybe
 
 ```typescript
-import { ok, err, toMaybeFromResult, fromResult } from '@deessejs/core';
+import { ok, err, toMaybeFromResult, fromResult } from '@deessejs/fp';
 
 toMaybeFromResult(ok(42)); // Some(42)
 fromResult(err('x'));     // None
@@ -402,7 +402,7 @@ fromResult(err('x'));     // None
 Result objects have methods built-in, enabling fluent chains:
 
 ```typescript
-import { ok, err } from '@deessejs/core';
+import { ok, err } from '@deessejs/fp';
 
 const result = ok(5)
   .map(x => x * 2)       // Ok(10)
@@ -420,7 +420,7 @@ Each method returns a new Result, so you can chain indefinitely.
 ### API Response Handling
 
 ```typescript
-import { ok, err, flatMap, getOrElse, Result } from '@deessejs/core';
+import { ok, err, flatMap, getOrElse, Result } from '@deessejs/fp';
 
 interface User {
   id: number;
@@ -451,7 +451,7 @@ const displayName = getOrElse(result, 'Unknown');
 ### Input Validation
 
 ```typescript
-import { ok, err, flatMap, Result } from '@deessejs/core';
+import { ok, err, flatMap, Result } from '@deessejs/fp';
 
 interface User {
   age: number;
@@ -484,7 +484,7 @@ const validateUser = (age: number, email: string): Result<User, ValidationError>
 
 ```typescript
 import { readFileSync } from 'fs';
-import { ok, err, getOrElse, Result } from '@deessejs/core';
+import { ok, err, getOrElse, Result } from '@deessejs/fp';
 
 type FileError = 'NOT_FOUND' | 'PERMISSION_DENIED' | 'INVALID_JSON';
 
@@ -515,7 +515,7 @@ const config = getOrElse(
 ### 1. Define Error Types
 
 ```typescript
-import { Result } from '@deessejs/core';
+import { Result } from '@deessejs/fp';
 
 // Good: Specific error types
 type FetchError =
@@ -542,7 +542,7 @@ result.mapErr(e => {
 ### 2. Use `match` for Complex Logic
 
 ```typescript
-import { match } from '@deessejs/core';
+import { match } from '@deessejs/fp';
 
 const display = match(
   result,
@@ -554,7 +554,7 @@ const display = match(
 ### 3. Keep Error Handling Local
 
 ```typescript
-import { getOrElse } from '@deessejs/core';
+import { getOrElse } from '@deessejs/fp';
 
 // Good: Handle errors where you need the value
 const user = getOrElse(fetchUser(id), { id: 0, name: 'Guest' });
@@ -572,7 +572,7 @@ const user = getOrElse(fetchUser(id), { id: 0, name: 'Guest' }); // Explicit fal
 Combines multiple Results into a single Result. Returns Ok with array of all values if all are Ok, or the first Err (fail-fast):
 
 ```typescript
-import { ok, err, all } from '@deessejs/core';
+import { ok, err, all } from '@deessejs/fp';
 
 const result = all(ok(1), ok(2), ok(3));
 // Ok([1, 2, 3])
@@ -586,7 +586,7 @@ const result2 = all(ok(1), err('error'), ok(3));
 Swaps the success and error types:
 
 ```typescript
-import { ok, err, swap } from '@deessejs/core';
+import { ok, err, swap } from '@deessejs/fp';
 
 const result: Result<string, number> = ok('hello');
 const swapped = swap(result);
@@ -609,7 +609,7 @@ err(42).swap();     // Ok(42)
 Extracts the value if Ok, throws the error if Err:
 
 ```typescript
-import { ok, err, unwrap } from '@deessejs/core';
+import { ok, err, unwrap } from '@deessejs/fp';
 
 unwrap(ok(42));    // 42
 unwrap(err('oops')); // throws 'oops'
@@ -664,7 +664,7 @@ const handleError = (error: AppError) => {
 
 ## Comparison with Alternatives
 
-| Feature | @deessejs/core | fp-ts | neverthrow |
+| Feature | @deessejs/fp | fp-ts | neverthrow |
 |---------|---------------|-------|-------------|
 | Bundle size | ~2KB | ~40KB | ~5KB |
 | Learning curve | Low | High | Medium |
