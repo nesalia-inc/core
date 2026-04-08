@@ -1,6 +1,6 @@
 {
   "name": "@deessejs/fp",
-  "version": "0.1.7",
+  "version": "3.0.0",
   "type": "module",
   "description": "Type-safe error handling for TypeScript - Result, Maybe, Try, and AsyncResult monads with zero runtime dependencies",
   "files": [
@@ -44,12 +44,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/nesalia-inc/core.git",
+    "url": "https://github.com/nesalia-inc/fp.git",
     "directory": "packages/core"
   },
-  "homepage": "https://core.nesalia.com",
+  "homepage": "https://fp.nesalia.com",
   "bugs": {
-    "url": "https://github.com/nesalia-inc/core/issues"
+    "url": "https://github.com/nesalia-inc/fp/issues"
   },
   "funding": {
     "type": "github",
