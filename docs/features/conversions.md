@@ -17,7 +17,7 @@ Conversions help bridge these paradigms without losing type safety.
 ## Quick Start
 
 ```typescript
-import { toResult, toMaybeFromResult, fromUndefinedable } from '@deessejs/core';
+import { toResult, toMaybeFromResult, fromUndefinedable } from '@deessejs/fp';
 ```
 
 ---
@@ -29,7 +29,7 @@ import { toResult, toMaybeFromResult, fromUndefinedable } from '@deessejs/core';
 Converts a `Maybe<T>` to a `Result<T, E>`. When the Maybe is `None`, the `onNone` function provides the error:
 
 ```typescript
-import { toResult, some, none } from '@deessejs/core';
+import { toResult, some, none } from '@deessejs/fp';
 
 const maybeUser = findUserById(1); // Maybe<User>
 
@@ -40,7 +40,7 @@ const result = toResult(maybeUser, () => 'USER_NOT_FOUND');
 **Use case:** When you need to explain why a value is missing:
 
 ```typescript
-import { toResult } from '@deessejs/core';
+import { toResult } from '@deessejs/fp';
 
 const findUser = (id: number): Result<User, 'NOT_FOUND'> => {
   const maybe = database.find(id);
@@ -55,7 +55,7 @@ const findUser = (id: number): Result<User, 'NOT_FOUND'> => {
 Converts a `Result<T, E>` to a `Maybe<T>`. Errors become `None`:
 
 ```typescript
-import { toMaybeFromResult, ok, err } from '@deessejs/core';
+import { toMaybeFromResult, ok, err } from '@deessejs/fp';
 
 const result: Result<User, Error> = fetchUser(1);
 
@@ -66,7 +66,7 @@ const maybe = toMaybeFromResult(result);
 **Use case:** When you need to pass a value to code that expects Maybe:
 
 ```typescript
-import { toMaybeFromResult } from '@deessejs/core';
+import { toMaybeFromResult } from '@deessejs/fp';
 
 const getConfig = (): Result<Config, Error> => { /* ... */ };
 
@@ -85,7 +85,7 @@ processConfig(toMaybeFromResult(getConfig()));
 Converts a `T | undefined` value to a `Maybe<T>`:
 
 ```typescript
-import { fromUndefinedable, some, none } from '@deessejs/core';
+import { fromUndefinedable, some, none } from '@deessejs/fp';
 
 fromUndefinedable(42);    // Some(42)
 fromUndefinedable(undefined); // None
@@ -94,7 +94,7 @@ fromUndefinedable(undefined); // None
 This is equivalent to `fromNullable` but specifically for handling `undefined`:
 
 ```typescript
-import { fromUndefinedable } from '@deessejs/core';
+import { fromUndefinedable } from '@deessejs/fp';
 
 // Use when the value might be undefined (but not null)
 const name = fromUndefinedable(getOptionalName());
@@ -107,7 +107,7 @@ const name = fromUndefinedable(getOptionalName());
 ### API to Domain Conversion
 
 ```typescript
-import { toResult, fromNullable } from '@deessejs/core';
+import { toResult, fromNullable } from '@deessejs/fp';
 
 interface User {
   id: number;
@@ -129,7 +129,7 @@ const userResult = toResult(maybeUser, () => ({ type: 'NOT_FOUND', id }));
 ### Optional Configuration
 
 ```typescript
-import { toResult, fromUndefinedable } from '@deessejs/core';
+import { toResult, fromUndefinedable } from '@deessejs/fp';
 
 interface Config {
   timeout: number;
@@ -152,7 +152,7 @@ const config = toResult(
 ### Mixed Error Types
 
 ```typescript
-import { toMaybeFromResult, ok, err, toResult, some, none } from '@deessejs/core';
+import { toMaybeFromResult, ok, err, toResult, some, none } from '@deessejs/fp';
 
 type DomainError = 'NOT_FOUND' | 'UNAUTHORIZED';
 
@@ -249,7 +249,7 @@ Maybe.fromPredicate(value, predicate, onFalse)
 
 ```typescript
 // Try already has the same shape as Result<T, Error>
-import { attempt, ok, err } from '@deessejs/core';
+import { attempt, ok, err } from '@deessejs/fp';
 
 const tryResult = attempt(() => JSON.parse(data));
 
@@ -282,7 +282,7 @@ const asyncMaybe = await AsyncResult.fromPromise(promise).toMaybe();
 **Workaround:**
 
 ```typescript
-import { ok, err, Result } from '@deessejs/core';
+import { ok, err, Result } from '@deessejs/fp';
 
 const fromPredicate = <T, E>(
   value: T,
@@ -327,7 +327,7 @@ if (!result.ok) {
 return result.value;
 
 // Alternative: Use tapErr before converting
-import { tapErr } from '@deessejs/core';
+import { tapErr } from '@deessejs/fp';
 const maybe = tapErr(fetchUser(id), e => log(e)).match(
   value => ({ ok: true, value }),
   () => ({ ok: false })

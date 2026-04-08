@@ -1,14 +1,14 @@
 /**
  * Logger with Side Effects Example
  *
- * This example demonstrates how to use @deessejs/core for:
+ * This example demonstrates how to use @deessejs/fp for:
  * - Using tap for side effects in pipelines
  * - Using tapErr for error logging
  * - Building observability into data pipelines
  * - Timing and monitoring operations
  */
 
-import { ok, err, fromPromise } from "@deessejs/core";
+import { ok, err, fromPromise } from "@deessejs/fp";
 
 // ============================================================================
 // Types
@@ -312,7 +312,7 @@ const metricsExample = async () => {
 
 const main = async () => {
   console.log("╔════════════════════════════════════════════════════════════╗");
-  console.log("║   Logger with Side Effects using @deessejs/core            ║");
+  console.log("║   Logger with Side Effects using @deessejs/fp            ║");
   console.log("╚════════════════════════════════════════════════════════════╝");
 
   try {

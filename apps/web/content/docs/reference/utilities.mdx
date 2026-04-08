@@ -35,7 +35,7 @@ Pipes a value through functions left-to-right. Each function receives the result
 - Reorder steps by moving function references
 
 ```typescript
-import { pipe } from '@deessejs/core';
+import { pipe } from '@deessejs/fp';
 
 // Before: nested, hard to follow
 const username = capitalize(JSON.parse(localStorage.getItem('user')).name);
@@ -59,7 +59,7 @@ Creates a reusable function from a sequence of transformations. Unlike pipe, flo
 - Cleaner API for public functions
 
 ```typescript
-import { flow } from '@deessejs/core';
+import { flow } from '@deessejs/fp';
 
 // Create a reusable transformation pipeline
 const processUserData = flow(
@@ -77,7 +77,7 @@ const processed2 = processUserData(rawJson2);
 The first function in flow can accept multiple arguments - useful for creating binary or variadic functions:
 
 ```typescript
-import { flow } from '@deessejs/core';
+import { flow } from '@deessejs/fp';
 
 // First function gets multiple args, rest get single result
 const createLogger = flow(
@@ -98,7 +98,7 @@ Pipes a value through a mix of sync and async functions. Each function is awaite
 - Clear error handling with Result/AsyncResult
 
 ```typescript
-import { pipeAsync } from '@deessejs/core';
+import { pipeAsync } from '@deessejs/fp';
 
 const result = await pipeAsync(
   fetchUser(id),                    // Promise<User>
@@ -118,7 +118,7 @@ Creates a reusable async function from a sequence of transformations.
 - Works with both promises and thenables
 
 ```typescript
-import { flowAsync } from '@deessejs/core';
+import { flowAsync } from '@deessejs/fp';
 
 const fetchAndProcessUser = flowAsync(
   async (id: string) => {
@@ -151,7 +151,7 @@ const result = pipe(
 );
 
 // With tap - explicit about intent
-import { pipe, tap } from '@deessejs/core';
+import { pipe, tap } from '@deessejs/fp';
 
 const result = pipe(
   user,
@@ -170,7 +170,7 @@ Executes a side effect function and returns the original value unchanged. Use fo
 - Separate concerns - business logic vs side effects
 
 ```typescript
-import { pipe, tap } from '@deessejs/core';
+import { pipe, tap } from '@deessejs/fp';
 
 pipe(
   user,
@@ -186,7 +186,7 @@ pipe(
 Same as tap but for async side effects. Use for analytics calls, async logging, or any effect that returns a Promise.
 
 ```typescript
-import { pipeAsync, tapAsync } from '@deessejs/core';
+import { pipeAsync, tapAsync } from '@deessejs/fp';
 
 const result = await pipeAsync(
   user,
@@ -205,7 +205,7 @@ Safe version of tap that catches errors in the side effect. If the side effect t
 - Useful for non-critical effects like optional logging
 
 ```typescript
-import { pipe, tapSafe } from '@deessejs/core';
+import { pipe, tapSafe } from '@deessejs/fp';
 
 const result = pipe(
   user,
@@ -249,7 +249,7 @@ Creates a Promise that resolves after a specified delay.
 - Any scenario requiring a deliberate pause
 
 ```typescript
-import { sleep } from '@deessejs/core';
+import { sleep } from '@deessejs/fp';
 
 // Simple delay
 await sleep(1000); // Wait 1 second
@@ -268,7 +268,7 @@ Sleep that can be cancelled via AbortSignal.
 - Implement request timeouts
 
 ```typescript
-import { sleepWithSignal } from '@deessejs/core';
+import { sleepWithSignal } from '@deessejs/fp';
 
 const controller = new AbortController();
 
@@ -292,7 +292,7 @@ Adds a timeout to any Promise. Throws TimeoutError if the operation takes too lo
 - Better UX - show timeout messages instead of spinners
 
 ```typescript
-import { withTimeout } from '@deessejs/core';
+import { withTimeout } from '@deessejs/fp';
 
 try {
   const data = await withTimeout(fetchData(), 5000, {
@@ -320,7 +320,7 @@ interface TimeoutError extends Error {
 For fine-grained control over abortable operations, pass a function that receives an AbortSignal:
 
 ```typescript
-import { withTimeout } from '@deessejs/core';
+import { withTimeout } from '@deessejs/fp';
 
 const { promise, cleanup } = withTimeout(
   (signal) => fetch('/api/data', { signal }),
@@ -346,7 +346,7 @@ Adds randomness to delays to prevent thundering herd problems.
 - Reduces load spikes on recovering services
 
 ```typescript
-import { addJitter } from '@deessejs/core';
+import { addJitter } from '@deessejs/fp';
 
 // Full jitter: 50% to 150% of delay (recommended for most cases)
 addJitter(1000, true);  // 500-1500ms
@@ -388,7 +388,7 @@ Retries an async function on failure. Use this in production.
 - Give external services time to recover
 
 ```typescript
-import { retryAsync } from '@deessejs/core';
+import { retryAsync } from '@deessejs/fp';
 
 const data = await retryAsync(
   async () => {
@@ -470,7 +470,7 @@ await retryAsync(fn, {
 Instead of using the string options, you can import and use the standalone backoff functions directly. This is useful when you want to reuse the same strategy across multiple retries or compose them with other delay modifiers:
 
 ```typescript
-import { retryAsync, exponentialBackoff, linearBackoff, constantBackoff } from '@deessejs/core';
+import { retryAsync, exponentialBackoff, linearBackoff, constantBackoff } from '@deessejs/fp';
 
 // Exponential backoff: 1s, 2s, 4s, 8s...
 retryAsync(fn, { delay: 1000, backoff: exponentialBackoff });
@@ -485,7 +485,7 @@ retryAsync(fn, { delay: 1000, backoff: constantBackoff });
 These functions match the behavior of their string equivalents but can be composed or modified:
 
 ```typescript
-import { retryAsync, exponentialBackoff } from '@deessejs/core';
+import { retryAsync, exponentialBackoff } from '@deessejs/fp';
 
 // Combine with jitter using a custom backoff
 retryAsync(fn, {
@@ -520,7 +520,7 @@ await retryAsync(
 Use `onRetry` to log or track retry attempts:
 
 ```typescript
-import { retryAsync } from '@deessejs/core';
+import { retryAsync } from '@deessejs/fp';
 
 await retryAsync(
   async () => flakyOperation(),
@@ -539,7 +539,7 @@ await retryAsync(
 Use AbortSignal to cancel retries:
 
 ```typescript
-import { retryAsync } from '@deessejs/core';
+import { retryAsync } from '@deessejs/fp';
 
 const controller = new AbortController();
 
@@ -563,8 +563,8 @@ window.addEventListener('beforeunload', () => controller.abort());
 ### API Client with Retry and Timeout
 
 ```typescript
-import { retryAsync, withTimeout } from '@deessejs/core';
-import { pipeAsync } from '@deessejs/core';
+import { retryAsync, withTimeout } from '@deessejs/fp';
+import { pipeAsync } from '@deessejs/fp';
 
 const createApiClient = (baseUrl: string) => {
   const request = <T>(path: string) =>
@@ -601,7 +601,7 @@ const createApiClient = (baseUrl: string) => {
 ### Data Processing Pipeline with Progress
 
 ```typescript
-import { pipe, flow, tap } from '@deessejs/core';
+import { pipe, flow, tap } from '@deessejs/fp';
 
 const processUserBatch = flow(
   (batch: RawUser[]) => batch.map(parseUser),
@@ -614,7 +614,7 @@ const processUserBatch = flow(
 ### Rate-Limited API Calls
 
 ```typescript
-import { sleep } from '@deessejs/core';
+import { sleep } from '@deessejs/fp';
 
 const fetchWithRateLimit = async <T>(
   urls: string[],

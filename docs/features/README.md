@@ -1,6 +1,6 @@
 # Features
 
-Comprehensive documentation for all @deessejs/core features.
+Comprehensive documentation for all @deessejs/fp features.
 
 ## Core Types
 
@@ -45,11 +45,11 @@ Comprehensive documentation for all @deessejs/core features.
 ## Installation
 
 ```bash
-npm install @deessejs/core
+npm install @deessejs/fp
 ```
 
 ## Usage
 
 ```typescript
-import { ok, err, some, none, attempt, fromPromise, error, exceptionGroup } from '@deessejs/core';
+import { ok, err, some, none, attempt, fromPromise, error, exceptionGroup } from '@deessejs/fp';
 ```

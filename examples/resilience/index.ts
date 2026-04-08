@@ -1,14 +1,14 @@
 /**
  * Rate Limiting & Timeouts Example
  *
- * This example demonstrates how to use @deessejs/core for:
+ * This example demonstrates how to use @deessejs/fp for:
  * - Implementing retry logic with different backoff strategies
  * - Adding timeout constraints to operations
  * - Rate limiting with sleep
  * - Building resilient API clients
  */
 
-import { sleep, withTimeout, retryAsync, retry, fromPromise } from "@deessejs/core";
+import { sleep, withTimeout, retryAsync, retry, fromPromise } from "@deessejs/fp";
 
 // ============================================================================
 // Types
@@ -329,7 +329,7 @@ const demonstrateApiClient = async () => {
 
 const main = async () => {
   console.log("╔════════════════════════════════════════════════════════════╗");
-  console.log("║   Rate Limiting & Timeouts with @deessejs/core             ║");
+  console.log("║   Rate Limiting & Timeouts with @deessejs/fp             ║");
   console.log("╚════════════════════════════════════════════════════════════╝");
 
   try {

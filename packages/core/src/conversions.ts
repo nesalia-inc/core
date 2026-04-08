@@ -3,7 +3,7 @@
  */
 
 import { ok, err, Result, isOk } from "./result";
-import { some, none, Maybe, isSome } from "./maybe";
+import { none, fromNullable, Maybe, isSome } from "./maybe";
 import type { Error } from "./error/types";
 
 /**
@@ -37,7 +37,7 @@ export const fromMaybe = toResult;
  * @returns Maybe<T> (loses error info)
  */
 export const toMaybeFromResult = <T, E extends Error>(result: Result<T, E>): Maybe<T> =>
-  isOk(result) ? some(result.value as NonNullable<T>) : none();
+  isOk(result) ? fromNullable(result.value) : none();
 
 /**
  * Alias for toMaybeFromResult - converts Result to Maybe
@@ -55,7 +55,7 @@ export const fromResult = toMaybeFromResult;
  * @returns Ok<NonNullable<T>> if value is not null/undefined, Err<E> otherwise
  *
  * @example
- * import { resultFromNullable } from '@deessejs/core';
+ * import { resultFromNullable } from '@deessejs/fp';
  *
  * const user = resultFromNullable(db.find(id), () => new NotFoundError({ id }));
  * const port = resultFromNullable(parseInt(env.PORT), () => new InvalidPortError({ port: env.PORT }));
@@ -73,7 +73,7 @@ export const resultFromNullable = <T, E extends Error>(
  * @returns Ok<T> with the return value, Err<Error> if the function throws
  *
  * @example
- * import { resultFromThrowable } from '@deessejs/core';
+ * import { resultFromThrowable } from '@deessejs/fp';
  *
  * const data = resultFromThrowable(() => JSON.parse(jsonString));
  */

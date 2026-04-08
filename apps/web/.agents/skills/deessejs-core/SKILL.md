@@ -3,16 +3,16 @@ name: deessejs-core
 description: Functional programming patterns for TypeScript - Result, Maybe, Try, AsyncResult. Use when working with error handling, optional values, or async operations in TypeScript.
 ---
 
-# @deessejs/core Skill
+# @deessejs/fp Skill
 
-When working with TypeScript error handling and functional programming, use these patterns from @deessejs/core.
+When working with TypeScript error handling and functional programming, use these patterns from @deessejs/fp.
 
 ## Quick Reference
 
 ### Creating Values
 
 ```typescript
-import { ok, err, some, none, okAsync, errAsync, attempt } from "@deessejs/core";
+import { ok, err, some, none, okAsync, errAsync, attempt } from "@deessejs/fp";
 
 // Result - explicit success/failure
 const success = ok(42);
@@ -68,7 +68,7 @@ ok(42).tap(v => console.log(v)); // logs 42, returns Ok(42)
 ### Type Guards
 
 ```typescript
-import { isOk, isErr, isSome, isNone } from "@deessejs/core";
+import { isOk, isErr, isSome, isNone } from "@deessejs/fp";
 
 if (isOk(result)) {
   console.log(result.value); // TypeScript knows it's Ok
@@ -149,7 +149,7 @@ return ok(formData);
 ## Error System (Python-like)
 
 ```typescript
-import { error, raise } from "@deessejs/core";
+import { error, raise } from "@deessejs/fp";
 
 const validationError = error({
   name: "ValidationError",
@@ -166,7 +166,7 @@ const validated = ok(input).mapErr(e => raise(validationError));
 ## Conversions
 
 ```typescript
-import { toResult, toMaybeFromResult, fromNullable } from "@deessejs/core";
+import { toResult, toMaybeFromResult, fromNullable } from "@deessejs/fp";
 
 // Maybe → Result
 const result = toResult(maybe, () => "default error");

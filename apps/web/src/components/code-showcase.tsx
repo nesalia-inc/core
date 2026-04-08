@@ -6,7 +6,7 @@ import { codeToHtml } from "shiki";
 const examples = [
   {
     title: "Result",
-    code: `import { Result, Ok, Err } from '@deessejs/core';
+    code: `import { Result, Ok, Err } from '@deessejs/fp';
 
 function divide(a: number, b: number): Result<number, string> {
   if (b === 0) return Err('Division by zero');
@@ -20,7 +20,7 @@ if (result.isOk()) {
   },
   {
     title: "Maybe",
-    code: `import { Maybe, Some, None } from '@deessejs/core';
+    code: `import { Maybe, Some, None } from '@deessejs/fp';
 
 function findUser(id: string): Maybe<User> {
   const user = db.find(id);
@@ -32,7 +32,7 @@ const name = user.map(u => u.name).unwrapOr('Unknown');`,
   },
   {
     title: "Try",
-    code: `import { Try } from '@deessejs/core';
+    code: `import { Try } from '@deessejs/fp';
 
 const result = Try(() => JSON.parse(userInput));
 if (result.isOk()) {
@@ -43,7 +43,7 @@ if (result.isOk()) {
   },
   {
     title: "AsyncResult",
-    code: `import { AsyncResult } from '@deessejs/core';
+    code: `import { AsyncResult } from '@deessejs/fp';
 
 async function fetchUser(id: string): AsyncResult<User, Error> {
   const response = await fetch(\`/api/\${id}\`);
@@ -55,7 +55,7 @@ async function fetchUser(id: string): AsyncResult<User, Error> {
   },
   {
     title: "Retry",
-    code: `import { retry, linearBackoff } from '@deessejs/core';
+    code: `import { retry, linearBackoff } from '@deessejs/fp';
 
 const result = await retry(
   () => fetchFlakyAPI(),

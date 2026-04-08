@@ -37,7 +37,7 @@ export const some = <T,>(value: NonNullable<T>): Some<NonNullable<T>> => {
       return this;
     },
     map<U>(fn: (value: NonNullable<T>) => U): Maybe<U> {
-      return some(fn(this.value) as NonNullable<U>);
+      return fromNullable(fn(this.value));
     },
     flatMap<U>(fn: (value: NonNullable<T>) => Maybe<U>): Maybe<U> {
       return fn(this.value);
@@ -137,7 +137,7 @@ export const isNone = <T>(maybe: Maybe<T>): maybe is None => maybe.ok === false;
  * @returns Some<U> if Some, None otherwise
  */
 export const map = <T, U>(maybe: Maybe<T>, fn: (value: T) => U): Maybe<U> =>
-  isSome(maybe) ? some(fn(maybe.value) as NonNullable<U>) : none();
+  isSome(maybe) ? fromNullable(fn(maybe.value)) : none();
 
 /**
  * Chains Maybes - function if Some, returns None otherwise

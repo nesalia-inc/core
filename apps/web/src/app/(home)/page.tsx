@@ -164,7 +164,7 @@ export default function HomePage() {
             <div className="p-6">
               <h2 className="text-2xl font-bold mb-4">Examples</h2>
               <p className="text-muted-foreground mb-6">
-                Discover how @deessejs/core makes error handling simple and type-safe.
+                Discover how @deessejs/fp makes error handling simple and type-safe.
               </p>
               <CodeShowcase />
             </div>
@@ -198,7 +198,7 @@ export default function HomePage() {
           <div></div>
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-4">
-              <span className="text-sm text-muted-foreground">© 2026 @deessejs/core</span>
+              <span className="text-sm text-muted-foreground">© 2026 @deessejs/fp</span>
               <span className="text-sm text-muted-foreground">MIT License</span>
             </div>
             <div className="flex items-center gap-4">
@@ -237,14 +237,14 @@ function NpmInstall() {
   const [copied, setCopied] = useState(false);
 
   const copyToClipboard = async () => {
-    await navigator.clipboard.writeText('npm install @deessejs/core');
+    await navigator.clipboard.writeText('npm install @deessejs/fp');
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   return (
     <Button variant="outline" className="font-mono" onClick={copyToClipboard}>
-      <span>npm install @deessejs/core</span>
+      <span>npm install @deessejs/fp</span>
       {copied ? (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />

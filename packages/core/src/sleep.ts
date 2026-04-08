@@ -178,11 +178,18 @@ export const withTimeout = <T>(
     cleanupCalled = true;
 
     clearTimeout(timeoutId);
-    if (!signal.aborted) {
+
+    // Capture abort state before calling abort(), since abort() sets
+    // signal.aborted = true synchronously, which would make the condition
+    // below always false and leave the promise pending forever
+    const wasAborted = signal.aborted;
+
+    if (!wasAborted) {
       controller.abort();
     }
+
     // For signal injection mode, reject deferred promise on manual cleanup
-    if (deferred && !signal.aborted) {
+    if (deferred && !wasAborted) {
       const error = new Error("Aborted") as TimeoutError;
       error.name = "ABORTED";
       deferred.reject(error);

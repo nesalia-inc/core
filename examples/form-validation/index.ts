@@ -1,13 +1,13 @@
 /**
  * Form Validation Example
  *
- * This example demonstrates how to use @deessejs/core for:
+ * This example demonstrates how to use @deessejs/fp for:
  * - Chaining multiple validation rules
  * - Accumulating validation errors
  * - Type-safe form data handling
  */
 
-import { ok, err } from "@deessejs/core";
+import { ok, err } from "@deessejs/fp";
 
 // ============================================================================
 // Types
@@ -381,7 +381,7 @@ const validateFormWithAsyncCheck = async (
 
 const main = async () => {
   console.log("╔════════════════════════════════════════════════════════════╗");
-  console.log("║   Form Validation with @deessejs/core                    ║");
+  console.log("║   Form Validation with @deessejs/fp                    ║");
   console.log("╚════════════════════════════════════════════════════════════╝");
 
   // Test form with multiple errors

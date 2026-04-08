@@ -1,7 +1,7 @@
 /**
  * File System Operations Example
  *
- * This example demonstrates how to use @deessejs/core for:
+ * This example demonstrates how to use @deessejs/fp for:
  * - Safe file reading with Try/attempt
  * - Async file operations with AsyncResult
  * - Handling permission errors
@@ -12,7 +12,7 @@ import { promises as fs, readdirSync } from "fs";
 import * as fsSync from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
-import { attempt, fromPromise, ok, err, okAsync, errAsync } from "@deessejs/core";
+import { attempt, fromPromise, ok, err, okAsync, errAsync } from "@deessejs/fp";
 
 // ============================================================================
 // Types
@@ -290,7 +290,7 @@ const readPackageJson = async (): Promise<Result<any, FileError>> => {
 
 const main = async () => {
   console.log("╔════════════════════════════════════════════════════════════╗");
-  console.log("║   File System Operations with @deessejs/core              ║");
+  console.log("║   File System Operations with @deessejs/fp              ║");
   console.log("╚════════════════════════════════════════════════════════════╝");
 
   const __filename = fileURLToPath(import.meta.url);
@@ -314,7 +314,7 @@ const main = async () => {
 
     // Example 6: Write file (in /tmp to be safe)
     const testFile = "/tmp/deessejs-test.txt";
-    await writeFileSafe(testFile, "Hello from @deessejs/core!");
+    await writeFileSafe(testFile, "Hello from @deessejs/fp!");
 
   } catch (error) {
     console.error("\nUnexpected error:", error);

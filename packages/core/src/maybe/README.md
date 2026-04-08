@@ -124,7 +124,7 @@ When you have a `None`, all transformation methods short-circuit and return `Non
 The three factory functions cover the main ways you might get a Maybe value:
 
 ```typescript
-import { some, none, fromNullable } from "@deessejs/core";
+import { some, none, fromNullable } from "@deessejs/fp";
 
 // From a concrete value - use when you know the value exists
 const present = some(42);
@@ -243,7 +243,7 @@ const validated = some(25)
 When you need to handle the "missing" case as an error rather than just a fallback value, convert your Maybe to a Result. This is the bridge between the "optional value" world and the "railway-oriented programming" world.
 
 ```typescript
-import { some, error } from "@deessejs/core";
+import { some, error } from "@deessejs/fp";
 
 const TooYoungError = error({
   name: "TooYoungError",
@@ -299,7 +299,7 @@ This works because `isSome()` and `isNone()` are type guards that TypeScript und
 Sometimes you need to combine multiple Maybe values. The `all` function lets you do this, but with a specific behavior: **all values must be present for the result to be Some**.
 
 ```typescript
-import { all, some, none } from "@deessejs/core";
+import { all, some, none } from "@deessejs/fp";
 
 // All must be Some to get Some of array
 const combined = all(some(1), some(2), some(3)); // Some([1, 2, 3])
@@ -404,7 +404,7 @@ function getCity(user: User | null): string {
 **After** - Maybe approach with composable operations:
 
 ```typescript
-import { fromNullable, getOrElse } from "@deessejs/core";
+import { fromNullable, getOrElse } from "@deessejs/fp";
 
 const getUserName = (user: User | null): string =>
   fromNullable(user).map(u => u.name).getOrElse("Anonymous");

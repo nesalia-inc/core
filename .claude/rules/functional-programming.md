@@ -36,7 +36,7 @@ This project uses a functional programming style. Classes and object-oriented pa
 
 ```typescript
 // Good - function-based design
-import { ok, err, map, flatMap } from "@deessejs/core";
+import { ok, err, map, flatMap } from "@deessejs/fp";
 
 const processData = (input: string) => {
   const result = parse(input);
@@ -63,7 +63,7 @@ All operations should be standalone functions, not methods on objects:
 
 ```typescript
 // Good - standalone function
-import { map } from "@deessejs/core";
+import { map } from "@deessejs/fp";
 
 const doubled = map(result, x => x * 2);
 

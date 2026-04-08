@@ -69,7 +69,7 @@ interface TryFailure<E> {
 ### Basic try/catch
 
 ```typescript
-import { attempt } from "@deessejs/core";
+import { attempt } from "@deessejs/fp";
 
 // Wrap a function that may throw
 const result = attempt(() => JSON.parse(userInput));
@@ -84,7 +84,7 @@ if (result.ok) {
 ### With async operations
 
 ```typescript
-import { attemptAsync } from "@deessejs/core";
+import { attemptAsync } from "@deessejs/fp";
 
 const result = await attemptAsync(() => fetch("/api/user").then(r => r.json()));
 
@@ -98,7 +98,7 @@ if (result.ok) {
 ### With custom error handler
 
 ```typescript
-import { attempt, error } from "@deessejs/core";
+import { attempt, error } from "@deessejs/fp";
 
 const DatabaseError = error({ name: "DatabaseError" });
 
@@ -112,7 +112,7 @@ const result = attempt(
 ### Chaining operations
 
 ```typescript
-import { attempt, map, flatMap } from "@deessejs/core";
+import { attempt, map, flatMap } from "@deessejs/fp";
 
 const result = attempt(() => fetchUser(id))
   .flatMap(user => attempt(() => fetchOrders(user.id)))
@@ -123,7 +123,7 @@ const result = attempt(() => fetchUser(id))
 ### Using match
 
 ```typescript
-import { attempt, match } from "@deessejs/core";
+import { attempt, match } from "@deessejs/fp";
 
 const result = await attemptAsync(() => fetchData());
 

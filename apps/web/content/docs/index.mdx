@@ -7,7 +7,7 @@ icon: Shield
 import { Callout } from 'fumadocs-ui/components/callout';
 import { Cards, Card } from 'fumadocs-ui/components/card';
 
-**@deessejs/core** is a TypeScript library that brings functional programming patterns to error handling. It provides zero-runtime-dependency monads with a clean, composable API.
+**@deessejs/fp** is a TypeScript library that brings functional programming patterns to error handling. It provides zero-runtime-dependency monads with a clean, composable API.
 
 <Callout>
   This library is inspired by fp-ts, Rust's std::result, and other functional programming traditions—adapted for idiomatic TypeScript.
@@ -47,7 +47,7 @@ This approach has fundamental issues:
 The `Result` type makes errors **explicit in your type signatures**. Instead of hoping a function won't throw, the return type tells you exactly what can go wrong:
 
 ```typescript
-import { ok, err, map, getOrElse } from "@deessejs/core";
+import { ok, err, map, getOrElse } from "@deessejs/fp";
 
 const divide = (a: number, b: number): Result<number, string> => {
   if (b === 0) return err("Division by zero");
@@ -66,7 +66,7 @@ console.log(result); // 5
   Now the type signature `Result<number, string>` tells you: "this returns a number, but it might fail with a string error."
 </Callout>
 
-## Why @deessejs/core?
+## Why @deessejs/fp?
 
 | Feature | Benefit |
 |---------|---------|
@@ -101,13 +101,13 @@ Our library provides multiple types for different scenarios:
 Install the library:
 
 ```bash
-pnpm add @deessejs/core
+pnpm add @deessejs/fp
 ```
 
 Then import and start using it:
 
 ```typescript
-import { ok, err, map, getOrElse, some, none } from "@deessejs/core";
+import { ok, err, map, getOrElse, some, none } from "@deessejs/fp";
 
 // Create a Result
 const success = ok(42);
@@ -136,7 +136,7 @@ Ready to dive in? Here's where to go next:
 
 <Cards>
   <Card title="Installation" href="/docs/installation">
-    Set up @deessejs/core in your project
+    Set up @deessejs/fp in your project
   </Card>
   <Card title="Maybe" href="/docs/reference/maybe">
     Start with optional values

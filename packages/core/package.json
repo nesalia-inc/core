@@ -1,8 +1,8 @@
 {
-  "name": "@deessejs/core",
-  "version": "2.0.0",
-  "description": "Type-safe error handling for TypeScript - Result, Maybe, Try, and AsyncResult monads with zero runtime dependencies",
+  "name": "@deessejs/fp",
+  "version": "0.1.7",
   "type": "module",
+  "description": "Type-safe error handling for TypeScript - Result, Maybe, Try, and AsyncResult monads with zero runtime dependencies",
   "files": [
     "dist"
   ],

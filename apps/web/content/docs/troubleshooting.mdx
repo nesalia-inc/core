@@ -6,7 +6,7 @@ description: Common issues and how to solve them
 import { Callout } from 'fumadocs-ui/components/callout';
 import { Accordions, Accordion } from 'fumadocs-ui/components/accordion';
 
-This page covers common issues you might encounter when using `@deessejs/core` and how to solve them.
+This page covers common issues you might encounter when using `@deessejs/fp` and how to solve them.
 
 ## Type Errors
 
@@ -23,7 +23,7 @@ if (isOk(result)) {
 }
 
 // Correct: use isOk from the library
-import { ok, err, isOk } from '@deessejs/core';
+import { ok, err, isOk } from '@deessejs/fp';
 
 const result = divide(10, 2);
 if (isOk(result)) {
@@ -183,7 +183,7 @@ const city1 = flatMap(company, c =>
 );
 
 // Use the flatten utility to simplify:
-import { flatten } from '@deessejs/core';
+import { flatten } from '@deessejs/fp';
 
 const city2 = flatten(city1); // Maybe<string>
 
@@ -260,14 +260,14 @@ if (err2.cause.isSome()) {
 ## Import Issues
 
 <Accordions>
-<Accordion title="Cannot find module '@deessejs/core'">
+<Accordion title="Cannot find module '@deessejs/fp'">
 
 Make sure the package is installed:
 
 ```bash
-pnpm add @deessejs/core
+pnpm add @deessejs/fp
 # or
-npm install @deessejs/core
+npm install @deessejs/fp
 ```
 
 If you're in a monorepo, you might need to ensure the workspace is properly configured.
@@ -279,7 +279,7 @@ If you're using CommonJS and getting import errors:
 
 ```typescript
 // Use the .js extension for ESM imports
-import { ok } from '@deessejs/core/index.js';
+import { ok } from '@deessejs/fp/index.js';
 
 // Or configure your package.json
 {

@@ -1,9 +1,9 @@
 {
-  "name": "@deessejs/core",
-  "version": "0.1.7",
+  "name": "@deessejs/fp",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
-  "description": "Monorepo for @deessejs/core - Type-safe error handling for TypeScript",
+  "description": "Monorepo for @deessejs/fp - Type-safe error handling for TypeScript",
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
@@ -31,7 +31,7 @@
     "changelog": false,
     "commit": false,
     "fixed": [
-      "@deessejs/core"
+      "@deessejs/fp"
     ],
     "linked": [],
     "access": "restricted"

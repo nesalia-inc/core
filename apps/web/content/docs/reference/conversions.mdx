@@ -12,7 +12,7 @@ Conversion functions allow you to transform between different error-handling typ
 Converts a Maybe to a Result. Some becomes Ok with the value, None becomes Err using the provided error factory.
 
 ```typescript
-import { some, none, toResult, error } from '@deessejs/core';
+import { some, none, toResult, error } from '@deessejs/fp';
 import { z } from 'zod';
 
 const NotFoundError = error({
@@ -30,7 +30,7 @@ toResult(none(), () => NotFoundError({ key: 'answer' }));    // Err(NotFoundErro
 Alias for `toResult`. Same behavior.
 
 ```typescript
-import { fromMaybe } from '@deessejs/core';
+import { fromMaybe } from '@deessejs/fp';
 
 fromMaybe(some(42), () => 'error'); // Ok(42)
 fromMaybe(none(), () => 'error');    // Err('error')
@@ -43,7 +43,7 @@ fromMaybe(none(), () => 'error');    // Err('error')
 Converts a Result to a Maybe. Ok becomes Some with the value, Err becomes None. The error information is lost.
 
 ```typescript
-import { ok, err, toMaybeFromResult } from '@deessejs/core';
+import { ok, err, toMaybeFromResult } from '@deessejs/fp';
 
 toMaybeFromResult(ok(42)); // Some(42)
 toMaybeFromResult(err('oops')); // None
@@ -54,7 +54,7 @@ toMaybeFromResult(err('oops')); // None
 Alias for `toMaybeFromResult`. Same behavior.
 
 ```typescript
-import { fromResult } from '@deessejs/core';
+import { fromResult } from '@deessejs/fp';
 
 fromResult(ok(42)); // Some(42)
 fromResult(err('oops')); // None
@@ -67,7 +67,7 @@ fromResult(err('oops')); // None
 Converts a nullable value directly to Result in one step. This combines `fromNullable` and `toResult` into a single operation.
 
 ```typescript
-import { resultFromNullable, error } from '@deessejs/core';
+import { resultFromNullable, error } from '@deessejs/fp';
 import { z } from 'zod';
 
 const NotFoundError = error({
@@ -87,7 +87,7 @@ resultFromNullable(undefined, () => NotFoundError({ field: 'name' })); // Err(No
 This is useful for database lookups, environment variables, and other sources where null/undefined indicates absence:
 
 ```typescript
-import { resultFromNullable } from '@deessejs/core';
+import { resultFromNullable } from '@deessejs/fp';
 
 const user = resultFromNullable(
   database.findUser(id),
@@ -102,7 +102,7 @@ const user = resultFromNullable(
 Wraps a synchronous function that might throw in a Result. Returns Ok with the value if successful, Err if it throws.
 
 ```typescript
-import { resultFromThrowable } from '@deessejs/core';
+import { resultFromThrowable } from '@deessejs/fp';
 
 resultFromThrowable(() => JSON.parse('{"valid": true}')); // Ok({ valid: true })
 resultFromThrowable(() => JSON.parse('invalid json'));   // Err(SyntaxError: Unexpected token)
@@ -111,7 +111,7 @@ resultFromThrowable(() => JSON.parse('invalid json'));   // Err(SyntaxError: Une
 For custom error types, transform the caught error:
 
 ```typescript
-import { resultFromThrowable, mapErr } from '@deessejs/core';
+import { resultFromThrowable, mapErr } from '@deessejs/fp';
 
 const parseJson = (input: string) =>
   mapErr(
@@ -134,7 +134,7 @@ const parseJson = (input: string) =>
 ### Database Lookup
 
 ```typescript
-import { resultFromNullable } from '@deessejs/core';
+import { resultFromNullable } from '@deessejs/fp';
 
 const findUser = (id: string) =>
   resultFromNullable(
@@ -146,7 +146,7 @@ const findUser = (id: string) =>
 ### Environment Variables
 
 ```typescript
-import { resultFromNullable } from '@deessejs/core';
+import { resultFromNullable } from '@deessejs/fp';
 
 const getPort = () =>
   resultFromNullable(
@@ -158,7 +158,7 @@ const getPort = () =>
 ### Safe JSON Parsing
 
 ```typescript
-import { resultFromThrowable } from '@deessejs/core';
+import { resultFromThrowable } from '@deessejs/fp';
 
 const safeParse = <T>(input: string) =>
   resultFromThrowable(() => JSON.parse(input) as T);
@@ -175,7 +175,7 @@ if (result.ok) {
 ### Combining with Maybe Operations
 
 ```typescript
-import { some, toMaybeFromResult, flatMap, fromNullable } from '@deessejs/core';
+import { some, toMaybeFromResult, flatMap, fromNullable } from '@deessejs/fp';
 
 const getUserName = (id: string) =>
   flatMap(

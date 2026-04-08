@@ -20,7 +20,7 @@ tsx examples/file-system/index.ts
 ### 1. Safe File Reading
 
 ```typescript
-import { attempt } from "@deessejs/core";
+import { attempt } from "@deessejs/fp";
 
 const result = attempt(() =>
   require("fs").readFileSync(path, "utf-8")

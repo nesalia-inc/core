@@ -9,7 +9,7 @@ Explicit success/failure with typed errors.
 ## Creating Results
 
 ```typescript
-import { ok, err } from '@deessejs/core';
+import { ok, err } from '@deessejs/fp';
 
 // Success
 const success: Result<number, Error> = ok(42);
@@ -21,7 +21,7 @@ const failure: Result<number, Error> = err(new Error('oops'));
 ## Type Guards
 
 ```typescript
-import { ok, err, isOk, isErr } from '@deessejs/core';
+import { ok, err, isOk, isErr } from '@deessejs/fp';
 
 const result = ok(42);
 
@@ -37,7 +37,7 @@ if (isErr(result)) {
 ## Transforming
 
 ```typescript
-import { ok, err, map, flatMap, mapErr } from '@deessejs/core';
+import { ok, err, map, flatMap, mapErr } from '@deessejs/fp';
 
 // map transforms the success value
 const doubled = map(ok(21), x => x * 2); // Ok(42)
@@ -57,7 +57,7 @@ const withError = mapErr(err('old'), e => new Error(e)); // Err(Error: 'old')
 ## Extraction
 
 ```typescript
-import { ok, err, getOrElse, getOrCompute, unwrap } from '@deessejs/core';
+import { ok, err, getOrElse, getOrCompute, unwrap } from '@deessejs/fp';
 
 // getOrElse returns default if Err
 const value = getOrElse(ok(42), 0); // 42
@@ -74,7 +74,7 @@ unwrap(err('oops')); // throws 'oops'
 ## Pattern Matching
 
 ```typescript
-import { ok, err, match } from '@deessejs/core';
+import { ok, err, match } from '@deessejs/fp';
 
 const result = ok(42);
 
@@ -88,14 +88,14 @@ const message = match(
 ## Combining Multiple Results
 
 ```typescript
-import { ok, err, all } from '@deessejs/core';
+import { ok, err, all } from '@deessejs/fp';
 
 // all succeeds only if all succeed (fail-fast)
 const combined = all(ok(1), ok(2), ok(3)); // Ok([1, 2, 3])
 const failed = all(ok(1), err('fail'), ok(3)); // Err('fail')
 
 // swap exchanges Ok and Err
-import { swap } from '@deessejs/core';
+import { swap } from '@deessejs/fp';
 swap(ok(42)); // Err(42)
 swap(err('oops')); // Ok('oops')
 ```

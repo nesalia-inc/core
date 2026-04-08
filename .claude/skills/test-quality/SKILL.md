@@ -910,7 +910,7 @@ If a function requires 20 tests to cover all paths:
 1. Can we reduce the number of paths?
 2. Can we use lookup tables instead of conditionals?
 3. Can we extract helper functions?
-4. Can we use @deessejs/core Result/Maybe to reduce null checks?
+4. Can we use @deessejs/fp Result/Maybe to reduce null checks?
 ```
 
 ### Example: Refactor Before Adding Tests
@@ -991,7 +991,7 @@ const DISCOUNT_RATES = {
 
 **Recommendation:** Use [simplify-code skill](../simplify-code-skill/SKILL.md)
 - Replace nested if/else with lookup table
-- Use @deessejs/core Result/Maybe to eliminate null checks
+- Use @deessejs/fp Result/Maybe to eliminate null checks
 - Target: < 10 tests for same coverage
 - Expected reduction: 80% fewer tests
 ```

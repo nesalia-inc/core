@@ -20,7 +20,7 @@ tsx examples/conversions/index.ts
 ### Result to Maybe
 
 ```typescript
-import { toMaybeFromResult } from "@deessejs/core";
+import { toMaybeFromResult } from "@deessejs/fp";
 
 const result = ok(42);
 const maybe = toMaybeFromResult(result); // Some(42)
@@ -32,7 +32,7 @@ const noneMaybe = toMaybeFromResult(error); // None
 ### Maybe to Result
 
 ```typescript
-import { toResult } from "@deessejs/core";
+import { toResult } from "@deessejs/fp";
 
 const maybe = some("value");
 const result = toResult(maybe, {
@@ -50,7 +50,7 @@ const error = toResult(none, {
 ### Result to Try
 
 ```typescript
-import { toTry } from "@deessejs/core";
+import { toTry } from "@deessejs/fp";
 
 const okResult = ok("data");
 const tryOk = toTry(okResult); // Try("data")

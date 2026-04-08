@@ -1,6 +1,6 @@
-# @deessejs/core
+# @deessejs/fp
 
-TypeScript monorepo for `@deessejs/core` - Type-safe error handling library using pnpm workspaces, turbo, vitest, husky, and changesets.
+TypeScript monorepo for `@deessejs/fp` - Type-safe error handling library using pnpm workspaces, turbo, vitest, husky, and changesets.
 
 # Agent Mentality
 
@@ -334,7 +334,7 @@ You are not a replacement for a junior developer. You are the infrastructure tha
 ```
 .
 ├── packages/              # Workspace packages
-│   └── core/             # Main @deessejs/core package
+│   └── core/             # Main @deessejs/fp package
 ├── examples/             # Usage examples
 ├── .github/workflows/    # GitHub Actions
 ├── .husky/              # Git hooks

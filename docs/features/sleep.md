@@ -13,7 +13,7 @@ Delays are essential in async programming:
 // Need to rate limit...
 
 // Solution: Simple promise-based delays
-import { sleep } from '@deessejs/core';
+import { sleep } from '@deessejs/fp';
 await sleep(1000); // Wait 1 second
 ```
 
@@ -22,7 +22,7 @@ await sleep(1000); // Wait 1 second
 ## Quick Start
 
 ```typescript
-import { sleep, withTimeout, sleepWithSignal } from '@deessejs/core';
+import { sleep, withTimeout, sleepWithSignal } from '@deessejs/fp';
 
 // Simple delay
 await sleep(1000); // Wait 1 second
@@ -45,7 +45,7 @@ controller.abort(); // Cancels the sleep
 Creates a promise that resolves after the specified delay:
 
 ```typescript
-import { sleep } from '@deessejs/core';
+import { sleep } from '@deessejs/fp';
 
 // Wait 1 second
 await sleep(1000);
@@ -64,7 +64,7 @@ await sleep(0);
 Adds a timeout to any promise. Throws a `TimeoutError` if the promise doesn't resolve in time:
 
 ```typescript
-import { withTimeout } from '@deessejs/core';
+import { withTimeout } from '@deessejs/fp';
 
 // Basic usage
 const result = await withTimeout(
@@ -107,7 +107,7 @@ interface TimeoutError extends Error {
 Examples:
 
 ```typescript
-import { withTimeout } from '@deessejs/core';
+import { withTimeout } from '@deessejs/fp';
 
 // Custom message
 await withTimeout(promise, 1000, {
@@ -132,7 +132,7 @@ await withTimeout(promise, 1000, {
 A sleep that can be cancelled using an AbortSignal:
 
 ```typescript
-import { sleepWithSignal } from '@deessejs/core';
+import { sleepWithSignal } from '@deessejs/fp';
 
 const controller = new AbortController();
 
@@ -156,7 +156,7 @@ try {
 ### Retry with Delay
 
 ```typescript
-import { retryAsync, sleep } from '@deessejs/core';
+import { retryAsync, sleep } from '@deessejs/fp';
 
 // Exponential backoff with sleep
 const fetchWithBackoff = async (url: string, attempts = 3) => {
@@ -176,7 +176,7 @@ const fetchWithBackoff = async (url: string, attempts = 3) => {
 ### Rate Limiting
 
 ```typescript
-import { sleep } from '@deessejs/core';
+import { sleep } from '@deessejs/fp';
 
 const rateLimitedFetch = async (urls: string[]) => {
   const results = [];
@@ -194,7 +194,7 @@ const rateLimitedFetch = async (urls: string[]) => {
 ### API Call with Timeout
 
 ```typescript
-import { withTimeout, TimeoutError } from '@deessejs/core';
+import { withTimeout, TimeoutError } from '@deessejs/fp';
 
 const fetchWithTimeout = async (url: string) => {
   try {
@@ -212,7 +212,7 @@ const fetchWithTimeout = async (url: string) => {
 ### Debouncing
 
 ```typescript
-import { sleep } from '@deessejs/core';
+import { sleep } from '@deessejs/fp';
 
 const debounce = <T extends (...args: any[]) => any>(
   fn: T,
@@ -238,7 +238,7 @@ const debouncedSearch = debounce(async (query: string) => {
 ### Timeout with Cleanup
 
 ```typescript
-import { withTimeout, sleepWithSignal } from '@deessejs/core';
+import { withTimeout, sleepWithSignal } from '@deessejs/fp';
 
 const fetchWithCleanup = async (url: string) => {
   const controller = new AbortController();
@@ -275,7 +275,7 @@ const data = await fetch('/api/data'); // Could hang forever
 ### 2. Handle Timeout Errors Gracefully
 
 ```typescript
-import { withTimeout, TimeoutError } from '@deessejs/core';
+import { withTimeout, TimeoutError } from '@deessejs/fp';
 
 try {
   await withTimeout(riskyOperation(), 5000);
@@ -292,7 +292,7 @@ try {
 ### 3. Use AbortSignal for Cancellation
 
 ```typescript
-import { sleepWithSignal } from '@deessejs/core';
+import { sleepWithSignal } from '@deessejs/fp';
 
 const controller = new AbortController();
 
@@ -316,7 +316,7 @@ await sleepWithSignal(5000, token.signal);
 **Recommended pattern for proper cleanup:**
 
 ```typescript
-import { withTimeout, sleepWithSignal } from '@deessejs/core';
+import { withTimeout, sleepWithSignal } from '@deessejs/fp';
 
 const fetchWithCleanup = async (url: string) => {
   const controller = new AbortController();
@@ -355,7 +355,7 @@ Human-readable strings like `'1s'` or `'500ms'` are not supported. This keeps th
 Unlike Retry, `sleep` does not include jitter support. For retry scenarios, use the `jitter` option in `retryAsync` instead:
 
 ```typescript
-import { retryAsync } from '@deessejs/core';
+import { retryAsync } from '@deessejs/fp';
 
 // Jitter is built into retry
 await retryAsync(fn, {
@@ -377,7 +377,7 @@ On Node.js, a long-running `sleep` can prevent the process from exiting cleanly.
 
 ## Comparison with Alternatives
 
-| Feature | @deessejs/core | Native |
+| Feature | @deessejs/fp | Native |
 |---------|---------------|--------|
 | `sleep()` | Simple promise wrapper | No (need manual implementation) |
 | `withTimeout()` | Rich error with timeout/elapsed | Promise.race manually |

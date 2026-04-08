@@ -1,15 +1,15 @@
 /**
  * HTTP API Error Handling Example
  *
- * This example demonstrates how to use @deessejs/core for:
+ * This example demonstrates how to use @deessejs/fp for:
  * - Wrapping fetch API calls with AsyncResult
  * - Implementing retry logic with exponential backoff
  * - Adding timeout constraints to requests
  * - Distinguishing between network errors and business logic errors
  */
 
-import { ok, err, fromPromise, okAsync, errAsync } from "@deessejs/core";
-import { retryAsync, withTimeout } from "@deessejs/core";
+import { ok, err, fromPromise, okAsync, errAsync } from "@deessejs/fp";
+import { retryAsync, withTimeout } from "@deessejs/fp";
 
 // Types
 type User = {
@@ -244,7 +244,7 @@ const getUserWithPosts = async (userId: number) => {
 
 const main = async () => {
   console.log("╔════════════════════════════════════════════════════════════╗");
-  console.log("║   HTTP API Error Handling with @deessejs/core            ║");
+  console.log("║   HTTP API Error Handling with @deessejs/fp            ║");
   console.log("╚════════════════════════════════════════════════════════════╝");
 
   try {

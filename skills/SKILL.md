@@ -5,7 +5,7 @@ metadata:
   tags: typescript, functional-programming, error-handling, result, maybe, try, asyncresult
 ---
 
-# @deessejs/core Skill
+# @deessejs/fp Skill
 
 Functional programming patterns for TypeScript: Result, Maybe, Try, AsyncResult, and structured error handling.
 
@@ -19,7 +19,7 @@ Functional programming patterns for TypeScript: Result, Maybe, Try, AsyncResult,
 
 ## Overview
 
-@deessejs/core provides zero-dependency monads for type-safe error handling:
+@deessejs/fp provides zero-dependency monads for type-safe error handling:
 
 | Type | Use When | Replaces |
 |------|----------|----------|
@@ -86,7 +86,7 @@ const getCity = (user: Maybe<User>): Maybe<string> =>
 Always use the Error system for domain errors:
 
 ```typescript
-import { error, err } from '@deessejs/core';
+import { error, err } from '@deessejs/fp';
 import { z } from 'zod';
 
 const ValidationError = error({
@@ -106,7 +106,7 @@ No classes. No mutations. Pure functions only:
 
 ```typescript
 // Good - standalone functions
-import { map, flatMap } from '@deessejs/core';
+import { map, flatMap } from '@deessejs/fp';
 const doubled = map(result, x => x * 2);
 
 // Bad - methods on objects
@@ -124,7 +124,7 @@ See [packages/core/src/index.ts](https://github.com/nesalia-inc/core/blob/main/p
 ### Input Validation
 
 ```typescript
-import { ok, err, map, flatMap } from '@deessejs/core';
+import { ok, err, map, flatMap } from '@deessejs/fp';
 
 const validateEmail = (email: string): Result<string, Error> =>
   email.includes('@') ? ok(email) : err(new Error('Invalid email'));
@@ -145,7 +145,7 @@ const createUser = (email: string, age: string) =>
 ### Safe API Calls
 
 ```typescript
-import { fromPromise, ok, err, isOk } from '@deessejs/core';
+import { fromPromise, ok, err, isOk } from '@deessejs/fp';
 
 const fetchUser = (id: string) =>
   fromPromise(fetch(`/api/users/${id}`))
@@ -165,7 +165,7 @@ if (isOk(result)) {
 ### Nested Property Access
 
 ```typescript
-import { some, fromNullable, flatMap, getOrElse } from '@deessejs/core';
+import { some, fromNullable, flatMap, getOrElse } from '@deessejs/fp';
 
 const getCity = (user: Maybe<User>): Maybe<string> =>
   flatMap(user, u =>

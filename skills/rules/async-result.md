@@ -17,7 +17,7 @@ Use AsyncResult when:
 ## Creating AsyncResults
 
 ```typescript
-import { fromPromise, okAsync, errAsync, isOk, isErr } from '@deessejs/core';
+import { fromPromise, okAsync, errAsync, isOk, isErr } from '@deessejs/fp';
 
 // fromPromise wraps a Promise
 const result = await fromPromise(fetch('/api/user'));
@@ -55,7 +55,7 @@ async function fetchUser(id: string): Promise<AsyncResult<User, Error>> {
 ## Chaining Operations
 
 ```typescript
-import { fromPromise, okAsync, flatMap, map, isOk } from '@deessejs/core';
+import { fromPromise, okAsync, flatMap, map, isOk } from '@deessejs/fp';
 
 const fetchUser = (id: number) =>
   fromPromise(fetch(`/api/users/${id}`).then(r => r.json()));
@@ -77,7 +77,7 @@ const getUserWithPosts = async (userId: number) =>
 ## Combining AsyncResults
 
 ```typescript
-import { okAsync, all, race, traverse } from '@deessejs/core';
+import { okAsync, all, race, traverse } from '@deessejs/fp';
 
 // all - succeed only if all succeed (fail-fast)
 const [user, posts, comments] = await all(
@@ -99,7 +99,7 @@ const users = await traverse([1, 2, 3], fetchUser);
 ## Transforming
 
 ```typescript
-import { fromPromise, map, mapAsync, flatMap, mapErr } from '@deessejs/core';
+import { fromPromise, map, mapAsync, flatMap, mapErr } from '@deessejs/fp';
 
 // map - sync transformation
 const doubled = await map(okAsync(21), x => x * 2); // Ok(42)
@@ -127,7 +127,7 @@ const withProfile = flatMap(
 ## Extraction
 
 ```typescript
-import { okAsync, getOrElse, getOrCompute, unwrap, unwrapOr } from '@deessejs/core';
+import { okAsync, getOrElse, getOrCompute, unwrap, unwrapOr } from '@deessejs/fp';
 
 // getOrElse returns default if Err
 const value = await getOrElse(okAsync(42), 0); // 42
@@ -144,7 +144,7 @@ unwrap(errAsync(new Error('fail'))); // throws
 ## Pattern Matching
 
 ```typescript
-import { okAsync, match } from '@deessejs/core';
+import { okAsync, match } from '@deessejs/fp';
 
 const result = await okAsync(42);
 
@@ -158,7 +158,7 @@ const message = await match(
 ## AbortSignal Support
 
 ```typescript
-import { fromPromise, withSignal } from '@deessejs/core';
+import { fromPromise, withSignal } from '@deessejs/fp';
 
 const controller = new AbortController();
 
@@ -175,7 +175,7 @@ controller.abort();
 ## Conversions
 
 ```typescript
-import { okAsync, toNullable, toUndefined } from '@deessejs/core';
+import { okAsync, toNullable, toUndefined } from '@deessejs/fp';
 
 // To nullable
 await toNullable(okAsync(42)); // 42

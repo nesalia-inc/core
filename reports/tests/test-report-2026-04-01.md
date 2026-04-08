@@ -1,7 +1,7 @@
 # Test Quality Report
 
 **Generated:** 2026-04-01
-**Project:** @deessejs/core
+**Project:** @deessejs/fp
 **Package analyzed:** packages/core
 
 ## Executive Summary
@@ -315,7 +315,7 @@ graph TD
 
 **Overall Assessment: A (Excellent)**
 
-The @deessejs/core test suite is of exceptionally high quality:
+The @deessejs/fp test suite is of exceptionally high quality:
 
 - **501 tests** covering all functional patterns
 - **96%+ statement and line coverage** across most modules

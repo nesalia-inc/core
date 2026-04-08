@@ -13,7 +13,7 @@ import {
   none,
   toResult,
   toMaybeFromResult,
-} from "@deessejs/core";
+} from "@deessejs/fp";
 
 // ============================================================================
 // Types
@@ -141,7 +141,7 @@ const migrationPatterns = () => {
 
 const main = () => {
   console.log("╔════════════════════════════════════════════════════════════╗");
-  console.log("║   Type Conversions Guide with @deessejs/core               ║");
+  console.log("║   Type Conversions Guide with @deessejs/fp               ║");
   console.log("╚════════════════════════════════════════════════════════════╝");
 
   try {
