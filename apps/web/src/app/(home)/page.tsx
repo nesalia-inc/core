@@ -37,10 +37,10 @@ export default function HomePage() {
       <div className="border-b border-border">
         <div className="w-full max-w-5xl border border-b-0 border-border mx-auto flex flex-col justify-start text-center flex-1">
           <div className="max-w-3xl mx-auto my-24">
-            <Link href="https://github.com/nesalia-inc/core" target="_blank" rel="noreferrer">
+            <Link href="https://github.com/nesalia-inc/fp/releases" target="_blank" rel="noreferrer">
               <Badge variant="outline" className="gap-2 rounded-md">
                 <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                v0.1.7 released
+                v3.0.0 released
               </Badge>
             </Link>
             <h1 className="text-4xl font-bold mb-4 mt-4">
@@ -101,7 +101,7 @@ export default function HomePage() {
                     variant="outline"
                     className="rounded-sm bg-blue-500/10 border-blue-500/20 text-blue-500"
                   >
-                    v0.1.7
+                    v3.0.0
                   </Badge>
                 </div>
                 <CardTitle className="mt-4 pl-4">Type-safe</CardTitle>
