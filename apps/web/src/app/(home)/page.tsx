@@ -58,7 +58,7 @@ export default function HomePage() {
                 <Link href="/docs">Get Started</Link>
               </Button>
               <Button variant="outline" asChild>
-                <Link href="https://github.com/nesalia-inc/core" target="_blank" rel="noreferrer">
+                <Link href="https://github.com/nesalia-inc/fp" target="_blank" rel="noreferrer">
                   GitHub
                 </Link>
               </Button>
