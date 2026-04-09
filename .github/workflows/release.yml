@@ -29,7 +29,7 @@ jobs:
 
       - name: Publish to npm
         run: |
-          cd packages/core
+          cd packages/fp
           echo '//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}' > .npmrc
           npm publish --include-dist --access public
 

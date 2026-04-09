@@ -135,4 +135,4 @@ const processOrder = (order: Order) =>
 
 ### Reference
 
-See `packages/core/src/result/` and `packages/core/src/async-result/` for examples of proper rail design.
+See `packages/fp/src/result/` and `packages/fp/src/async-result/` for examples of proper rail design.

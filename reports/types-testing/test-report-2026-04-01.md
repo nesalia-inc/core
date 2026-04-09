@@ -2,7 +2,7 @@
 
 **Generated:** 2026-04-01
 **Project:** @deessejs/fp
-**Package analyzed:** packages/core
+**Package analyzed:** packages/fp
 
 ## Overall Score: 15/100 (F - Failing)
 
@@ -140,18 +140,18 @@ type Test2 = Equal<Result<number, Error>, Result<string, Error>>;  // Should be 
    ```
 
 2. **Create type test file for Result types**
-   - File: `packages/core/tests/result.types.test-types.ts`
+   - File: `packages/fp/tests/result.types.test-types.ts`
    - Test: `Result<T, E> = Ok<T, E> | Err<E>`
    - Test: `Success<T> = Result<T, never>`
    - Test: `ExtractResultError` conditional type
 
 3. **Create type test file for Maybe types**
-   - File: `packages/core/tests/maybe.types.test-types.ts`
+   - File: `packages/fp/tests/maybe.types.test-types.ts`
    - Test: `Maybe<T> = Some<T> | None`
    - Test: `None.equals` uses `Maybe<unknown>`
 
 4. **Create type test file for Error types**
-   - File: `packages/core/tests/error.types.test-types.ts`
+   - File: `packages/fp/tests/error.types.test-types.ts`
    - Test: `Error<T> = Readonly<ErrorData<T>> & NativeError & ErrorMethods<T>`
    - Test: `ExtractError<T>` conditional type
 

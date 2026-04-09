@@ -51,7 +51,7 @@ This project uses a Fumadocs-based documentation system with MDX files.
 | `apps/web/content/docs/` | Primary user-facing documentation (MDX) |
 | `apps/web/content/docs/meta.json` | Navigation structure (auto-generates ToC) |
 | `docs/` | Feature documentation (additional reference) |
-| `packages/core/` | API-level READMEs |
+| `packages/fp/` | API-level READMEs |
 
 ### Navigation Structure
 

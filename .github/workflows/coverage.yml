@@ -4,17 +4,17 @@ on:
   push:
     branches: [main]
     paths:
-      - 'packages/core/src/**'
-      - 'packages/core/tests/**'
-      - 'packages/core/vitest.config.ts'
-      - 'packages/core/tsconfig.json'
+      - 'packages/fp/src/**'
+      - 'packages/fp/tests/**'
+      - 'packages/fp/vitest.config.ts'
+      - 'packages/fp/tsconfig.json'
   pull_request:
     branches: [main]
     paths:
-      - 'packages/core/src/**'
-      - 'packages/core/tests/**'
-      - 'packages/core/vitest.config.ts'
-      - 'packages/core/tsconfig.json'
+      - 'packages/fp/src/**'
+      - 'packages/fp/tests/**'
+      - 'packages/fp/vitest.config.ts'
+      - 'packages/fp/tsconfig.json'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -65,7 +65,7 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          cd packages/core
+          cd packages/fp
           npx vitest run --coverage
 
       - name: Find coverage comment
@@ -102,7 +102,7 @@ jobs:
           script: |
             try {
               const fs = require('fs');
-              const coveragePath = './packages/core/coverage/coverage-summary.json';
+              const coveragePath = './packages/fp/coverage/coverage-summary.json';
 
               if (!fs.existsSync(coveragePath)) {
                 console.log('Coverage file not found, skipping comment');

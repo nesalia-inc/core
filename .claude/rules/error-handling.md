@@ -77,4 +77,4 @@ const ValidationError = error({
 
 ### Reference
 
-See `packages/core/src/error/` for the complete Error system implementation.
+See `packages/fp/src/error/` for the complete Error system implementation.

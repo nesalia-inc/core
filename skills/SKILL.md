@@ -1,5 +1,5 @@
 ---
-name: deessejs-core
+name: deesse-fp
 description: Functional programming patterns for TypeScript - Result, Maybe, Try, AsyncResult, and structured error handling
 metadata:
   tags: typescript, functional-programming, error-handling, result, maybe, try, asyncresult
@@ -117,7 +117,7 @@ See [Functional Programming Rules](./rules/functional-programming.md) for princi
 
 ## API Reference
 
-See [packages/core/src/index.ts](https://github.com/nesalia-inc/core/blob/main/packages/core/src/index.ts) for the complete exported API.
+See [packages/fp/src/index.ts](https://github.com/nesalia-inc/fp/blob/main/packages/fp/src/index.ts) for the complete exported API.
 
 ## Examples
 
