@@ -15,28 +15,81 @@ import { Cards, Card } from 'fumadocs-ui/components/card';
 
 ## The Problem with Traditional Error Handling
 
-Traditional error handling in TypeScript relies heavily on exceptions and try-catch blocks:
+Traditional error handling in TypeScript relies heavily on exceptions and try-catch blocks. But try/catch works. Until it doesn't.
+
+### 1. Errors Lose Context
 
 ```typescript
-function divide(a: number, b: number): number {
-  if (b === 0) throw new Error("Division by zero");
-  return a / b;
-}
-
+// try/catch: Error loses all context
 try {
-  const result = divide(10, 2);
-  console.log(result * 2);
+  const user = await fetchUser(id);
+  const profile = await fetchProfile(user.profileId);
+  const posts = await fetchPosts(profile.id);
 } catch (e) {
-  console.error(e.message);
+  logger.error(e); // What failed? Where? Why?
 }
 ```
 
-This approach has fundamental issues:
+When this fails, you have no idea:
+- Was it `fetchUser`? `fetchProfile`? `fetchPosts`?
+- What was the ID that failed?
+- Was it a network error? A 404? A timeout?
 
-1. **Exceptions can escape** - There's no guarantee you'll catch all errors
-2. **No static type checking** - TypeScript can't verify you've handled every error case
-3. **Nested code** - Error handling logic becomes deeply nested and hard to read
-4. **Easy to forget** - It's simple to miss an error case
+### 2. Types Lie to You
+
+TypeScript promises type safety everywhere except exceptions:
+
+```typescript
+function fetchUser(id: string): User {
+  // TypeScript says: returns User
+  // Reality: might throw, might return null
+}
+```
+
+With try/catch, the type system can't tell you what can fail.
+
+### 3. Nested try/catch is Ugly
+
+```typescript
+try {
+  try {
+    const user = await fetchUser(id);
+    try {
+      const profile = await fetchProfile(user.profileId);
+    } catch (e) {
+      // Handle profile error
+    }
+  } catch (e) {
+    // Handle user error
+  }
+} catch (e) {
+  // Handle... what exactly?
+}
+```
+
+### The Result Alternative
+
+@deessejs/fp makes errors explicit in your types:
+
+```typescript
+import { fromPromise, ok, err } from '@deessejs/fp';
+
+const result = await fromPromise(fetchUser(id))
+  .flatMap(user => fromPromise(fetchProfile(user.profileId)))
+  .flatMap(profile => fromPromise(fetchPosts(profile.id)))
+  .mapErr(e => e.addNotes('Failed to load user feed'));
+
+// TypeScript KNOWS this might fail
+// Error has FULL context
+```
+
+| try/catch | @deessejs/fp |
+|-----------|---------------|
+| Errors lose context | Errors have rich context |
+| Types lie | Types tell the truth |
+| Nested mess | Flat, composable chains |
+| Silent failures possible | Compiler enforces handling |
+| Unknown failure modes | Explicit error types |
 
 <Callout type="warning">
   Did you notice the function signature says it returns `number`, but it can actually throw? TypeScript doesn't tell you about the potential for failure.
