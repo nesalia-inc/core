@@ -84,6 +84,30 @@ Choose @deessejs/fp when you want:
 
 ## Migration from other libraries
 
+### From try/catch
+
+Ready to make the switch? Here's the simplest example:
+
+```typescript
+// try/catch
+try {
+  const data = JSON.parse(input);
+} catch (e) {
+  console.error('Parse failed:', e.message);
+}
+
+// @deessejs/fp
+import { attempt } from '@deessejs/fp';
+
+const result = attempt(() => JSON.parse(input));
+result.match({
+  onSuccess: (data) => console.log(data),
+  onError: (e) => console.error('Parse failed:', e.message)
+});
+```
+
+[Read more about why to switch](/docs/why-not-try-catch)
+
 ### From neverthrow
 
 ```typescript
@@ -145,6 +169,9 @@ const divide = (a: number, b: number): Result<number, string> => {
 <Cards>
   <Card title="Getting Started" href="/docs">
     Quick introduction
+  </Card>
+  <Card title="Why not try/catch?" href="/docs/why-not-try-catch">
+    The case for type-safe error handling
   </Card>
   <Card title="Result" href="/docs/reference/result">
     Deep dive into Result type
