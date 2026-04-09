@@ -1,0 +1,217 @@
+---
+title: Why Not Build Your Own?
+description: Why type-safe error handling beats building it yourself
+icon: Wrench
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Cards, Card } from 'fumadocs-ui/components/card';
+
+# Why Not Build Your Own?
+
+A basic Result type is trivial to build. Here's why you shouldn't.
+
+## The True Cost
+
+Everyone says "I'll just build a simple Result type." Here's what that actually costs:
+
+| Feature | Time to Build Properly |
+|---------|----------------------|
+| Basic Result type | 15 minutes |
+| TypeScript generics | 1 hour |
+| AsyncResult (thenable) | 4 hours |
+| Error enrichment (notes, cause) | 2 hours |
+| Zod integration | 3 hours |
+| Sensitive data redaction | 3 hours |
+| Retry with backoff | 4 hours |
+| Maybe type | 2 hours |
+| Try type | 1 hour |
+| Edge cases, tests | 10+ hours |
+| **Total** | **~30+ hours** |
+
+<Callout type="warning">
+  A production-ready error handling library takes 30+ hours to build properly.
+  @deessejs/fp is 30 hours of work we've already done.
+</Callout>
+
+## What You're Actually Building
+
+### The "Simple" Version
+
+```typescript
+type Result<T, E = Error> =
+  | { ok: true; value: T }
+  | { ok: false; error: E };
+```
+
+15 minutes. Looks good. Ship it.
+
+### The Problems Start Later
+
+```typescript
+// Problem 1: Async doesn't work
+const result = await fetchUser(id);
+// TypeScript: What's the error type?
+
+// Problem 2: Null handling
+const user = findUser(id);
+// What if user is undefined?
+
+// Problem 3: Error context
+try {
+  await fetchUser(id);
+} catch (e) {
+  logger.error(e); // What happened? Where?
+}
+
+// Problem 4: Type narrowing breaks
+const r = ok(42);
+if (!r.ok) return;
+console.log(r.value); // TypeScript might not know
+```
+
+### The Real Code You Need
+
+```typescript
+// This is what production error handling actually needs:
+
+// 1. Typed async errors
+const result = await fromPromise(fetchUser(id))
+  .map(user => user.profile);
+
+// 2. Null-safe Maybe
+const name = fromNullable(findUser(id))
+  .map(user => user.name)
+  .getOrElse('Anonymous');
+
+// 3. Error context preservation
+const enriched = err(new Error('Failed'))
+  .mapErr(e => e.addNotes('User validation'))
+  .from(previousError);
+
+// 4. Automatic sensitive data redaction
+const safe = err(new Error('Password: super_secret_123'));
+// safe.message === "Password: [REDACTED]"
+```
+
+## When Building Your Own Is Fine
+
+Use try/catch or build your own if:
+
+- **One-off scripts** - No production risk
+- **Throwaway code** - Will be deleted soon
+- **Personal projects** - No team depending on it
+- **Proof of concepts** - Speed over robustness
+
+## When You Need @deessejs/fp
+
+| Scenario | Why |
+|----------|-----|
+| Production systems | Bugs cost money |
+| Multiple failure modes | Complex error states need proper modeling |
+| Async operations | fetch(), DB calls need typed errors |
+| Team environments | Shared understanding, consistent patterns |
+| Compliance requirements | Audit trails, error tracking |
+| Long-term maintenance | You'll hit edge cases we already solved |
+
+## The ROI Calculation
+
+```
+Your team: 3 developers
+Hourly rate: $100/hour
+
+Building it yourself:
+- 30 hours × 3 developers = 90 hours
+- Cost: $9,000
+- Bugs you'll hit: Priceless
+- Time to market: 2-3 weeks slower
+
+Using @deessejs/fp:
+- Installation: 5 minutes
+- Cost: Free (MIT license)
+- Bugs we already solved: Included
+- Time to market: Today
+```
+
+<Callout type="success">
+  $9,000 vs free. 30 hours vs 5 minutes. Your call.
+</Callout>
+
+## What We Bring That You Won't Build
+
+### Error Enrichment
+
+```typescript
+// Add context to errors
+err(networkError)
+  .addNotes('Failed to fetch user profile')
+  .from(causeError)
+  .mapErr(e => e.withTags({ userId, requestId }));
+```
+
+### Zod Integration
+
+```typescript
+// Validate errors at runtime
+const ApiError = error({
+  name: 'ApiError',
+  schema: z.object({
+    code: z.string(),
+    status: z.number()
+  })
+});
+```
+
+### Sensitive Data Redaction
+
+```typescript
+// Automatically redact passwords, tokens, etc.
+const e = CredentialsError({
+  username: 'user@example.com',
+  password: 'super_secret'
+});
+// e.message contains "[REDACTED]" for password
+```
+
+### Production Utilities
+
+```typescript
+// Retry with backoff
+await retry(
+  () => fetchFlakyAPI(),
+  exponentialBackoff(100).take(3)
+);
+
+// Timeout with cleanup
+const { promise, cleanup } = withTimeout(
+  (signal) => fetchWithSignal(url, signal),
+  5000
+);
+```
+
+## The Honest Answer
+
+**When is building your own actually fine?**
+
+When you're learning. When it's a script. When you have weeks to spare.
+
+**When should you use @deessejs/fp?**
+
+When you're building something that matters. When errors cost money. When you want to ship today.
+
+## See Also
+
+<Cards>
+  <Card title="Result Type" href="/docs/reference/result">
+    The core Result type that powers everything
+  </Card>
+  <Card title="AsyncResult" href="/docs/reference/async-result">
+    Handle async operations with proper error typing
+  </Card>
+  <Card title="Error System" href="/docs/reference/error">
+    Rich errors with enrichment and Zod validation
+  </Card>
+  <Card title="Why not try/catch?" href="/docs/why-not-try-catch">
+    The case for type-safe error handling
+  </Card>
+</Cards>
