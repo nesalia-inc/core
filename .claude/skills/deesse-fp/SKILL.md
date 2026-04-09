@@ -1,5 +1,5 @@
 ---
-name: deessejs-core
+name: deesse-fp
 description: Functional programming patterns for TypeScript - Result, Maybe, Try, AsyncResult. Use when working with error handling, optional values, or async operations in TypeScript.
 ---
 
@@ -189,5 +189,5 @@ const maybe = fromNullable(value);
 
 ## Additional Resources
 
-- Documentation: https://core.deesse.dev
-- GitHub: https://github.com/nesalia-inc/core
+- Documentation: https://fp.deessejs.com
+- GitHub: https://github.com/nesalia-inc/fp

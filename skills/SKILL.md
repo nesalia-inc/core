@@ -12,9 +12,9 @@ Functional programming patterns for TypeScript: Result, Maybe, Try, AsyncResult,
 ## Quick Usage
 
 ```bash
-/deessejs-core
-/deessejs-core --topic=result
-/deessejs-core --topic=maybe
+/deesse-fp
+/deesse-fp --topic=result
+/deesse-fp --topic=maybe
 ```
 
 ## Overview

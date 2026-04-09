@@ -227,7 +227,7 @@ The gap is clear: developers want **simple Result types** (like neverthrow) but 
 - [ ] Fix `" Either"` keyword typo (leading space)
 - [ ] Add 15 new keywords: `fp-ts-alternative`, `neverthrow-alternative`, `typescript-error-handling`, `typed-errors`, `result-type`, `error-handling-typescript`, `exception-handling`, `type-safe-errors`, `typescript-fp`, `either`
 - [ ] Update description to: "TypeScript error handling that actually works. Result, Maybe, Try, and AsyncResult monads with perfect type inference, zero runtime deps, and React 19 support."
-- [ ] Fix homepage URL mismatch (fp.nesalia.com vs core.deessejs.com)
+- [ ] Fix homepage URL mismatch (fp.nesalia.com vs fp.deessejs.com)
 - [ ] Update GitHub Actions badge URL
 
 **Week 2 -- Migration Content:**
@@ -523,7 +523,7 @@ Review weekly. Adjust based on what is working.
 
 1. **Fix package.json keywords** -- Remove `" Either"` typo, add 15 new keywords
 2. **Update description** -- Problem-first, specific differentiators
-3. **Fix homepage URL** -- Verify fp.nesalia.com vs core.deessejs.com
+3. **Fix homepage URL** -- Verify fp.nesalia.com vs fp.deessejs.com
 4. **Update GitHub Actions badge** -- Verify correct repo URL
 5. **Pin "Why @deessejs/fp?" discussion** -- On GitHub repo
 6. **Create migration guide (neverthrow)** -- High-priority conversion page
@@ -533,7 +533,7 @@ Review weekly. Adjust based on what is working.
 
 ## Appendix: Key Resources
 
-- **Documentation:** https://core.deessejs.com
+- **Documentation:** https://fp.deessejs.com
 - **GitHub:** https://github.com/nesalia-inc/fp
 - **npm:** https://www.npmjs.com/package/@deessejs/fp
 
