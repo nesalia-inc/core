@@ -2,7 +2,7 @@
 
 **Generated:** 2026-04-01
 **Project:** @deessejs/fp
-**Package analyzed:** packages/core
+**Package analyzed:** packages/fp
 
 ## Executive Summary
 
@@ -284,7 +284,7 @@ These are minor observations, not critical issues.
 
 ```mermaid
 graph TD
-    A[packages/core] --> B[Result 98%]
+    A[packages/fp] --> B[Result 98%]
     A --> C[Maybe 92%]
     A --> D[AsyncResult 99%]
     A --> E[Error 91%]

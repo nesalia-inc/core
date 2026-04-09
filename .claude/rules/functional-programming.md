@@ -90,4 +90,4 @@ For AsyncResult and other types that use Thenable pattern, the `then()` method i
 
 ### Reference
 
-See `packages/core/src/result/` and `packages/core/src/async-result/` for examples of functional patterns.
+See `packages/fp/src/result/` and `packages/fp/src/async-result/` for examples of functional patterns.

@@ -94,7 +94,7 @@ This plan covers 7 areas with specific, actionable items. Every recommendation i
 "repository": {
   "type": "git",
   "url": "https://github.com/nesalia-inc/fp.git",
-  "directory": "packages/core"
+  "directory": "packages/fp"
 },
 "bugs": {
   "url": "https://github.com/nesalia-inc/fp/issues"
