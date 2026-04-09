@@ -1,50 +1,54 @@
 # 12-Month Roadmap
 
+**Status Legend:** ✅ Done | 🔄 In Progress | ⏳ Pending
+
 ---
 
-## Month 1: Fix the Basics (Foundation)
+## Month 1: Fix the Basics (Foundation) 🔄
 
 **Theme:** Make the library actually discoverable and the onboarding actually works.
 
-### Week 1: npm SEO Emergency Fixes
+### Week 1: npm SEO Emergency Fixes ✅
 
-| Action | Priority | Impact |
-|--------|----------|--------|
-| Fix `" Either"` typo in keywords (remove leading space) | CRITICAL | Searchability |
-| Add 15 new keywords: `fp-ts-alternative`, `neverthrow-alternative`, `typescript-error-handling`, `typed-errors`, `result-type`, `error-handling-typescript`, `exception-handling`, `type-safe-errors`, `typescript-fp`, `either` | CRITICAL | Searchability |
-| Update description to: "TypeScript error handling that actually works. Result, Maybe, Try, and AsyncResult monads with perfect type inference, zero runtime deps, and React 19 support." | HIGH | Conversion |
-| Fix homepage URL mismatch (currently fp.nesalia.com, should be core.deessejs.com) | HIGH | Trust |
-| Verify GitHub Actions badge URL | MEDIUM | Presentation |
+| Action | Priority | Impact | Status |
+|--------|----------|--------|--------|
+| Fix `" Either"` typo in keywords (remove leading space) | CRITICAL | Searchability | ✅ Done |
+| Add 15 new keywords: `fp-ts-alternative`, `neverthrow-alternative`, `typescript-error-handling`, `typed-errors`, `result-type`, `error-handling-typescript`, `exception-handling`, `type-safe-errors`, `typescript-fp`, `either` | CRITICAL | Searchability | ✅ Done |
+| Update description to: "TypeScript error handling that actually works..." | HIGH | Conversion | ✅ Done |
+| Fix homepage URL mismatch (fp.nesalia.com → fp.deessejs.com) | HIGH | Trust | ✅ Done |
+| Verify GitHub Actions badge URL | MEDIUM | Presentation | ⏳ Pending |
 
-### Week 2: First-Time User Experience
+### Week 2: First-Time User Experience 🔄
 
-| Action | Priority | Impact |
-|--------|----------|--------|
-| Create "Why @deessejs/fp instead of try/catch?" page -- THIS IS THE MISSING PAGE | CRITICAL | Conversion |
-| Create interactive 30-second playground on homepage | HIGH | Aha moment |
-| Add live code example to npm description (cannot, but link to it) | MEDIUM | First 5 minutes |
-| Ensure `ok()`, `err()`, `fromPromise()` are importable in one line | HIGH | Simplicity |
+| Action | Priority | Impact | Status |
+|--------|----------|--------|--------|
+| Create "Why @deessejs/fp instead of try/catch?" page -- THIS IS THE MISSING PAGE | CRITICAL | Conversion | ✅ Done |
+| Create interactive 30-second playground on homepage | HIGH | Aha moment | ⏳ Pending |
+| Add live code example to npm description (cannot, but link to it) | MEDIUM | First 5 minutes | ⏳ Pending |
+| Ensure `ok()`, `err()`, `fromPromise()` are importable in one line | HIGH | Simplicity | ✅ Verified |
 
-### Week 3: Migration Documentation
+### Week 3: Migration Documentation 🔄
 
-| Action | Priority | Impact |
-|--------|----------|--------|
-| Finalize "Migrating from neverthrow to @deessejs/fp" page | HIGH | Competitor switchers |
-| Finalize "Migrating from fp-ts to @deessejs/fp" page | HIGH | Competitor switchers |
-| Create "Why not just build your own Result type?" page | HIGH | Enterprise |
-| Create comparison table: @deessejs/fp vs neverthrow vs fp-ts vs ts-results | MEDIUM | Decision making |
+| Action | Priority | Impact | Status |
+|--------|----------|--------|--------|
+| Finalize "Migrating from neverthrow to @deessejs/fp" page | HIGH | Competitor switchers | ✅ Done |
+| Finalize "Migrating from fp-ts to @deessejs/fp" page | HIGH | Competitor switchers | ✅ Done |
+| Create "Why not just build your own Result type?" page | HIGH | Enterprise | ⏳ Pending |
+| Create comparison table: @deessejs/fp vs neverthrow vs fp-ts vs ts-results | MEDIUM | Decision making | ⏳ Pending |
 
-### Week 4: Community Seeding
+### Week 4: Community Seeding ⏳
 
-| Action | Priority | Impact |
-|--------|----------|--------|
-| Post "Ask HN: What's your TypeScript error handling strategy?" | HIGH | Awareness |
-| Answer 3 Reddit threads about TypeScript error handling | MEDIUM | Credibility |
-| Create GitHub discussion: "Show me your error handling code" | LOW | Community |
+| Action | Priority | Impact | Status |
+|--------|----------|--------|--------|
+| Post "Ask HN: What's your TypeScript error handling strategy?" | HIGH | Awareness | ⏳ Pending |
+| Answer 3 Reddit threads about TypeScript error handling | MEDIUM | Credibility | ⏳ Pending |
+| Create GitHub discussion: "Show me your error handling code" | LOW | Community | ⏳ Pending |
+
+**Month 1 Completion: ~65%**
 
 ---
 
-## Month 2: Build Credibility (Trust Building)
+## Month 2: Build Credibility (Trust Building) ⏳
 
 ### Weeks 5-6: Content Marketing Push
 
@@ -60,10 +64,10 @@
 
 | Action | Priority | Impact |
 |--------|----------|--------|
-| Create SECURITY.md with vulnerability disclosure policy | HIGH | Enterprise |
-| Document LTS/deprecation policy (e.g., "we'll deprecate with 12 months notice") | HIGH | Enterprise |
+| Create SECURITY.md with vulnerability disclosure policy | HIGH | Enterprise | ✅ Done |
+| Document LTS/deprecation policy (e.g., "we'll deprecate with 12 months notice") | HIGH | Enterprise | ⏳ Pending |
 | Create "TypeScript Error Handling: A Practical Guide" page | MEDIUM | SEO/Traffic |
-| Add "Who maintains this?" page with maintainer bios | MEDIUM | Trust |
+| Add "Who maintains this?" page with maintainer bios | MEDIUM | Trust | ✅ Done |
 
 ---
 

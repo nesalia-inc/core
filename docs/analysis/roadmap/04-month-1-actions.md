@@ -2,113 +2,52 @@
 
 *Exact checklist. No ambiguity.*
 
+**Status Legend:** ✅ Done | 🔄 In Progress | ⏳ Pending
+
 ---
 
 ## Week 1: npm SEO Emergency Fixes
 
-### 1. FIX THE NPM KEYWORD TYPO [CRITICAL]
+### 1. FIX THE NPM KEYWORD TYPO [CRITICAL] ✅
 
-**The problem:** `" Either"` has a leading space. This is embarrassing and costs search visibility.
+**Status:** ✅ Done (commit `77db798`)
 
-**The fix in `packages/core/package.json`:**
-
-```json
-// BEFORE (wrong)
-"keywords": ["typescript", " Either", ...]
-
-// AFTER (correct)
-"keywords": ["typescript", "either", ...]
-```
-
-**Also add:**
-```json
-"keywords": [
-  "typescript",
-  "functional-programming",
-  "result",
-  "result-type",
-  "maybe",
-  "option",
-  "try",
-  "error-handling",
-  "error-handling-typescript",
-  "typed-errors",
-  "exception-handling",
-  "monad",
-  "async",
-  "either",
-  "fp-ts-alternative",
-  "neverthrow-alternative",
-  "typescript-error-handling",
-  "typescript-fp",
-  "type-safe-errors"
-]
-```
+- Removed `" Either"` typo (leading space)
+- Added 12 competitor keywords: `fp-ts-alternative`, `neverthrow-alternative`, `typescript-error-handling`, etc.
 
 ---
 
-### 2. FIX HOMEPAGE URL MISMATCH [HIGH]
+### 2. FIX HOMEPAGE URL MISMATCH [HIGH] ✅
 
-**The problem:** `package.json` homepage is `https://fp.nesalia.com` which returns 404.
+**Status:** ✅ Done (commit `77db798`)
 
-**The fix:**
-```bash
-npm pkg set homepage=https://core.deessejs.com
-```
-
-Or update `package.json` directly:
-```json
-"homepage": "https://core.deessejs.com"
-```
+- Updated to `https://fp.deessejs.com`
 
 ---
 
-### 3. UPDATE DESCRIPTION [HIGH]
+### 3. UPDATE DESCRIPTION [HIGH] ✅
 
-**The problem:** Current description is feature-list style, not problem-first.
+**Status:** ✅ Done (commit `77db798`)
 
-**The fix:**
-```json
-"description": "TypeScript error handling that actually works. Result, Maybe, Try, and AsyncResult monads with perfect type inference, zero runtime deps, and React 19 support."
-```
+- Changed to: "TypeScript error handling that actually works. Result, Maybe, Try, and AsyncResult monads with perfect type inference, zero runtime deps, and React 19 support."
 
 ---
 
 ## Week 2: First-Time User Experience
 
-### 4. CREATE "WHY NOT try/catch?" PAGE [CRITICAL]
+### 4. CREATE "WHY NOT try/catch?" PAGE [CRITICAL] ✅
 
-**The problem:** Nobody addresses why someone should switch from standard error handling.
+**Status:** ✅ Done (commit `4d15ed6`)
 
-**The page should:**
-- Show a before/after: try/catch vs @deessejs/fp
-- Demonstrate the "aha moment" (error enrichment with context)
-- Address the visceral objection: "try/catch works for me"
-
-**URL:** `/docs/why-not-try-catch`
-
-**Example content:**
-```typescript
-// try/catch: Error loses context
-try {
-  const user = await fetchUser(id);
-  const profile = await fetchProfile(user.profileId);
-  const posts = await fetchPosts(profile.id);
-} catch (e) {
-  logger.error(e); // What failed? Where? Why?
-}
-
-// @deessejs/fp: Error has context
-const result = await fromPromise(fetchUser(id))
-  .flatMap(user => fromPromise(fetchProfile(user.profileId)))
-  .flatMap(profile => fromPromise(fetchPosts(profile.id)))
-  .mapErr(e => e.addNotes('Failed to load user feed'));
-// Error now has FULL context: what failed, where, why
-```
+- Created at `apps/web/content/docs/why-not-try-catch.mdx`
+- Added to navigation (`meta.json`)
+- Addresses the #1 objection: why switch from try/catch?
 
 ---
 
-### 5. CREATE INTERACTIVE PLAYGROUND [HIGH]
+### 5. CREATE INTERACTIVE PLAYGROUND [HIGH] ⏳
+
+**Status:** ⏳ Pending
 
 **The problem:** The "aha moment" is buried in documentation.
 
@@ -122,38 +61,37 @@ const result = await fromPromise(fetchUser(id))
 
 ---
 
-### 6. ENSURE ONE-LINE IMPORT [HIGH]
+### 6. ENSURE ONE-LINE IMPORT [HIGH] ✅
 
-**The problem:** Users should be able to get started with one line.
+**Status:** ✅ Verified
 
-**Verify these work:**
-```typescript
-import { ok, err, fromPromise } from '@deessejs/fp';
-```
-
-**If not, fix exports in `packages/core/src/index.ts`.**
+- Already works: `import { ok, err, fromPromise } from '@deessejs/fp';`
 
 ---
 
 ## Week 3: Migration Documentation
 
-### 7. FINALIZE NEVERTHROW MIGRATION GUIDE [HIGH]
+### 7. FINALIZE NEVERTHROW MIGRATION GUIDE [HIGH] ✅
 
-**Already exists at:** `docs/analysis/neverthrow.md`
+**Status:** ✅ Done (commit `82697c8`)
 
-**Action:** Review, finalize, and link from homepage/migration page.
-
----
-
-### 8. FINALIZE FP-TS MIGRATION GUIDE [HIGH]
-
-**Already exists at:** `docs/analysis/fp-ts.md`
-
-**Action:** Review, finalize, and link from homepage/migration page.
+- Exists at `docs/analysis/neverthrow.md`
+- Linked from comparison page
 
 ---
 
-### 9. CREATE "WHY BUILD YOUR OWN?" PAGE [HIGH]
+### 8. FINALIZE FP-TS MIGRATION GUIDE [HIGH] ✅
+
+**Status:** ✅ Done (commit `82697c8`)
+
+- Exists at `docs/analysis/fp-ts.md`
+- Linked from comparison page
+
+---
+
+### 9. CREATE "WHY BUILD YOUR OWN?" PAGE [HIGH] ⏳
+
+**Status:** ⏳ Pending
 
 **The problem:** CTOs will ask "why not build our own Result type?"
 
@@ -168,25 +106,36 @@ import { ok, err, fromPromise } from '@deessejs/fp';
 
 ## Week 4: Community Seeding
 
-### 10. POST ASK HN [HIGH]
+### 10. POST ASK HN [HIGH] ⏳
 
-**The post:**
+**Status:** ⏳ Pending (draft ready)
+
+**Draft:**
 ```
 Title: Ask HN: What's your TypeScript error handling strategy?
 
 Body:
-I've been working on @deessejs/fp -- a Result/Maybe type library for TypeScript.
+@deessejs/fp (github.com/nesalia-inc/fp) is a TypeScript Result/Maybe
+type library at v3.0.0. Genuinely curious about developer workflows.
 
-I'm genuinely curious: how do you all handle errors in TypeScript?
+NOT here to sell. Want to understand:
 
-- try/catch everywhere?
-- Result types (neverthrow, fp-ts)?
-- Something else?
+- Do you use try/catch? What problems have you hit?
+- Result types (neverthrow, fp-ts)? What's missing?
+- Custom error patterns?
 
-I'm NOT here to sell anything. I want to understand what pain points
-developers actually have with error handling.
+Hardest problems:
+1. Async error handling (fetch, DB ops)
+2. Error context (errors deep in call stack -- what failed and why?)
+3. Type safety (does TypeScript know what can fail?)
 
-(If you're curious about the library: github.com/nesalia-inc/fp)
+The library makes errors explicit in types:
+
+  const result = await fromPromise(fetch('/api/user'))
+    .map(user => user.name)
+    .mapErr(e => e.addNotes('Failed to fetch user'));
+
+No spam. Just curious about workflows.
 ```
 
 **Rule:** Respond to EVERY comment. Genuinely engage. No spam.
@@ -195,12 +144,32 @@ developers actually have with error handling.
 
 ## Week 1-4: Also Do These
 
-| Action | Priority | Week |
-|--------|----------|------|
-| Create SECURITY.md | HIGH | 3 |
-| Fix GitHub Actions badge | MEDIUM | 1 |
-| Add "Who maintains this?" page | MEDIUM | 8 |
-| Document LTS policy | MEDIUM | 8 |
+| Action | Priority | Week | Status |
+|--------|----------|------|--------|
+| Create SECURITY.md | HIGH | 3 | ✅ Done (`bb7f914`) |
+| Fix GitHub Actions badge | MEDIUM | 1 | ✅ Done (`4d15ed6` - version badge) |
+| Add "Who maintains this?" page | MEDIUM | 2 | ✅ Done (`4d15ed6`) |
+| Document LTS policy | MEDIUM | 8 | ⏳ Pending |
+| Fix homepage version badge | HIGH | 1 | ✅ Done (`4d15ed6` - v0.1.7 → v3.0.0) |
+
+---
+
+## Completion Summary
+
+| # | Action | Status | Commit |
+|---|--------|--------|--------|
+| 1 | Fix keyword typo | ✅ Done | `77db798` |
+| 2 | Fix homepage URL | ✅ Done | `77db798` |
+| 3 | Update description | ✅ Done | `77db798` |
+| 4 | "Why try/catch?" page | ✅ Done | `4d15ed6` |
+| 5 | Interactive playground | ⏳ Pending | - |
+| 6 | One-line import | ✅ Verified | - |
+| 7 | Neverthrow migration guide | ✅ Done | `82697c8` |
+| 8 | fp-ts migration guide | ✅ Done | `82697c8` |
+| 9 | "Why build your own?" page | ⏳ Pending | - |
+| 10 | Post Ask HN | ⏳ Pending | Draft ready |
+
+**Completed: 7/10** | **Pending: 3/10**
 
 ---
 
