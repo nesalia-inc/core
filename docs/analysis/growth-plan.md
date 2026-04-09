@@ -90,7 +90,7 @@ This plan covers 7 areas with specific, actionable items. Every recommendation i
 
 **Add:**
 ```json
-"homepage": "https://core.deessejs.com",
+"homepage": "https://fp.deessejs.com",
 "repository": {
   "type": "git",
   "url": "https://github.com/nesalia-inc/fp.git",
@@ -107,7 +107,7 @@ This plan covers 7 areas with specific, actionable items. Every recommendation i
 "license": "MIT"
 ```
 
-**Note:** Verify homepage links to `core.deessejs.com` (the docs URL provided). The user said docs are at `https://core.deessejs.com` but package.json shows `https://fp.nesalia.com`. **Fix this mismatch.**
+**Note:** Verify homepage links to `fp.deessejs.com` (the docs URL provided). The user said docs are at `https://fp.deessejs.com` but package.json shows `https://fp.nesalia.com`. **Fix this mismatch.**
 
 ### 1.4 npm Badges and Features to Enable
 
@@ -557,7 +557,7 @@ If you only need validation, use Zod. If you need typed error propagation throug
 **Week 1:**
 - [ ] Fix package.json keywords (remove " Either" typo, add fp-ts-alternative, neverthrow-alternative, etc.)
 - [ ] Update package.json description to the problem-first version
-- [ ] Verify/fix homepage URL mismatch (fp.nesalia.com vs core.deessejs.com)
+- [ ] Verify/fix homepage URL mismatch (fp.nesalia.com vs fp.deessejs.com)
 - [ ] Update GitHub Actions badge URL if incorrect
 - [ ] Pin a "Why @deessejs/fp?" GitHub discussion
 
@@ -692,7 +692,7 @@ Review weekly. Adjust strategy based on what is actually working.
 
 ## Appendix: Key Resources
 
-**Documentation:** https://core.deessejs.com
+**Documentation:** https://fp.deessejs.com
 **GitHub:** https://github.com/nesalia-inc/fp
 **npm:** https://www.npmjs.com/package/@deessejs/fp
 

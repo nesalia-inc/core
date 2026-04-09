@@ -84,7 +84,7 @@ CTOs don't adopt libraries based on blog posts. They need testimonials, benchmar
 ### Do These Now (Week 1)
 
 1. Fix npm keywords (remove `" Either"` typo, add competitors)
-2. Fix homepage URL (fp.nesalia.com -> core.deessejs.com)
+2. Fix homepage URL (fp.nesalia.com -> fp.deessejs.com)
 3. Update description to problem-first
 
 ### Do These This Month (Month 1)

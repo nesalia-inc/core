@@ -60,7 +60,7 @@ If the package isn't searchable, nothing else matters.
 
 1. Fix npm keywords (remove `" Either"` typo)
 2. Create "Why try/catch?" page
-3. Fix homepage URL (fp.nesalia.com -> core.deessejs.com)
+3. Fix homepage URL (fp.nesalia.com -> fp.deessejs.com)
 
 ---
 

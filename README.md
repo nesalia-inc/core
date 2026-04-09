@@ -15,14 +15,14 @@
   <a href="https://www.npmjs.com/package/@deessejs/fp">
     <img src="https://img.shields.io/bundlejs/size/@deessejs/fp" alt="Bundle Size">
   </a>
-  <a href="https://github.com/nesalia-inc/core/actions">
-    <img src="https://img.shields.io/github/actions/workflow/status/nesalia-inc/core/ci?label=tests" alt="Tests">
+  <a href="https://github.com/nesalia-inc/fp/actions">
+    <img src="https://img.shields.io/github/actions/workflow/status/nesalia-inc/fp/ci?label=tests" alt="Tests">
   </a>
-  <a href="https://github.com/nesalia-inc/core/actions">
+  <a href="https://github.com/nesalia-inc/fp/actions">
     <img src="https://img.shields.io/badge/coverage-100%25-brightgreen" alt="Coverage">
   </a>
-  <a href="https://github.com/nesalia-inc/core/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/nesalia-inc/core" alt="License">
+  <a href="https://github.com/nesalia-inc/fp/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/nesalia-inc/fp" alt="License">
   </a>
 </p>
 
@@ -54,7 +54,7 @@ yarn add @deessejs/fp
 
 ## Documentation
 
-For full documentation, visit [core.deessejs.com](https://core.deessejs.com).
+For full documentation, visit [fp.deessejs.com](https://fp.deessejs.com).
 
 ## Quick Start
 

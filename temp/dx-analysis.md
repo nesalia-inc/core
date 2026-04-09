@@ -19,7 +19,7 @@
 
 1. **npm install @deessejs/fp** - 30 seconds
 2. **Try to understand what it does** - Read README - 2 minutes
-3. **Read the docs** - Navigate to core.deessejs.com - 1 minute
+3. **Read the docs** - Navigate to fp.deessejs.com - 1 minute
 4. **See the homepage** - Feature list, not problem statement - 30 seconds
 5. **Give up** - This is too much friction
 
