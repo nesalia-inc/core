@@ -22,7 +22,7 @@ jobs:
     if: ${{ github.event.sender.type != 'Bot' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # Check if comment is from a bot account
       - name: Check if bot comment
