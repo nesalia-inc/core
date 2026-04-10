@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "motion/react";
+import { codeToHtml } from "shiki";
 import { Check, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -25,6 +26,18 @@ interface CodeBlockProps {
 
 function CodeBlock({ code }: CodeBlockProps) {
   const [copied, setCopied] = useState(false);
+  const [highlightedCode, setHighlightedCode] = useState<string>("");
+
+  useEffect(() => {
+    const highlight = async () => {
+      const html = await codeToHtml(code, {
+        lang: "typescript",
+        theme: "github-dark",
+      });
+      setHighlightedCode(html);
+    };
+    highlight();
+  }, [code]);
 
   const copyToClipboard = async () => {
     await navigator.clipboard.writeText(code);
@@ -46,7 +59,10 @@ function CodeBlock({ code }: CodeBlockProps) {
           <Copy className="size-4 text-[#666]" />
         )}
       </Button>
-      <pre className="overflow-x-auto font-mono text-sm text-[#888]">{code}</pre>
+      <pre
+        className="overflow-x-auto text-left"
+        dangerouslySetInnerHTML={{ __html: highlightedCode }}
+      />
     </div>
   );
 }

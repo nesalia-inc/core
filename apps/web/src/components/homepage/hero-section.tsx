@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import Link from "next/link";
+import { codeToHtml } from "shiki";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronRight } from "lucide-react";
@@ -18,6 +20,19 @@ result.map(value => console.log(\`Result: \${value}\`));
 // Result: 5`;
 
 export function HeroSection() {
+  const [highlightedCode, setHighlightedCode] = useState<string>("");
+
+  useEffect(() => {
+    const highlight = async () => {
+      const html = await codeToHtml(heroCode, {
+        lang: "typescript",
+        theme: "github-dark",
+      });
+      setHighlightedCode(html);
+    };
+    highlight();
+  }, []);
+
   return (
     <section className="relative flex min-h-[70vh] flex-col items-center justify-center px-6 py-24">
       {/* Background grid */}
@@ -91,7 +106,10 @@ export function HeroSection() {
           transition={{ duration: 0.5, delay: 0.4, ease: "easeOut" }}
         >
           <div className="rounded-xl border border-[#222] bg-[#0a0a0a] p-6 font-mono text-sm">
-            <pre className="overflow-x-auto text-[#888]">{heroCode}</pre>
+            <pre
+              className="overflow-x-auto text-left"
+              dangerouslySetInnerHTML={{ __html: highlightedCode }}
+            />
           </div>
         </motion.div>
       </div>
