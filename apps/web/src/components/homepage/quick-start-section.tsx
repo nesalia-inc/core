@@ -46,7 +46,7 @@ function CodeBlock({ code }: CodeBlockProps) {
   };
 
   return (
-    <div className="relative rounded-xl border border-[#222] bg-[#0a0a0a] p-6">
+    <div className="relative rounded-xl border border-[#222] bg-[#0a0a0a] p-6 [&_pre]:!bg-transparent">
       <Button
         variant="ghost"
         size="icon"
@@ -59,10 +59,7 @@ function CodeBlock({ code }: CodeBlockProps) {
           <Copy className="size-4 text-[#666]" />
         )}
       </Button>
-      <pre
-        className="overflow-x-auto text-left"
-        dangerouslySetInnerHTML={{ __html: highlightedCode }}
-      />
+      <div dangerouslySetInnerHTML={{ __html: highlightedCode }} />
     </div>
   );
 }

@@ -105,12 +105,10 @@ export function HeroSection() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4, ease: "easeOut" }}
         >
-          <div className="rounded-xl border border-[#222] bg-[#0a0a0a] p-6 font-mono text-sm">
-            <pre
-              className="overflow-x-auto text-left"
-              dangerouslySetInnerHTML={{ __html: highlightedCode }}
-            />
-          </div>
+          <div
+            className="rounded-xl border border-[#222] bg-[#0a0a0a] p-6 [&_pre]:!bg-transparent"
+            dangerouslySetInnerHTML={{ __html: highlightedCode }}
+          />
         </motion.div>
       </div>
     </section>
