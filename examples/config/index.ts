@@ -1,7 +1,7 @@
 /**
  * Environment Configuration Example
  *
- * This example demonstrates how to use @deessejs/core for:
+ * This example demonstrates how to use @deessejs/fp for:
  * - Handling optional environment variables with Maybe
  * - Validating required configuration with Result
  * - Providing sensible defaults for missing values
@@ -15,7 +15,7 @@ import {
   ok,
   err,
   toResult,
-} from "@deessejs/core";
+} from "@deessejs/fp";
 
 // ============================================================================
 // Types
@@ -266,7 +266,7 @@ const loadAppConfig = (): Result<AppConfig, Error> => {
 
 const main = async () => {
   console.log("╔════════════════════════════════════════════════════════════╗");
-  console.log("║   Environment Configuration with @deessejs/core           ║");
+  console.log("║   Environment Configuration with @deessejs/fp           ║");
   console.log("╚════════════════════════════════════════════════════════════╝");
 
   // Note: These examples work with actual environment variables

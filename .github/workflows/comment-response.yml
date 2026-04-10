@@ -144,7 +144,7 @@ jobs:
       - name: Generate Marty token
         if: steps.mention-check.outputs.should_respond == 'true' && steps.already-responded.outputs.already_done != 'true' && steps.rate-limit.outputs.rate_limited != 'true'
         id: marty-token
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ secrets.MARTY_APP_ID }}
           private-key: ${{ secrets.MARTY_APP_PRIVATE_KEY }}

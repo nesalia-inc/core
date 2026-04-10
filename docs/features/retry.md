@@ -12,7 +12,7 @@ const user = await fetchUser(id);
 // If the API is down, you're stuck
 
 // Solution: Retry with smart backoff
-import { retryAsync } from '@deessejs/core';
+import { retryAsync } from '@deessejs/fp';
 const user = await retryAsync(() => fetchUser(id), {
   attempts: 3,
   delay: 1000,
@@ -26,7 +26,7 @@ const user = await retryAsync(() => fetchUser(id), {
 ## Quick Start
 
 ```typescript
-import { retry, retryAsync } from '@deessejs/core';
+import { retry, retryAsync } from '@deessejs/fp';
 
 // Sync operations
 const result = retry(() => riskyOperation());
@@ -42,7 +42,7 @@ const result = await retryAsync(() => fetch('/api/data'));
 ### `retry(fn, options)` - Retry synchronous operations
 
 ```typescript
-import { retry } from '@deessejs/core';
+import { retry } from '@deessejs/fp';
 
 const result = retry(() => {
   // Operation that might throw
@@ -53,7 +53,7 @@ const result = retry(() => {
 ### `retryAsync(fn, options)` - Retry asynchronous operations
 
 ```typescript
-import { retryAsync } from '@deessejs/core';
+import { retryAsync } from '@deessejs/fp';
 
 const result = await retryAsync(async () => {
   const response = await fetch('/api/data');
@@ -98,7 +98,7 @@ interface RetryOptions {
 Delays double with each attempt: 1s, 2s, 4s, 8s...
 
 ```typescript
-import { retryAsync } from '@deessejs/core';
+import { retryAsync } from '@deessejs/fp';
 
 await retryAsync(fn, {
   attempts: 4,
@@ -159,7 +159,7 @@ await retryAsync(fn, {
 Not all errors should trigger a retry. Use `predicate` to filter:
 
 ```typescript
-import { retryAsync } from '@deessejs/core';
+import { retryAsync } from '@deessejs/fp';
 
 const isRetryable = (error: Error) => {
   // Retry on network errors, 5xx errors
@@ -184,7 +184,7 @@ await retryAsync(async () => {
 Log or track retries:
 
 ```typescript
-import { retryAsync } from '@deessejs/core';
+import { retryAsync } from '@deessejs/fp';
 
 await retryAsync(async () => {
   const response = await fetch('/api/data');
@@ -205,7 +205,7 @@ await retryAsync(async () => {
 Add randomness to prevent "thundering herd" problems when multiple clients retry simultaneously:
 
 ```typescript
-import { retryAsync } from '@deessejs/core';
+import { retryAsync } from '@deessejs/fp';
 
 await retryAsync(fn, {
   attempts: 5,
@@ -222,7 +222,7 @@ await retryAsync(fn, {
 ### API Calls with Retry
 
 ```typescript
-import { retryAsync } from '@deessejs/core';
+import { retryAsync } from '@deessejs/fp';
 
 interface User {
   id: number;
@@ -258,7 +258,7 @@ const user = await fetchUserWithRetry(123);
 ### Database Connection
 
 ```typescript
-import { retry } from '@deessejs/core';
+import { retry } from '@deessejs/fp';
 
 const connect = retry(() => {
   // Might throw if DB is temporarily unavailable
@@ -276,7 +276,7 @@ const connect = retry(() => {
 ### File Upload with Progress
 
 ```typescript
-import { retryAsync } from '@deessejs/core';
+import { retryAsync } from '@deessejs/fp';
 
 const uploadFile = async (file: File): Promise<void> => {
   const formData = new FormData();
@@ -474,7 +474,7 @@ This allows calculating from the initial delay. If you need the last used delay,
 
 ## Comparison with Alternatives
 
-| Feature | @deessejs/core | op-retry | retry-async |
+| Feature | @deessejs/fp | op-retry | retry-async |
 |---------|---------------|----------|-------------|
 | Bundle size | ~2KB | ~1KB | ~2KB |
 | Async support | Yes | No | Yes |

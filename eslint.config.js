@@ -5,7 +5,7 @@ export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    ignores: ["node_modules", "dist", "build", ".turbo", "*.config.js"],
+    ignores: ["node_modules", "dist", "build", ".turbo", "*.config.js", "**/*.test-d.ts"],
   },
   {
     files: ["**/*.ts", "**/*.tsx"],

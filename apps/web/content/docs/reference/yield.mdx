@@ -1,0 +1,159 @@
+---
+title: Yield
+description: Yield control to the event loop for responsive async operations
+---
+
+The `yield` utility yields control to the event loop, allowing it to process other tasks like UI rendering, I/O operations, or other pending promises.
+
+## Why Yield?
+
+JavaScript is single-threaded. Long-running synchronous operations block the event loop, making the UI unresponsive:
+
+```typescript
+// Bad - blocks the event loop for a long time
+const processLargeDataset = (data: Item[]) => {
+  const results: Result[] = [];
+  for (const item of data) {
+    results.push(heavyComputation(item)); // Blocks for too long
+  }
+  return results;
+};
+```
+
+By yielding periodically, you allow the event loop to breathe:
+
+```typescript
+import { yieldControl } from '@deessejs/fp';
+
+const processLargeDataset = async (data: Item[]) => {
+  const results: Result[] = [];
+  for (const item of data) {
+    results.push(heavyComputation(item));
+    await yieldControl(); // Yield after each item - UI stays responsive
+  }
+  return results;
+};
+```
+
+## When to Use Yield
+
+### Long Synchronous Loops
+
+If you have a CPU-intensive loop that processes many items, yield periodically to keep the application responsive:
+
+```typescript
+import { yieldControl } from '@deessejs/fp';
+
+const processItems = async (items: string[]) => {
+  const results: ParsedItem[] = [];
+
+  for (const item of items) {
+    results.push(parseItem(item));
+
+    // Yield every 100 items to prevent blocking
+    if (results.length % 100 === 0) {
+      await yieldControl();
+    }
+  }
+
+  return results;
+};
+```
+
+### Cooperative Multitasking
+
+Yield allows other async tasks to run between your operations:
+
+```typescript
+import { yieldControl } from '@deessejs/fp';
+
+const taskQueue = [task1, task2, task3];
+
+for (const task of taskQueue) {
+  await task(); // Do work
+  await yieldControl(); // Let other tasks run
+}
+```
+
+### UI Updates
+
+When processing data in response to a user action, yield to allow the browser to repaint between steps:
+
+```typescript
+import { yieldControl } from '@deessejs/fp';
+
+const handleImport = async (rows: Row[]) => {
+  for (const row of rows) {
+    await processRow(row);
+    await yieldControl(); // UI can update to show progress
+  }
+};
+```
+
+## The `yieldControl()` Function
+
+Yields control to the event loop using the best available method:
+
+```typescript
+import { yieldControl } from '@deessejs/fp';
+
+await yieldControl(); // Yields once
+```
+
+The function automatically uses the best available mechanism:
+
+1. **`scheduler.yield()`** - Modern standard (Chrome/Edge) that preserves task priority
+2. **`setImmediate`** - Node.js/Bun macrotask bypass
+3. **`MessageChannel`** - Browser macrotask without the 4ms setTimeout clamp
+4. **`setTimeout(0)`** - Universal fallback
+
+## The `immediate` Alias
+
+`immediate` is an alias for `yieldControl`. Use whichever reads better in context:
+
+```typescript
+import { yieldControl, immediate } from '@deessejs/fp';
+
+await yieldControl(); // When explaining what it does
+await immediate();    // When emphasizing immediacy
+```
+
+## Comparison
+
+| Method | Browser | Node.js | Priority Preserved |
+|--------|---------|---------|-------------------|
+| `scheduler.yield()` | Chrome/Edge | No | Yes |
+| `setImmediate` | No | Yes | No |
+| `MessageChannel` | Yes | Yes | No |
+| `setTimeout(0)` | Yes | Yes | No |
+
+## Example: Batch Processing
+
+```typescript
+import { yieldControl } from '@deessejs/fp';
+
+const processWithProgress = async (
+  items: Item[],
+  onProgress: (percent: number) => void
+) => {
+  const results: Result<Item, Error>[] = [];
+  const total = items.length;
+
+  for (let i = 0; i < total; i++) {
+    results.push(processItem(items[i]));
+
+    // Report progress
+    if (i % 10 === 0) {
+      onProgress(Math.round((i / total) * 100));
+      await yieldControl(); // Let UI update
+    }
+  }
+
+  return results;
+};
+```
+
+## See Also
+
+- [AsyncResult](./async-result.mdx) - For async operations with error handling
+- [Sleep](./utilities.mdx) - For deliberate delays

@@ -37,10 +37,10 @@ export default function HomePage() {
       <div className="border-b border-border">
         <div className="w-full max-w-5xl border border-b-0 border-border mx-auto flex flex-col justify-start text-center flex-1">
           <div className="max-w-3xl mx-auto my-24">
-            <Link href="https://github.com/nesalia-inc/core" target="_blank" rel="noreferrer">
+            <Link href="https://github.com/nesalia-inc/fp/releases" target="_blank" rel="noreferrer">
               <Badge variant="outline" className="gap-2 rounded-md">
                 <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                v0.1.7 released
+                v3.0.0 released
               </Badge>
             </Link>
             <h1 className="text-4xl font-bold mb-4 mt-4">
@@ -58,7 +58,7 @@ export default function HomePage() {
                 <Link href="/docs">Get Started</Link>
               </Button>
               <Button variant="outline" asChild>
-                <Link href="https://github.com/nesalia-inc/core" target="_blank" rel="noreferrer">
+                <Link href="https://github.com/nesalia-inc/fp" target="_blank" rel="noreferrer">
                   GitHub
                 </Link>
               </Button>
@@ -101,7 +101,7 @@ export default function HomePage() {
                     variant="outline"
                     className="rounded-sm bg-blue-500/10 border-blue-500/20 text-blue-500"
                   >
-                    v0.1.7
+                    v3.0.0
                   </Badge>
                 </div>
                 <CardTitle className="mt-4 pl-4">Type-safe</CardTitle>
@@ -164,7 +164,7 @@ export default function HomePage() {
             <div className="p-6">
               <h2 className="text-2xl font-bold mb-4">Examples</h2>
               <p className="text-muted-foreground mb-6">
-                Discover how @deessejs/core makes error handling simple and type-safe.
+                Discover how @deessejs/fp makes error handling simple and type-safe.
               </p>
               <CodeShowcase />
             </div>
@@ -198,7 +198,7 @@ export default function HomePage() {
           <div></div>
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-4">
-              <span className="text-sm text-muted-foreground">© 2026 @deessejs/core</span>
+              <span className="text-sm text-muted-foreground">© 2026 @deessejs/fp</span>
               <span className="text-sm text-muted-foreground">MIT License</span>
             </div>
             <div className="flex items-center gap-4">
@@ -237,14 +237,14 @@ function NpmInstall() {
   const [copied, setCopied] = useState(false);
 
   const copyToClipboard = async () => {
-    await navigator.clipboard.writeText('npm install @deessejs/core');
+    await navigator.clipboard.writeText('npm install @deessejs/fp');
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   return (
     <Button variant="outline" className="font-mono" onClick={copyToClipboard}>
-      <span>npm install @deessejs/core</span>
+      <span>npm install @deessejs/fp</span>
       {copied ? (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />

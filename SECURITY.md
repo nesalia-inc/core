@@ -19,6 +19,5 @@ Please include:
 ## Security Best Practices
 
 - Never commit secrets or credentials to the repository
-- Use GitHub secrets for sensitive data
 - Keep dependencies up to date
 - Follow the principle of least privilege

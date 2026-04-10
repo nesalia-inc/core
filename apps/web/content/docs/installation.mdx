@@ -1,24 +1,24 @@
 ---
 title: Installation
-description: How to install and set up @deessejs/core in your project
+description: How to install and set up @deessejs/fp in your project
 icon: Rocket
 ---
 
-Get up and running with @deessejs/core in just a few minutes.
+Get up and running with @deessejs/fp in just a few minutes.
 
 ## Install the Package
 
-Install `@deessejs/core` using your preferred package manager:
+Install `@deessejs/fp` using your preferred package manager:
 
 ```bash
 # pnpm (recommended)
-pnpm add @deessejs/core
+pnpm add @deessejs/fp
 
 # npm
-npm install @deessejs/core
+npm install @deessejs/fp
 
 # yarn
-yarn add @deessejs/core
+yarn add @deessejs/fp
 ```
 
 ## Requirements
@@ -31,7 +31,7 @@ yarn add @deessejs/core
 After installation, import the functions you need:
 
 ```typescript
-import { ok, err, map, Result } from "@deessejs/core";
+import { ok, err, map, Result } from "@deessejs/fp";
 
 // Create a Result - explicit about potential failure
 const divide = (a: number, b: number): Result<number, string> => {
@@ -97,17 +97,17 @@ The package is published as an ES module. Ensure your `package.json` has:
 If you're using CommonJS, import like this:
 
 ```typescript
-import { ok } from "@deessejs/core/index.js";
+import { ok } from "@deessejs/fp/index.js";
 ```
 
-## Importing from @deessejs/core
+## Importing from @deessejs/fp
 
 ### Individual Imports (Recommended)
 
 Import only what you need for smaller bundles:
 
 ```typescript
-import { ok, err, map, getOrElse } from "@deessejs/core";
+import { ok, err, map, getOrElse } from "@deessejs/fp";
 ```
 
 ### All Exports
@@ -115,7 +115,7 @@ import { ok, err, map, getOrElse } from "@deessejs/core";
 Import everything if needed:
 
 ```typescript
-import * as Deesse from "@deessejs/core";
+import * as Deesse from "@deessejs/fp";
 
 Deesse.ok(42);
 Deesse.err("error");

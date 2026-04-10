@@ -474,7 +474,7 @@ FastAPI excels at numbered steps:
 ## Step 1: Import
 
 ```typescript
-import { ok, err } from '@deessejs/core';
+import { ok, err } from '@deessejs/fp';
 ```
 
 ## Step 2: Create a Success

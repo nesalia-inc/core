@@ -1,14 +1,14 @@
 /**
  * CLI Argument Parsing Example
  *
- * This example demonstrates how to use @deessejs/core for:
+ * This example demonstrates how to use @deessejs/fp for:
  * - Parsing optional flags with Maybe
  * - Validating required arguments with Result
  * - Type-safe argument parsing
  * - Building CLI configuration
  */
 
-import { some, none, fromNullable, ok, err, toResult } from "@deessejs/core";
+import { some, none, fromNullable, ok, err, toResult } from "@deessejs/fp";
 
 // ============================================================================
 // Types
@@ -268,7 +268,7 @@ const main = () => {
   const processArgs = process.argv.slice(2);
 
   console.log("╔════════════════════════════════════════════════════════════╗");
-  console.log("║   CLI Argument Parsing with @deessejs/core               ║");
+  console.log("║   CLI Argument Parsing with @deessejs/fp               ║");
   console.log("╚════════════════════════════════════════════════════════════╝");
 
   // Show help if no args or --help

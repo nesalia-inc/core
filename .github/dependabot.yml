@@ -38,6 +38,6 @@ updates:
 
   # Package-specific updates (if you add more packages)
   # - package-ecosystem: "npm"
-  #   directory: "/packages/core"
+  #   directory: "/packages/fp"
   #   schedule:
   #     interval: "weekly"

@@ -1,12 +1,12 @@
 ---
 title: Claude Code Skill
-description: Use @deessejs/core with Claude Code - skill reference and patterns
+description: Use @deessejs/fp with Claude Code - skill reference and patterns
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout';
 import { Cards, Card } from 'fumadocs-ui/components/card';
 
-This page documents the Claude Code skill for `@deessejs/core`. The skill makes functional programming patterns discoverable within Claude Code.
+This page documents the Claude Code skill for `@deessejs/fp`. The skill makes functional programming patterns discoverable within Claude Code.
 
 <Callout>
 The skill is automatically loaded when you ask about error handling, optional values, or async operations in TypeScript.
@@ -14,11 +14,11 @@ The skill is automatically loaded when you ask about error handling, optional va
 
 ## Getting Started
 
-The skill is located at [`.claude/skills/deessejs-core/SKILL.md`](https://github.com/nesalia-inc/core/blob/main/.claude/skills/deessejs-core/SKILL.md) in the repository.
+The skill is located at [`.claude/skills/deesse-fp/SKILL.md`](https://github.com/nesalia-inc/fp/blob/main/.claude/skills/deesse-fp/SKILL.md) in the repository.
 
 ### Installation
 
-The skill is already included in the repository. When you clone `@deessejs/core`, the skill is automatically available in Claude Code.
+The skill is already included in the repository. When you clone `@deessejs/fp`, the skill is automatically available in Claude Code.
 
 ### Usage
 
@@ -26,7 +26,7 @@ You can invoke the skill in two ways:
 
 1. **Direct invocation**:
    ```
-   /deessejs-core
+   /deesse-fp
    ```
 
 2. **Natural language** - Claude will automatically load the skill when you ask about:
@@ -40,7 +40,7 @@ You can invoke the skill in two ways:
 ### Creating Values
 
 ```typescript
-import { ok, err, some, none, okAsync, errAsync, attempt } from "@deessejs/core";
+import { ok, err, some, none, okAsync, errAsync, attempt } from "@deessejs/fp";
 
 // Result - explicit success/failure
 const success = ok(42);
@@ -96,7 +96,7 @@ ok(42).tap(v => console.log(v)); // logs 42, returns Ok(42)
 ### Type Guards
 
 ```typescript
-import { isOk, isErr, isSome, isNone } from "@deessejs/core";
+import { isOk, isErr, isSome, isNone } from "@deessejs/fp";
 
 if (isOk(result)) {
   console.log(result.value); // TypeScript knows it's Ok
@@ -176,7 +176,7 @@ return ok(formData);
 ## Error System
 
 ```typescript
-import { error, raise } from "@deessejs/core";
+import { error, raise } from "@deessejs/fp";
 
 const validationError = error({
   name: "ValidationError",
@@ -193,7 +193,7 @@ const validated = ok(input).mapErr(e => raise(validationError));
 ## Conversions
 
 ```typescript
-import { toResult, toMaybeFromResult, fromNullable } from "@deessejs/core";
+import { toResult, toMaybeFromResult, fromNullable } from "@deessejs/fp";
 
 // Maybe → Result
 const result = toResult(maybe, () => "default error");
@@ -217,16 +217,16 @@ const maybe = fromNullable(value);
 ## See Also
 
 <Cards>
-  <Card title="API Reference" href="/docs/reference/api">
-    Complete function reference
-  </Card>
-  <Card title="Result" href="/docs/concepts/result">
+  <Card title="Result" href="/docs/reference/result">
     Deep dive into Result type
   </Card>
-  <Card title="Maybe" href="/docs/concepts/maybe">
+  <Card title="Maybe" href="/docs/reference/maybe">
     Deep dive into Maybe type
   </Card>
-  <Card title="Error System" href="/docs/guides/error-system">
-    Python-like error handling
+  <Card title="Error" href="/docs/reference/error">
+    Structured errors with enrichment
+  </Card>
+  <Card title="Comparison" href="/docs/comparison">
+    Compare with other libraries
   </Card>
 </Cards>

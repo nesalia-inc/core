@@ -12,7 +12,7 @@ const user = users.find(u => u.id === id);
 // Type: User | undefined
 
 // Solution: The type clearly shows presence or absence
-import { some, none, fromNullable, Maybe } from '@deessejs/core';
+import { some, none, fromNullable, Maybe } from '@deessejs/fp';
 const user = fromNullable(users.find(u => u.id === id));
 // Type: Maybe<User>
 ```
@@ -24,7 +24,7 @@ With Maybe, **absence becomes explicit in your types**. No more `Cannot read pro
 ## Quick Start
 
 ```typescript
-import { some, none, fromNullable, isSome, isNone } from '@deessejs/core';
+import { some, none, fromNullable, isSome, isNone } from '@deessejs/fp';
 
 // Present value
 const present: Maybe<number> = some(42);
@@ -45,7 +45,7 @@ const maybe = fromNullable(getUserById(123));
 #### `some(value)` - Create a present value
 
 ```typescript
-import { some } from '@deessejs/core';
+import { some } from '@deessejs/fp';
 
 const result = some(42);
 // { ok: true, value: 42 }
@@ -54,7 +54,7 @@ const result = some(42);
 #### `none()` - Create an absent value
 
 ```typescript
-import { none } from '@deessejs/core';
+import { none } from '@deessejs/fp';
 
 const result = none();
 // { ok: false }
@@ -64,7 +64,7 @@ const result = none();
 #### `fromNullable(value)` - Convert nullable to Maybe
 
 ```typescript
-import { fromNullable, isSome, isNone } from '@deessejs/core';
+import { fromNullable, isSome, isNone } from '@deessejs/fp';
 
 fromNullable(42);      // Some(42)
 fromNullable(null);    // None
@@ -81,7 +81,7 @@ fromNullable(false);   // Some(false) - NOT None!
 #### `someUnit()` - Create a Some with undefined value
 
 ```typescript
-import { someUnit } from '@deessejs/core';
+import { someUnit } from '@deessejs/fp';
 
 const result = someUnit();
 // Some(undefined) - present but with no meaningful value
@@ -94,7 +94,7 @@ const result = someUnit();
 #### `isSome(maybe)` - Check for presence
 
 ```typescript
-import { some, isSome } from '@deessejs/core';
+import { some, isSome } from '@deessejs/fp';
 
 const result = some(42);
 
@@ -106,7 +106,7 @@ if (isSome(result)) {
 #### `isNone(maybe)` - Check for absence
 
 ```typescript
-import { none, isNone } from '@deessejs/core';
+import { none, isNone } from '@deessejs/fp';
 
 const result = none();
 
@@ -119,7 +119,7 @@ if (isNone(result)) {
 > **Why type guards?** They narrow the type, so TypeScript knows which branch you're in:
 
 ```typescript
-import { isSome, isNone, Maybe } from '@deessejs/core';
+import { isSome, isNone, Maybe } from '@deessejs/fp';
 
 function handle(maybe: Maybe<number>) {
   if (isSome(maybe)) {
@@ -141,7 +141,7 @@ function handle(maybe: Maybe<number>) {
 Transforms the present value, passes None through unchanged:
 
 ```typescript
-import { some, none, map } from '@deessejs/core';
+import { some, none, map } from '@deessejs/fp';
 
 const result = map(some(2), x => x * 2);
 // Some(4)
@@ -153,7 +153,7 @@ const failed = map(none(), x => x * 2);
 Equivalent to the method on Some:
 
 ```typescript
-import { some } from '@deessejs/core';
+import { some } from '@deessejs/fp';
 
 some(2).map(x => x * 2); // Some(4)
 ```
@@ -163,7 +163,7 @@ some(2).map(x => x * 2); // Some(4)
 Chains operations that can return Maybe. If Some, applies the function. If None, returns None:
 
 ```typescript
-import { some, none, flatMap, Maybe } from '@deessejs/core';
+import { some, none, flatMap, Maybe } from '@deessejs/fp';
 
 interface User {
   id: number;
@@ -200,7 +200,7 @@ const result3 = flatMap(some(1), x => flatMap(findUser(x.id), getEmail));
 Returns the present value, or a default if None:
 
 ```typescript
-import { some, none, getOrElse } from '@deessejs/core';
+import { some, none, getOrElse } from '@deessejs/fp';
 
 const success = getOrElse(some(42), 0);  // 42
 const failure = getOrElse(none(), 0);    // 0
@@ -211,7 +211,7 @@ const failure = getOrElse(none(), 0);    // 0
 Returns the present value, or computes one if None. Useful for expensive fallbacks:
 
 ```typescript
-import { some, none, getOrCompute } from '@deessejs/core';
+import { some, none, getOrCompute } from '@deessejs/fp';
 
 const success = getOrCompute(some(42), () => expensiveOperation());
 // 42 (expensiveOperation never called)
@@ -229,7 +229,7 @@ const failure = getOrCompute(none(), () => 0);
 Executes a function on the value without changing it. Useful for logging:
 
 ```typescript
-import { some, none, tap } from '@deessejs/core';
+import { some, none, tap } from '@deessejs/fp';
 
 tap(some(42), value => console.log('Got:', value));
 // Logs: "Got: 42"
@@ -249,7 +249,7 @@ tap(none(), value => console.log('Got:', value));
 The most expressive way to handle Maybe:
 
 ```typescript
-import { some, match } from '@deessejs/core';
+import { some, match } from '@deessejs/fp';
 
 const result = some(42);
 
@@ -264,7 +264,7 @@ const message = match(
 Can return different types:
 
 ```typescript
-import { none, match } from '@deessejs/core';
+import { none, match } from '@deessejs/fp';
 
 const result = none();
 
@@ -283,7 +283,7 @@ const value = match(
 #### `toNullable(maybe)` - Convert to nullable
 
 ```typescript
-import { some, none, toNullable } from '@deessejs/core';
+import { some, none, toNullable } from '@deessejs/fp';
 
 toNullable(some(42)); // 42
 toNullable(none());   // null
@@ -292,7 +292,7 @@ toNullable(none());   // null
 #### `toUndefined(maybe)` - Convert to undefined
 
 ```typescript
-import { some, none, toUndefined } from '@deessejs/core';
+import { some, none, toUndefined } from '@deessejs/fp';
 
 toUndefined(some(42)); // 42
 toUndefined(none());   // undefined
@@ -305,7 +305,7 @@ toUndefined(none());   // undefined
 Maybe objects have methods built-in, enabling fluent chains:
 
 ```typescript
-import { some, none } from '@deessejs/core';
+import { some, none } from '@deessejs/fp';
 
 const result = some(5)
   .map(x => x * 2)       // Some(10)
@@ -323,7 +323,7 @@ Each method returns a new Maybe, so you can chain indefinitely.
 ### Finding an item in a list
 
 ```typescript
-import { fromNullable, getOrElse, Maybe } from '@deessejs/core';
+import { fromNullable, getOrElse, Maybe } from '@deessejs/fp';
 
 interface User {
   id: number;
@@ -349,7 +349,7 @@ const unknown = getOrElse(findUser(999), { id: 0, name: 'Guest' });
 ### Optional Configuration
 
 ```typescript
-import { fromNullable, map, Maybe } from '@deessejs/core';
+import { fromNullable, map, Maybe } from '@deessejs/fp';
 
 interface Config {
   apiUrl: string;
@@ -374,7 +374,7 @@ const withTimeout = map(maybeConfig, config => ({
 ### Chained Property Access
 
 ```typescript
-import { some, none, flatMap, Maybe } from '@deessejs/core';
+import { some, none, flatMap, Maybe } from '@deessejs/fp';
 
 interface Company {
   name: string;
@@ -421,7 +421,7 @@ const user = fromNullable(database.findUser(id));
 ### 2. Distinguish Between "Not Found" and "Error"
 
 ```typescript
-import { ok, err, Result } from '@deessejs/core';
+import { ok, err, Result } from '@deessejs/fp';
 
 // Result: for operations that can fail with an error
 const fetchUser = (id: number): Result<User, 'NOT_FOUND' | 'ERROR'> => {
@@ -437,7 +437,7 @@ const config = fromNullable(loadConfig());
 ### 3. Use `match` for Complex Logic
 
 ```typescript
-import { match } from '@deessejs/core';
+import { match } from '@deessejs/fp';
 
 const display = match(
   maybeUser,
@@ -469,7 +469,7 @@ const display = match(
 
 ```typescript
 import { pipe } from 'fp-ts/pipeable'; // or custom
-import { map, flatMap } from '@deessejs/core';
+import { map, flatMap } from '@deessejs/fp';
 
 const result = pipe(
   maybeValue,
@@ -487,7 +487,7 @@ const result = pipe(
 **Recommendation:** Use `fromNullable` instead, which properly handles null/undefined:
 
 ```typescript
-import { some, fromNullable } from '@deessejs/core';
+import { some, fromNullable } from '@deessejs/fp';
 
 // Creates Some with null value (not recommended)
 const bad = some(null);
@@ -505,7 +505,7 @@ const good = fromNullable(null);
 **Recommendation:** If you need to signal success without a value, use `Result<void, E>` instead:
 
 ```typescript
-import { ok, err } from '@deessejs/core';
+import { ok, err } from '@deessejs/fp';
 
 // Better: explicit success/failure
 const result = ok<void, string>(undefined);
@@ -521,7 +521,7 @@ const error = err('something went wrong');
 **Workaround:** Use `flatMap`:
 
 ```typescript
-import { some, none, flatMap } from '@deessejs/core';
+import { some, none, flatMap } from '@deessejs/fp';
 
 const maybeAge: Maybe<number> = some(25);
 
@@ -538,7 +538,7 @@ const adult = flatMap(maybeAge, age => age >= 18 ? some(age) : none());
 **Workaround:** Use nested `flatMap`:
 
 ```typescript
-import { some, none, flatMap } from '@deessejs/core';
+import { some, none, flatMap } from '@deessejs/fp';
 
 const firstName: Maybe<string> = some('John');
 const lastName: Maybe<string> = some('Doe');
@@ -560,7 +560,7 @@ const fullName = flatMap(firstName, f =>
 **Workaround:**
 
 ```typescript
-import { ok, err, Result } from '@deessejs/core';
+import { ok, err, Result } from '@deessejs/fp';
 
 const maybeUser = findUser(id);
 
@@ -579,7 +579,7 @@ const result: Result<User, 'NOT_FOUND'> =
 **Workaround:**
 
 ```typescript
-import { isSome, isNone } from '@deessejs/core';
+import { isSome, isNone } from '@deessejs/fp';
 
 const equals = <T>(a: Maybe<T>, b: Maybe<T>): boolean => {
   if (isSome(a) && isSome(b)) return a.value === b.value;
@@ -595,7 +595,7 @@ const equals = <T>(a: Maybe<T>, b: Maybe<T>): boolean => {
 **Workaround:** Use `flatMap`:
 
 ```typescript
-import { some, flatMap } from '@deessejs/core';
+import { some, flatMap } from '@deessejs/fp';
 
 const nested: Maybe<Maybe<number>> = some(some(42));
 const flattened = flatMap(nested, x => x);
@@ -607,7 +607,7 @@ const flattened = flatMap(nested, x => x);
 
 ## Comparison with Alternatives
 
-| Feature | @deessejs/core | fp-ts Option |
+| Feature | @deessejs/fp | fp-ts Option |
 |---------|---------------|--------------|
 | Bundle size | ~2KB | ~40KB |
 | Learning curve | Low | High |

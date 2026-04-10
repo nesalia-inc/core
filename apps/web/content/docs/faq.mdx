@@ -1,6 +1,6 @@
 ---
 title: FAQ
-description: Frequently asked questions about @deessejs/core
+description: Frequently asked questions about @deessejs/fp
 ---
 
 import { Accordions, Accordion } from 'fumadocs-ui/components/accordion';
@@ -8,9 +8,9 @@ import { Accordions, Accordion } from 'fumadocs-ui/components/accordion';
 ## General
 
 <Accordions>
-<Accordion title="What is @deessejs/core?">
+<Accordion title="What is @deessejs/fp?">
 
-`@deessejs/core` is a TypeScript library that provides functional programming patterns for type-safe error handling. It offers monads like `Result`, `Maybe`, `Try`, and `AsyncResult`.
+`@deessejs/fp` is a TypeScript library that provides functional programming patterns for type-safe error handling. It offers monads like `Result`, `Maybe`, `Try`, and `AsyncResult`.
 
 </Accordion>
 <Accordion title="Why should I use this instead of try-catch?">
@@ -21,7 +21,7 @@ Traditional `try-catch` has several drawbacks:
 - Error handling logic can become nested and messy
 - It's easy to forget to handle an error
 
-With `@deessejs/core`:
+With `@deessejs/fp`:
 - Errors are explicit in the type signature
 - You must handle both success and failure cases
 - Operations are composable and chainable
@@ -46,7 +46,7 @@ With `@deessejs/core`:
 <Accordion title="How do I create a Result?">
 
 ```typescript
-import { ok, err } from "@deessejs/core";
+import { ok, err } from "@deessejs/fp";
 
 const success = ok(42);
 const failure = err("Something went wrong");
@@ -58,7 +58,7 @@ const failure = err("Something went wrong");
 Use `match` for exhaustive handling:
 
 ```typescript
-import { ok, err, match } from "@deessejs/core";
+import { ok, err, match } from "@deessejs/fp";
 
 const result = ok(42);
 const message = match(
@@ -99,7 +99,7 @@ const result = ok("10")
 Use the conversion utilities:
 
 ```typescript
-import { toResult, toMaybeFromResult } from "@deessejs/core";
+import { toResult, toMaybeFromResult } from "@deessejs/fp";
 
 // Maybe → Result
 const result = toResult(maybe, () => "error");
@@ -174,7 +174,7 @@ function divide(a: number, b: number): number {
 Use:
 
 ```typescript
-import { ok, err, Result } from "@deessejs/core";
+import { ok, err, Result } from "@deessejs/fp";
 
 function divide(a: number, b: number): Result<number, string> {
   if (b === 0) return err("Division by zero");
@@ -198,7 +198,7 @@ const value = getConfig("key") ?? "default";
 Use:
 
 ```typescript
-import { fromNullable, getOrElse } from "@deessejs/core";
+import { fromNullable, getOrElse } from "@deessejs/fp";
 
 const value = fromNullable(config[key])
   .getOrElse("default");
@@ -217,10 +217,14 @@ See our GitHub repository for contribution guidelines.
 </Accordion>
 <Accordion title="Is this production ready?">
 
-Yes, `@deessejs/core` is used in production. It has:
+Yes, `@deessejs/fp` is used in production. It has:
 - Comprehensive test coverage
 - Full TypeScript support
 - Well-documented API
 
 </Accordion>
 </Accordions>
+
+## Still Have Questions?
+
+If your question is not answered here, see the [Troubleshooting](./troubleshooting.mdx) guide for common issues and solutions.

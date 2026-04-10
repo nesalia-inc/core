@@ -2,12 +2,12 @@
 
 ## Getting Help
 
-Welcome to the `@deessejs/core` community! Here are some ways to get help:
+Welcome to the `@deessejs/fp` community! Here are some ways to get help:
 
 ### Questions & Discussions
 
 - **GitHub Discussions**: For general questions and community discussions
-  - URL: https://github.com/nesalia-inc/core/discussions
+  - URL: https://github.com/nesalia-inc/fp/discussions
 
 ### Reporting Issues
 

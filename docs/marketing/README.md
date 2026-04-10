@@ -1,4 +1,4 @@
-# @deessejs/core - Marketing Strategy
+# @deessejs/fp - Marketing Strategy
 
 ## Positioning
 
@@ -34,7 +34,7 @@ TypeScript promises type safety, but error handling breaks that promise:
 
 ### Our Solution
 
-`@deessejs/core` makes errors **explicit in your types**:
+`@deessejs/fp` makes errors **explicit in your types**:
 
 ```typescript
 // Before: Exceptions can escape, types lie

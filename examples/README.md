@@ -1,6 +1,6 @@
-# @deessejs/core Examples
+# @deessejs/fp Examples
 
-This directory contains practical, runnable examples demonstrating how to use `@deessejs/core` for functional programming patterns in TypeScript.
+This directory contains practical, runnable examples demonstrating how to use `@deessejs/fp` for functional programming patterns in TypeScript.
 
 ## Running Examples
 
@@ -137,4 +137,4 @@ When adding new examples:
 
 ## License
 
-These examples are part of the `@deessejs/core` project.
+These examples are part of the `@deessejs/fp` project.

@@ -15,7 +15,7 @@ const result = validate(
 );
 
 // Solution: Linear top-to-bottom flow
-import { pipe } from '@deessejs/core';
+import { pipe } from '@deessejs/fp';
 
 const result = pipe(
   id,
@@ -32,7 +32,7 @@ With Pipe, your code reads like a recipe - each step transforms the previous res
 ## Quick Start (Future API)
 
 ```typescript
-import { pipe, flow, map, flatMap, match } from '@deessejs/core';
+import { pipe, flow, map, flatMap, match } from '@deessejs/fp';
 
 // Using pipe - explicit value
 const result = pipe(
@@ -100,7 +100,7 @@ Since `pipe` and `flow` are not yet implemented, here are workarounds:
 Most types already support method chaining:
 
 ```typescript
-import { ok } from '@deessejs/core';
+import { ok } from '@deessejs/fp';
 
 const result = ok(1)
   .map(x => x * 2)    // Ok(2)
@@ -147,7 +147,7 @@ const processUser = flow(
 ### With Result
 
 ```typescript
-import { ok, err, flatMap, map, getOrElse } from '@deessejs/core';
+import { ok, err, flatMap, map, getOrElse } from '@deessejs/fp';
 
 // Current approach - method chaining
 const result = ok(userId)
@@ -167,7 +167,7 @@ const result = pipe(
 ### With AsyncResult
 
 ```typescript
-import { okAsync, mapAsync, flatMapAsync, match } from '@deessejs/core';
+import { okAsync, mapAsync, flatMapAsync, match } from '@deessejs/fp';
 
 // Current approach
 const result = await okAsync(userId)
@@ -196,7 +196,7 @@ const result = await okAsync(userId)
 
 | Library | pipe | flow | Notes |
 |---------|------|------|-------|
-| @deessejs/core | Future | Future | Not yet implemented |
+| @deessejs/fp | Future | Future | Not yet implemented |
 | fp-ts | Yes | Yes | Part of fp-ts/pipeable |
 | RxJS | Yes | Yes | In pipeable operators |
 | lodash/fp | Yes | Yes | fp module |
