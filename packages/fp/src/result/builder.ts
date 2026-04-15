@@ -243,13 +243,12 @@ export const match = <T, E extends Error, U>(
  *   TypeScript cannot express "T becomes the error" or "E becomes the value"
  *   without circular type constraints. The any is unavoidable for this operation.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const swap = (result: any): any =>
+
+/* eslint-disable @typescript-eslint/no-explicit-any -- swap operation requires any due to TypeScript limitations */
+export const swap = (result: Result<any, any>): unknown =>
   isOk(result)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ? createErr(result.value as any)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    : createOk(result.error as any);
+    ? createErr(result.value)
+    : createOk(result.error);
 
 /**
  * Converts Result to a nullable value

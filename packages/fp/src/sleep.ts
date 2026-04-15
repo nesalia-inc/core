@@ -68,6 +68,8 @@ export const addJitter = (delay: number, jitter?: boolean | number): number => {
   const variance = jitter === true ? 0.5 : jitter;
   const min = delay * (1 - variance);
   const max = delay * (1 + variance);
+  // Math.random is acceptable here - it's for jitter, not security
+  // eslint-disable-next-line sonarjs/pseudo-random
   return min + Math.random() * (max - min);
 };
 
@@ -125,11 +127,12 @@ export const withTimeout = <T>(
   const isSignalInjection = isFunction && (promise as (...args: unknown[]) => Promise<T>).length > 0;
 
   // Convert function to promise
-  const p = isFunction
-    ? isSignalInjection
-      ? (promise as (signal: AbortSignal) => Promise<T>)(signal)
-      : (promise as () => Promise<T>)()
-    : (promise as Promise<T>);
+  const convertToPromise = (): Promise<T> => {
+    if (!isFunction) return promise as Promise<T>;
+    if (isSignalInjection) return (promise as (signal: AbortSignal) => Promise<T>)(signal);
+    return (promise as () => Promise<T>)();
+  };
+  const p = convertToPromise();
 
   const start = Date.now();
 

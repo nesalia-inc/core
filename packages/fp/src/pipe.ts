@@ -54,6 +54,7 @@ export function pipe(value: unknown, ...fns: AnyFn[]): unknown;
 export function pipe(value: unknown, ...fns: AnyFn[]): unknown {
   let result = value;
   for (let i = 0; i < fns.length; i++) {
+    // eslint-disable-next-line security/detect-object-injection -- Safe: fns is a local array, i is a loop counter
     result = fns[i](result);
   }
   return result;
@@ -114,6 +115,7 @@ export function flow(...fns: AnyFn[]): (...args: unknown[]) => unknown {
 
     // Subsequent functions are strictly unary
     for (let i = 1; i < fns.length; i++) {
+      // eslint-disable-next-line security/detect-object-injection -- Safe: fns is a local array, i is a loop counter
       result = fns[i](result);
     }
 
@@ -195,9 +197,9 @@ export const tapSafe = <T>(
 ) => (value: T): T => {
   try {
     fn(value);
-  } catch (e) {
+  } catch (error) {
     if (onError) {
-      onError(e);
+      onError(error);
     }
   }
   return value;
@@ -244,7 +246,9 @@ export async function pipeAsync(value: unknown, ...fns: AnyFn[]): Promise<unknow
   // Check initial value too to avoid unnecessary microtasks
   let result = isThenable(value) ? await (value as Promise<unknown>) : value;
   for (let i = 0; i < fns.length; i++) {
+    // eslint-disable-next-line security/detect-object-injection -- Safe: fns is a local array, i is a loop counter
     const next = fns[i](result);
+    // eslint-disable-next-line no-await-in-loop -- Sequential execution is required for pipe semantics
     result = isThenable(next) ? await (next as Promise<unknown>) : next;
   }
   return result;
@@ -293,7 +297,9 @@ export function flowAsync(...fns: AnyFn[]): (...args: unknown[]) => Promise<unkn
 
     let result = await fns[0](...args);
     for (let i = 1; i < fns.length; i++) {
+      // eslint-disable-next-line security/detect-object-injection -- Safe: fns is a local array, i is a loop counter
       const next = fns[i](result);
+      // eslint-disable-next-line no-await-in-loop -- Sequential execution is required for flow semantics
       result = isThenable(next) ? await (next as Promise<unknown>) : next;
     }
 

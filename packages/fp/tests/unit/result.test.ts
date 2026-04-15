@@ -488,8 +488,8 @@ describe("Result", () => {
         expect(() => result.unwrap()).toThrow();
         try {
           result.unwrap();
-        } catch (e) {
-          expect(e).toEqual(errorObj);
+        } catch (error) {
+          expect(error).toEqual(errorObj);
         }
       });
     });

@@ -142,8 +142,8 @@ describe("Retry", () => {
     });
 
     it("calculateDelay should handle undefined backoff", () => {
-      expect(calculateDelay(1, 100, undefined)).toBe(100);
-      expect(calculateDelay(2, 100, undefined)).toBe(200);
+      expect(calculateDelay(1, 100)).toBe(100);
+      expect(calculateDelay(2, 100)).toBe(200);
     });
 
     it("calculateDelay should cap delay with maxDelay", () => {
@@ -163,8 +163,8 @@ describe("Retry", () => {
     });
 
     it("calculateDelay should handle undefined maxDelay (no cap)", () => {
-      expect(calculateDelay(5, 1000, "exponential", undefined)).toBe(16000);
-      expect(calculateDelay(5, 1000, "linear", undefined)).toBe(5000);
+      expect(calculateDelay(5, 1000, "exponential")).toBe(16000);
+      expect(calculateDelay(5, 1000, "linear")).toBe(5000);
     });
   });
 

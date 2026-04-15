@@ -80,7 +80,7 @@ export const resultFromNullable = <T, E extends Error>(
 export const resultFromThrowable = <T, E extends Error = Error>(fn: () => T): Result<T, E> => {
   try {
     return ok(fn());
-  } catch (e) {
-    return err((e instanceof Error ? e : new Error(String(e))) as E);
+  } catch (error) {
+    return err((error instanceof Error ? error : new Error(String(error))) as E);
   }
 };

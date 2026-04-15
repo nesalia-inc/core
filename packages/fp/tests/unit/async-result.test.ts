@@ -12,8 +12,6 @@ import {
   isAbortError,
   map,
   flatMap,
-  mapAsync,
-  flatMapAsync,
   getOrElse,
   getOrCompute,
   tap,
@@ -153,28 +151,28 @@ describe("AsyncResult", () => {
     });
   });
 
-  describe("mapAsync", () => {
+  describe("map", () => {
     it("should transform value with async function", async () => {
-      const result = await mapAsync(okAsync(2), async (x) => x * 2);
+      const result = await map(okAsync(2), async (x) => x * 2);
       expect(isOk(result)).toBe(true);
       expect((result as { value: number }).value).toBe(4);
     });
 
     it("should return Err if AsyncErr", async () => {
-      const result = await mapAsync(errAsync("error"), async (x) => x * 2);
+      const result = await map(errAsync("error"), async (x) => x * 2);
       expect(isErr(result)).toBe(true);
     });
   });
 
   describe("flatMapAsync", () => {
     it("should chain with async function", async () => {
-      const result = await flatMapAsync(okAsync(2), async (x) => okAsync(x * 2));
+      const result = await flatMap(okAsync(2), async (x) => okAsync(x * 2));
       expect(isOk(result)).toBe(true);
       expect((result as { value: number }).value).toBe(4);
     });
 
     it("should return Err if AsyncErr", async () => {
-      const result = await flatMapAsync(errAsync<string, string>("error"), async (x) => okAsync(x * 2));
+      const result = await flatMap(errAsync<string, string>("error"), async (x) => okAsync(x * 2));
       expect(isErr(result)).toBe(true);
     });
   });
@@ -474,7 +472,7 @@ describe("AsyncResult", () => {
         const ar = from(Promise.reject<string>("error"));
         const result = await ar.then(
           (v) => v,
-          (e) => ({ ok: true as const, value: `caught: ${e}` })
+          (error) => ({ ok: true as const, value: `caught: ${error}` })
         );
         expect(result.ok).toBe(true);
         expect(result.value).toBe("caught: error");
@@ -482,7 +480,7 @@ describe("AsyncResult", () => {
 
       it("should call onrejected and return value in then", async () => {
         const ar = from(Promise.reject<string>("error"));
-        const result = await ar.then(undefined, (e) => ({ ok: true as const, value: `caught: ${e}` }));
+        const result = await ar.then(undefined, (error) => ({ ok: true as const, value: `caught: ${error}` }));
         expect(result.ok).toBe(true);
       });
 
@@ -554,16 +552,16 @@ describe("AsyncResult", () => {
       });
     });
 
-    describe("flatMapAsync", () => {
-      it("should flatMapAsync when Ok", async () => {
-        const ar = okAsync(10).flatMapAsync(async (x) => ({ ok: true as const, value: x * 2 }));
+    describe("flatMap", () => {
+      it("should chain with async function", async () => {
+        const ar = okAsync(10).flatMap(async (x) => ({ ok: true as const, value: x * 2 }));
         const result = await ar;
         expect(result.ok).toBe(true);
         expect(result.value).toBe(20);
       });
 
-      it("should pass through error when Err in flatMapAsync", async () => {
-        const ar = errAsync<string, string>("error").flatMapAsync(async (x) => ({ ok: true as const, value: x * 2 }));
+      it("should pass through error when Err", async () => {
+        const ar = errAsync<string, string>("error").flatMap(async (x) => ({ ok: true as const, value: x * 2 }));
         const result = await ar;
         expect(result.ok).toBe(false);
         expect(result.error).toBe("error");
@@ -656,7 +654,7 @@ describe("AsyncResult", () => {
       it("should catch error from rejected promise", async () => {
         // Test with actual rejected promise
         const ar = from(Promise.reject<string>("error"));
-        const caught = await ar.catch((e) => ({ ok: true as const, value: `caught: ${e}` }));
+        const caught = await ar.catch((error) => ({ ok: true as const, value: `caught: ${error}` }));
         expect(caught.ok).toBe(true);
         expect(caught.value).toBe("caught: error");
       });

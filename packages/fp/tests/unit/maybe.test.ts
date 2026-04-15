@@ -663,7 +663,7 @@ describe("Maybe", () => {
       });
 
       it("should return Ok if predicate passes", () => {
-        const result = some(25).filter((age) => age >= 18).toResult(() => TooYoungError({ age: 15 }));
+        const result = some(25).filter((age) => age >= 18).toResult(() => new TooYoungError({ age: 15 }));
         expect(result.ok).toBe(true);
         if (result.ok) {
           expect(result.value).toBe(25);
@@ -671,7 +671,7 @@ describe("Maybe", () => {
       });
 
       it("should return Err if predicate fails", () => {
-        const result = some(15).filter((age) => age >= 18).toResult(() => TooYoungError({ age: 15 }));
+        const result = some(15).filter((age) => age >= 18).toResult(() => new TooYoungError({ age: 15 }));
         expect(result.ok).toBe(false);
         if (!result.ok) {
           expect(result.error.name).toBe("TooYoungError");
@@ -682,7 +682,7 @@ describe("Maybe", () => {
         let called = false;
         some(25).filter((age) => age >= 18).toResult(() => {
           called = true;
-          return TooYoungError({ age: 15 });
+          return new TooYoungError({ age: 15 });
         });
         expect(called).toBe(false);
       });
@@ -702,7 +702,7 @@ describe("Maybe", () => {
       });
 
       it("should return Err with toResult result", () => {
-        const result = none().filter((age) => age >= 18).toResult(() => NoAgeError({ reason: "missing" }));
+        const result = none().filter((age) => age >= 18).toResult(() => new NoAgeError({ reason: "missing" }));
         expect(result.ok).toBe(false);
         if (!result.ok) {
           expect(result.error.name).toBe("NoAgeError");
@@ -743,12 +743,12 @@ describe("Maybe", () => {
       });
 
       it("should return Ok when predicate passes", () => {
-        const result = toResult(filter(some(25), (age) => age >= 18), () => TooYoungError({ age: 15 }));
+        const result = toResult(filter(some(25), (age) => age >= 18), () => new TooYoungError({ age: 15 }));
         expect(result.ok).toBe(true);
       });
 
       it("should return Err when predicate fails", () => {
-        const result = toResult(filter(some(15), (age) => age >= 18), () => TooYoungError({ age: 15 }));
+        const result = toResult(filter(some(15), (age) => age >= 18), () => new TooYoungError({ age: 15 }));
         expect(result.ok).toBe(false);
         if (!result.ok) {
           expect(result.error.name).toBe("TooYoungError");
@@ -756,7 +756,7 @@ describe("Maybe", () => {
       });
 
       it("should return Err when Maybe is None", () => {
-        const result = toResult(filter(none(), (age) => age >= 18), () => NoAgeError({ reason: "missing" }));
+        const result = toResult(filter(none(), (age) => age >= 18), () => new NoAgeError({ reason: "missing" }));
         expect(result.ok).toBe(false);
         if (!result.ok) {
           expect(result.error.name).toBe("NoAgeError");

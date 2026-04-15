@@ -32,7 +32,8 @@
  */
 
 import type { Maybe } from "../maybe";
-import type { ZodSchema } from "zod";
+ 
+import type { ZodType } from "zod";
 
 /**
  * Native JavaScript Error type alias
@@ -84,7 +85,7 @@ export type ErrorGroup = Readonly<ErrorData<readonly Error[]> & NativeError> & E
  */
 export type ErrorOptions<T> = {
   readonly name: string;
-  readonly schema?: ZodSchema<T>;
+  readonly schema?: ZodType<T>;
   readonly defaultDescription?: string;
   readonly message?: (args: T) => string;
 };

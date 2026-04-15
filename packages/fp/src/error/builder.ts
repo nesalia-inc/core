@@ -64,33 +64,35 @@ const createErrorObject = <T>(
  * Extracts Error from Err<Error>, Some<Error>, or plain Error
  */
 const extractCause = (input: Error | Maybe<Error>): Maybe<Error> => {
-  // Helper to check if value is an object
-  const isObject = (val: unknown): val is Record<string, unknown> =>
-    val !== null && typeof val === 'object';
-
-  // Check if it's Some<Error> - has ok: true and value property
-  if (isObject(input) && input.ok === true && 'value' in input) {
-    const value = (input as { value: unknown }).value;
-    return isError(value as Error) ? some(value as Error) : none();
-  }
-
-  // Check if it's Err<Error> - has ok: false and error property
-  if (isObject(input) && input.ok === false && 'error' in input) {
-    const error = (input as unknown as { error: unknown }).error;
-    return isError(error as Error) ? some(error as Error) : none();
-  }
-
-  // Check if it's None - has ok: false and no value/error properties
-  if (isObject(input) && input.ok === false) {
-    return none();
-  }
-
-  // Otherwise it's a plain Error (the library's Error type)
+  // If it's a plain Error (the library's Error type), return it wrapped in Some
   if (isError(input as Error)) {
     return some(input as Error);
   }
 
-  // Fallback - no valid cause
+  // Helper to check if value is an object
+  const isObject = (val: unknown): val is Record<string, unknown> =>
+    val !== null && typeof val === "object";
+
+  // If not an object, can't be a Maybe type
+  if (!isObject(input)) {
+    return none();
+  }
+
+  // It's a Maybe type
+  if (input.ok === true) {
+    // Some<Error> - has ok: true and value property
+    const value = (input as { value: unknown }).value;
+    return isError(value as Error) ? some(value as Error) : none();
+  }
+
+  // ok === false - could be Err<Error> or None
+  // Check if it's Err<Error> - has ok: false and error property
+  if ("error" in input) {
+    const error = (input as unknown as { error: unknown }).error;
+    return isError(error as Error) ? some(error as Error) : none();
+  }
+
+  // It's None - ok: false with no error property
   return none();
 };
 
@@ -137,11 +139,14 @@ const redactSensitive = <T extends Record<string, unknown>>(obj: T): T => {
 
   for (const [key, value] of Object.entries(obj)) {
     if (isSensitiveField(key)) {
+      // eslint-disable-next-line security/detect-object-injection -- Safe: key is from Object.entries, assigning to local object
       redacted[key] = '[REDACTED]';
     } else if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
       // Recursively redact nested objects
+      // eslint-disable-next-line security/detect-object-injection -- Safe: key is from Object.entries, assigning to local object
       redacted[key] = redactSensitive(value as Record<string, unknown>);
     } else {
+      // eslint-disable-next-line security/detect-object-injection -- Safe: key is from Object.entries, assigning to local object
       redacted[key] = value;
     }
   }

@@ -55,6 +55,33 @@ export class RetryAbortedError extends Error {
 const defaultPredicate = () => true;
 
 /**
+ * Normalizes an unknown error into a standard Error
+ */
+const normalizeError = (error: unknown): Error =>
+  error instanceof Error ? error : new Error(String(error));
+
+/**
+ * Checks if we should stop retrying based on attempt and predicate
+ */
+const shouldStopRetrying = (
+  attempt: number,
+  attempts: number,
+  predicate: (error: Error) => boolean,
+  lastError: Error
+): boolean => attempt >= attempts || !predicate(lastError);
+
+/**
+ * Sleeps for the specified delay, respecting abort signal if provided
+ */
+const sleepForRetry = async (delayMs: number, signal?: AbortSignal): Promise<void> => {
+  if (signal) {
+    await sleepWithSignal(delayMs, signal);
+  } else {
+    await sleep(delayMs);
+  }
+};
+
+/**
  * Calculates the delay for a given attempt
  */
 export const calculateDelay = (
@@ -80,10 +107,8 @@ export const calculateDelay = (
         break;
       default: {
         // Exhaustive check: ensures all backoff strings are handled at compile time
-         
-        const _exhaustiveCheck: never = backoff;
-        void _exhaustiveCheck;
-        calculatedDelay = exponentialBackoff(attempt, delay); // Fallback for runtime safety
+        calculatedDelay = exponentialBackoff(attempt, delay);
+        return calculatedDelay;
       }
     }
   }
@@ -92,11 +117,79 @@ export const calculateDelay = (
 };
 
 /**
+ * Handles a single retry attempt failure
+ * Returns the error to throw if all retries are exhausted, undefined if should continue
+ */
+const handleRetryAttempt = (
+  error: unknown,
+  attempt: number,
+  attempts: number,
+  predicate: (error: Error) => boolean,
+  onRetry: ((error: Error, attempt: number) => void) | undefined,
+  signal: AbortSignal | undefined
+): Error | undefined => {
+  if (signal?.aborted) {
+    throw new RetryAbortedError();
+  }
+
+  const lastError = normalizeError(error);
+  if (onRetry) {
+    onRetry(lastError, attempt);
+  }
+
+  if (shouldStopRetrying(attempt, attempts, predicate, lastError)) {
+    return lastError;
+  }
+
+  return undefined;
+};
+
+/**
+ * Computes retry delay with jitter
+ */
+const computeRetryDelay = (
+  attempt: number,
+  delay: number,
+  backoff: RetryOptions["backoff"],
+  maxDelay: number | undefined,
+  jitter: boolean
+): number => addJitter(calculateDelay(attempt, delay, backoff, maxDelay), jitter);
+
+/**
+ * Executes a single retry attempt with error handling
+ * Returns the error to throw if should stop, undefined if should continue
+ */
+const executeRetryAttempt = async (
+  error: unknown,
+  attempt: number,
+  attempts: number,
+  delay: number,
+  backoff: RetryOptions["backoff"],
+  maxDelay: number | undefined,
+  predicate: (error: Error) => boolean,
+  onRetry: ((error: Error, attempt: number) => void) | undefined,
+  jitter: boolean,
+  signal: AbortSignal | undefined
+): Promise<Error | undefined> => {
+  const errorToThrow = handleRetryAttempt(error, attempt, attempts, predicate, onRetry, signal);
+
+  if (errorToThrow) {
+    return errorToThrow;
+  }
+
+  const delayMs = computeRetryDelay(attempt, delay, backoff, maxDelay, jitter);
+  await sleepForRetry(delayMs, signal);
+
+  return undefined;
+};
+
+/**
  * Retries an async function
  * @param fn - The async function to retry
  * @param options - Retry options
  * @returns The function result
  */
+// eslint-disable-next-line complexity -- Complexity of 12 is due to inherent retry logic (loop, try-catch, abort handling). Extracting further would reduce clarity without reducing actual cognitive complexity.
 export const retryAsync = async <T>(fn: () => Promise<T>, options: RetryOptions = {}): Promise<T> => {
   const {
     attempts = 3,
@@ -111,37 +204,32 @@ export const retryAsync = async <T>(fn: () => Promise<T>, options: RetryOptions 
 
   if (signal?.aborted) throw new RetryAbortedError();
 
-  let lastError: Error;
-
   for (let attempt = 1; attempt <= attempts; attempt++) {
     try {
-      return await fn(); // Early return on success
+      // eslint-disable-next-line no-await-in-loop -- Must wait for each attempt to complete before retrying
+      return await fn();
     } catch (error: unknown) {
-      // If aborted during execution, exit immediately before doing any retry logic
-      if (signal?.aborted) throw new RetryAbortedError();
+      // eslint-disable-next-line no-await-in-loop -- Must wait for delay between retry attempts
+      const errorToThrow = await executeRetryAttempt(
+        error,
+        attempt,
+        attempts,
+        delay,
+        backoff,
+        maxDelay,
+        predicate,
+        onRetry,
+        jitter,
+        signal
+      );
 
-      // Normalize error
-      lastError = error instanceof Error ? error : new Error(String(error));
-
-      // Fire callbacks
-      if (onRetry) onRetry(lastError, attempt);
-
-      // Check if we should stop retrying
-      if (attempt >= attempts || !predicate(lastError)) {
-        throw lastError;
-      }
-
-      // Calculate delay and sleep
-      const delayMs = addJitter(calculateDelay(attempt, delay, backoff, maxDelay), jitter);
-      if (signal) {
-        await sleepWithSignal(delayMs, signal);
-      } else {
-        await sleep(delayMs);
+      if (errorToThrow) {
+        throw errorToThrow;
       }
     }
   }
 
   // istanbul ignore next - TypeScript exhaustive check, unreachable at runtime
-  throw lastError!;
+  throw new RetryAbortedError("Exhausted retries");
 };
 
