@@ -2,7 +2,7 @@
  * Try builder functions
  */
 
-import type { Try, TrySuccess, TryFailure } from "./types";
+import { type Try, type TrySuccess, type TryFailure } from "./types.js";
 
 /**
  * Creates a TrySuccess with methods

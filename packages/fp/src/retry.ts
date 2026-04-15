@@ -2,7 +2,7 @@
  * Retry utilities - resilience patterns for handling transient failures
  */
 
-import { sleep, sleepWithSignal, addJitter } from "./sleep";
+import { sleep, sleepWithSignal, addJitter } from "./sleep.js";
 
 /**
  * Retry options

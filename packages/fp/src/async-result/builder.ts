@@ -5,16 +5,16 @@
 
 /* eslint-disable unicorn/throw-new-error -- PanicError and AbortError are factory functions, not constructors */
 
-import type {
-  AsyncResultInner,
-  AsyncOk,
-  AsyncErr,
-  AbortError,
-  FromPromiseOptions,
-  AsyncResult,
-} from "./types";
+import {
+  type AsyncResultInner,
+  type AsyncOk,
+  type AsyncErr,
+  type AbortError,
+  type FromPromiseOptions,
+  type AsyncResult,
+} from "./types.js";
 
-import { error, type Error, isError } from "../error";
+import { error, type Error, isError } from "../error/index.js";
 
 // Re-export types
 export type {
@@ -23,7 +23,7 @@ export type {
   AsyncErr,
   AbortError,
   FromPromiseOptions,
-} from "./types";
+} from "./types.js";
 
 /**
  * PanicError - wraps unexpected exceptions from rejected promises

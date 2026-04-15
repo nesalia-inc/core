@@ -18,7 +18,7 @@ import {
   all,
   unwrap,
   Result,
-} from "../../src/result";
+} from "../../src/result/index.js";
 
 describe("Result", () => {
   describe("ok", () => {

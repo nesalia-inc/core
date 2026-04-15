@@ -5,7 +5,7 @@
  * These guards verify both structure AND primitive types for robustness.
  */
 
-import type { Error, ErrorGroup } from "./types";
+import { type Error, type ErrorGroup } from "./types.js";
 
 /**
  * Helper for safe object narrowing

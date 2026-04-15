@@ -13,7 +13,7 @@ import {
   err,
   isOk,
   isErr,
-} from "../../src";
+} from "../../src/index.js";
 
 describe("error() with Zod schema validation", () => {
   describe("Zod schema validation", () => {

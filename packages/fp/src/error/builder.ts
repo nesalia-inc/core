@@ -5,9 +5,9 @@
  * Inspired by Python's exception classes.
  */
 
-import type { ErrorOptions, ErrorBuilder, Error, ErrorGroup } from "./types";
-import { isError, isErrorGroup } from "./guards";
-import { some, none, type Maybe } from "../maybe";
+import { type ErrorOptions, type ErrorBuilder, type Error, type ErrorGroup } from "./types.js";
+import { isError, isErrorGroup } from "./guards.js";
+import { some, none, type Maybe } from "../maybe/index.js";
 
 /**
  * Captures and formats stack trace, removing internal frames

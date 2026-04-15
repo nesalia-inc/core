@@ -2,9 +2,9 @@
  * Maybe builder functions
  */
 
-import { ok, err, type Result } from "../result";
-import type { Error } from "../error/types";
-import type { Some, None, Maybe } from "./types";
+import { ok, err, type Result } from "../result/index.js";
+import { type Error } from "../error/types.js";
+import { type Some, type None, type Maybe } from "./types.js";
 
 /**
  * Creates a Some (present value)
@@ -250,7 +250,11 @@ export const equalsWith = <T>(
   a: Maybe<T>,
   b: Maybe<T>,
   comparator: (a: T, b: T) => boolean
-): boolean => a.equals(b, comparator);
+): boolean => {
+  if (!a.ok) return !b.ok;
+  if (!b.ok) return false;
+  return comparator(a.value, b.value);
+};
 
 /**
  * Combines multiple Maybes into one

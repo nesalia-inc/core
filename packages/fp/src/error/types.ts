@@ -31,9 +31,9 @@
  * ```
  */
 
-import type { Maybe } from "../maybe";
- 
-import type { ZodType } from "zod";
+import { type Maybe } from "../maybe/index.js";
+
+import { type ZodType } from "zod";
 
 /**
  * Native JavaScript Error type alias

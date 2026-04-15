@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { z } from "zod";
-import { error } from "../../src";
+import { error } from "../../src/index.js";
 import {
   some,
   none,
@@ -22,7 +22,7 @@ import {
   all,
   filter,
   toResult,
-} from "../../src/maybe";
+} from "../../src/maybe/index.js";
 
 describe("Maybe", () => {
   describe("some", () => {

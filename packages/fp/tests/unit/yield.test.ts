@@ -15,7 +15,7 @@ interface MockGlobal {
 const originalGlobal = globalThis as MockGlobal;
 
 // We need to import the module fresh for each test to reset the environment checks
-import * as yieldModule from "../../src/yield";
+import * as yieldModule from "../../src/yield/index.js";
 
 describe("Yield", () => {
   describe("yieldControl", () => {
@@ -56,7 +56,7 @@ describe("Yield", () => {
 
       // Re-import to pick up the mocked scheduler
       vi.resetModules();
-      const { yieldControl } = await import("../../src/yield");
+      const { yieldControl } = await import("../../src/yield/index.js");
 
       await yieldControl();
       expect(mockYield).toHaveBeenCalled();
@@ -83,7 +83,7 @@ describe("Yield", () => {
 
     it("should use setImmediate when scheduler.yield is not available", async () => {
       vi.resetModules();
-      const { yieldControl } = await import("../../src/yield");
+      const { yieldControl } = await import("../../src/yield/index.js");
 
       await yieldControl();
       expect(true).toBe(true);
@@ -104,7 +104,7 @@ describe("Yield", () => {
 
     it("should use MessageChannel when scheduler.yield and setImmediate are not available", async () => {
       vi.resetModules();
-      const { yieldControl } = await import("../../src/yield");
+      const { yieldControl } = await import("../../src/yield/index.js");
 
       await yieldControl();
       expect(true).toBe(true);

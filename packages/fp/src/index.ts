@@ -7,8 +7,8 @@
  */
 
 // Unit
-export type { Unit } from "./unit";
-export { unit, isUnit } from "./unit";
+export type { Unit } from "./unit.js";
+export { unit, isUnit } from "./unit.js";
 
 // Re-export all types
 export type { Maybe, Some, None } from "./maybe";
@@ -36,7 +36,7 @@ export {
   all as allMaybe,
   filter as filterMaybe,
   toResult as toResultMaybe,
-} from "./maybe";
+} from "./maybe/index.js";
 
 // Result
 export {
@@ -56,10 +56,10 @@ export {
   toUndefined as toUndefinedResult,
   all as allResult,
   unwrap as unwrapResult,
-} from "./result";
+} from "./result/index.js";
 
 // Try
-export type { Try, TrySuccess, TryFailure } from "./try";
+export type { Try, TrySuccess, TryFailure } from "./try/index.js";
 export {
   attempt,
   attemptAsync,
@@ -73,10 +73,10 @@ export {
   match as matchTry,
   toNullable as toNullableTry,
   toUndefined as toUndefinedTry,
-} from "./try";
+} from "./try/index.js";
 
 // AsyncResult
-export type { AsyncResultInner, AsyncOk, AsyncErr, AbortError, FromPromiseOptions } from "./async-result";
+export type { AsyncResultInner, AsyncOk, AsyncErr, AbortError, FromPromiseOptions } from "./async-result/index.js";
 export {
   ok as okAsync,
   err as errAsync,
@@ -105,18 +105,18 @@ export {
   toNullable as toNullableAsyncResult,
   toUndefined as toUndefinedAsyncResult,
   withSignal,
-} from "./async-result";
+} from "./async-result/index.js";
 
 // Sleep
-export { sleep, withTimeout, sleepWithSignal, addJitter } from "./sleep";
-export type { TimeoutOptions, TimeoutError, SleepOptions, TimeoutCleanup, TimeoutResult } from "./sleep";
+export { sleep, withTimeout, sleepWithSignal, addJitter } from "./sleep.js";
+export type { TimeoutOptions, TimeoutError, SleepOptions, TimeoutCleanup, TimeoutResult } from "./sleep.js";
 
 // Yield
-export { yieldControl as yield, immediate } from "./yield";
+export { yieldControl as yield, immediate } from "./yield.js";
 
 // Retry
-export { retryAsync, exponentialBackoff, linearBackoff, constantBackoff } from "./retry";
-export type { RetryOptions, RetryAbortedError } from "./retry";
+export { retryAsync, exponentialBackoff, linearBackoff, constantBackoff } from "./retry.js";
+export type { RetryOptions, RetryAbortedError } from "./retry.js";
 
 // Conversions
 export {
@@ -126,14 +126,14 @@ export {
   fromResult,
   resultFromNullable,
   resultFromThrowable,
-} from "./conversions";
-export type { ToResultOptions } from "./conversions";
+} from "./conversions.js";
+export type { ToResultOptions } from "./conversions.js";
 
 // Pipe & Flow
-export { pipe, flow, pipeAsync, flowAsync, tap, tapAsync, tapSafe } from "./pipe";
+export { pipe, flow, pipeAsync, flowAsync, tap, tapAsync, tapSafe } from "./pipe.js";
 
 // Error System
-export type { Error, ErrorGroup, ErrorOptions } from "./error/index";
+export type { Error, ErrorGroup, ErrorOptions } from "./error/index.js";
 export {
   error,
   exceptionGroup,
@@ -143,4 +143,4 @@ export {
   getErrorMessage,
   flattenErrorGroup,
   filterErrorsByName,
-} from "./error/index";
+} from "./error/index.js";

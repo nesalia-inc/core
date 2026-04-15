@@ -13,30 +13,30 @@ export type {
 } from "./types";
 
 // Factory functions
-export { ok, err, okAsync, errAsync } from "./builder";
-export { fromPromise, fromPromiseWithOptions, from, fromValue, fromError } from "./builder";
+export { ok, err, okAsync, errAsync } from "./builder.js";
+export { fromPromise, fromPromiseWithOptions, from, fromValue, fromError } from "./builder.js";
 
 // Type guards
-export { isOk, isErr, isAbortError } from "./builder";
+export { isOk, isErr, isAbortError } from "./builder.js";
 
 // Chainable functions
-export { map, flatMap, mapErr } from "./builder";
-export { mapAsync, flatMapAsync } from "./builder";
+export { map, flatMap, mapErr } from "./builder.js";
+export { mapAsync, flatMapAsync } from "./builder.js";
 
 // Accessors
-export { getOrElse, getOrCompute, unwrap, unwrapOr } from "./builder";
+export { getOrElse, getOrCompute, unwrap, unwrapOr } from "./builder.js";
 
 // Side effects
-export { tap, tapErr } from "./builder";
+export { tap, tapErr } from "./builder.js";
 
 // Pattern matching
-export { match } from "./builder";
+export { match } from "./builder.js";
 
 // Conversion
-export { toNullable, toUndefined } from "./builder";
+export { toNullable, toUndefined } from "./builder.js";
 
 // Combinators
-export { race, all, allSettled, traverse } from "./builder";
+export { race, all, allSettled, traverse } from "./builder.js";
 
 // Signal handling
-export { withSignal } from "./builder";
+export { withSignal } from "./builder.js";

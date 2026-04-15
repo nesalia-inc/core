@@ -2,9 +2,9 @@
  * Conversion helpers - convert between Result, Maybe, Try and other types
  */
 
-import { ok, err, Result, isOk } from "./result";
-import { none, fromNullable, Maybe, isSome } from "./maybe";
-import type { Error } from "./error/types";
+import { ok, err, Result, isOk } from "./result/index.js";
+import { none, fromNullable, Maybe, isSome } from "./maybe/index.js";
+import { type Error } from "./error/types.js";
 
 /**
  * Options for converting Maybe to Result

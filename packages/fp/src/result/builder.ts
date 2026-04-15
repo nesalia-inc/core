@@ -2,8 +2,8 @@
  * Result builder functions
  */
 
-import type { Ok, Err, Result } from "./types";
-import type { Error } from "../error/types";
+import { type Ok, type Err, type Result } from "./types.js";
+import { type Error } from "../error/types.js";
 
 /**
  * Creates an Ok with methods

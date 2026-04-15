@@ -7,11 +7,11 @@ import {
   toMaybeFromResult,
   resultFromNullable,
   resultFromThrowable,
-} from "../../src/conversions";
-import { some, none } from "../../src/maybe";
-import { ok, err } from "../../src/result";
-import { error, exceptionGroup } from "../../src";
-import { assertIsError, assertIsErrorGroup } from "../../src/error/guards";
+} from "../../src/conversions/index.js";
+import { some, none } from "../../src/maybe/index.js";
+import { ok, err } from "../../src/result/index.js";
+import { error, exceptionGroup } from "../../src/index.js";
+import { assertIsError, assertIsErrorGroup } from "../../src/error/guards/index.js";
 
 describe("Conversions", () => {
   describe("fromMaybe (new naming)", () => {

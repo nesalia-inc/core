@@ -42,13 +42,13 @@ export type {
 } from "./types";
 
 // Guards
-export { isError, isErrorGroup, assertIsError, assertIsErrorGroup } from "./guards";
+export { isError, isErrorGroup, assertIsError, assertIsErrorGroup } from "./guards.js";
 
 // Utilities
-export { getErrorMessage, flattenErrorGroup, filterErrorsByName } from "./utils";
+export { getErrorMessage, flattenErrorGroup, filterErrorsByName } from "./utils.js";
 
 // Builder
-export { error, exceptionGroup } from "./builder";
+export { error, exceptionGroup } from "./builder.js";
 
 // Functional throw
-export { raise } from "./raise";
+export { raise } from "./raise.js";
