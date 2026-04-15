@@ -33,4 +33,4 @@ export { match } from "./builder.js";
 export { toNullable, toUndefined, swap } from "./builder.js";
 
 // Combinators
-export { all } from "./builder.js";
+export { all, traverse } from "./builder.js";

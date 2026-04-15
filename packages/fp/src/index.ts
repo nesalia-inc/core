@@ -36,6 +36,7 @@ export {
   all as allMaybe,
   filter as filterMaybe,
   toResult as toResultMaybe,
+  traverse as traverseMaybe,
 } from "./maybe/index.js";
 
 // Result
@@ -56,6 +57,7 @@ export {
   toUndefined as toUndefinedResult,
   all as allResult,
   unwrap as unwrapResult,
+  traverse as traverseResult,
 } from "./result/index.js";
 
 // Try
@@ -130,7 +132,7 @@ export {
 export type { ToResultOptions } from "./conversions.js";
 
 // Pipe & Flow
-export { pipe, flow, pipeAsync, flowAsync, tap, tapAsync, tapSafe } from "./pipe.js";
+export { pipe, flow, pipeAsync, flowAsync, tap, tapAsync, tapSafe, reduce } from "./pipe.js";
 
 // Error System
 export type { Error, ErrorGroup, ErrorOptions } from "./error/index.js";

@@ -21,4 +21,4 @@ export { toNullable, toUndefined, getOrElse, getOrCompute, toResult } from "./bu
 export { equals, equalsWith } from "./builder.js";
 
 // Combinators
-export { all, filter } from "./builder.js";
+export { all, filter, traverse } from "./builder.js";

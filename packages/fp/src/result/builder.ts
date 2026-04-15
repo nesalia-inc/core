@@ -301,3 +301,38 @@ export const unwrap = <T, E extends Error>(result: Result<T, E>): T => {
   }
   throw result.error;
 };
+
+/**
+ * Transforms an array of items by applying a Result-returning function to each,
+ * short-circuiting on the first Err (fail-fast semantics).
+ *
+ * @typeParam T - The type of the input items
+ * @typeParam U - The type of the transformed values
+ * @typeParam E - The type of the error
+ * @param items - The array of items to traverse
+ * @param fn - Function to apply to each item, returning a Result
+ * @returns Ok with array of values if all succeed, or the first Err
+ *
+ * @example
+ * import { traverse, ok, err } from '@deessejs/fp';
+ *
+ * const parseNum = (s: string): Result<number, Error> =>
+ *   isNaN(+s) ? err(new Error('not a number')) : ok(+s);
+ *
+ * traverse(['1', '2', '3'], parseNum); // Ok([1, 2, 3])
+ * traverse(['1', 'a', '3'], parseNum); // Err(Error('not a number'))
+ */
+export const traverse = <T, U, E extends Error>(
+  items: readonly T[],
+  fn: (item: T) => Result<U, E>
+): Result<U[], E> => {
+  const results: U[] = [];
+  for (const item of items) {
+    const result = fn(item);
+    if (isErr(result)) {
+      return result;
+    }
+    results.push(result.value);
+  }
+  return createOk(results);
+};
