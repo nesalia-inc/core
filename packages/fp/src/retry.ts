@@ -141,6 +141,7 @@ const handleRetryAttempt = (
     return lastError;
   }
 
+  // eslint-disable-next-line @typescript-eslint/consistent-return -- Returning undefined is intentional here as sentinel to continue retrying
   return undefined;
 };
 
@@ -180,6 +181,7 @@ const executeRetryAttempt = async (
   const delayMs = computeRetryDelay(attempt, delay, backoff, maxDelay, jitter);
   await sleepForRetry(delayMs, signal);
 
+  // eslint-disable-next-line @typescript-eslint/consistent-return -- Returning undefined is intentional here as sentinel to continue retrying
   return undefined;
 };
 
@@ -189,7 +191,6 @@ const executeRetryAttempt = async (
  * @param options - Retry options
  * @returns The function result
  */
-// eslint-disable-next-line complexity -- Complexity of 12 is due to inherent retry logic (loop, try-catch, abort handling). Extracting further would reduce clarity without reducing actual cognitive complexity.
 export const retryAsync = async <T>(fn: () => Promise<T>, options: RetryOptions = {}): Promise<T> => {
   const {
     attempts = 3,

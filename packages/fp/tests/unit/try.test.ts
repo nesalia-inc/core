@@ -36,6 +36,7 @@ describe("Try", () => {
 
     it("should wrap non-Error throws", () => {
       const result = attempt(() => {
+        // eslint-disable-next-line no-throw-literal -- Testing library's ability to wrap non-Error throws
         throw "string error";
       });
       expect(result.ok).toBe(false);
@@ -62,6 +63,7 @@ describe("Try", () => {
 
     it("should wrap rejected promise", async () => {
       const result = await attemptAsync(async () => {
+        // eslint-disable-next-line no-throw-literal -- Testing library's ability to wrap rejected promises
         throw "rejected";
       });
       expect(result.ok).toBe(false);

@@ -110,6 +110,7 @@ describe("Conversions", () => {
 
     it("should wrap non-Error throws", () => {
       const result = resultFromThrowable(() => {
+        // eslint-disable-next-line no-throw-literal -- Testing library's ability to wrap non-Error throws
         throw "string error";
       });
       expect(result.ok).toBe(false);
