@@ -26,7 +26,7 @@ describe("error() with Zod schema validation", () => {
         }),
       });
 
-      const e = new SizeError({ current: 3, wanted: 5 });
+      const e = SizeError({ current: 3, wanted: 5 });
 
       // Error is a plain object - verify structure directly
       expect(e.name).toBe("SizeError");
@@ -44,7 +44,7 @@ describe("error() with Zod schema validation", () => {
       });
 
       // @ts-expect-error - intentionally passing wrong type
-      const e = new SizeError({ current: "not a number", wanted: 5 });
+      const e = SizeError({ current: "not a number", wanted: 5 });
 
       expect(e.name).toBe("SizeErrorValidationError");
       expect(e.notes).toHaveLength(1);
@@ -60,7 +60,7 @@ describe("error() with Zod schema validation", () => {
       });
 
       // Valid args, then addNotes
-      const e = new ValidationError({ field: "email" }).addNotes("Form submission failed");
+      const e = ValidationError({ field: "email" }).addNotes("Form submission failed");
 
       expect(e.notes).toEqual(["Form submission failed"]);
     });
@@ -81,8 +81,8 @@ describe("error() with Zod schema validation", () => {
         }),
       });
 
-      const cause = new NetworkError({ host: "api.example.com" });
-      const e = new SizeError({ current: 3, wanted: 5 }).from(cause);
+      const cause = NetworkError({ host: "api.example.com" });
+      const e = SizeError({ current: 3, wanted: 5 }).from(cause);
 
       expect(e.cause.isSome()).toBe(true);
       expect(e.cause.map(c => c.name).getOrElse(undefined)).toBe("NetworkError");
@@ -94,7 +94,7 @@ describe("error() with Zod schema validation", () => {
         schema: z.object({ value: z.number() }),
       });
 
-      const e = new SizeError({ value: 10 });
+      const e = SizeError({ value: 10 });
 
       expect(Object.isFrozen(e)).toBe(true);
       expect(Object.isFrozen(e.notes)).toBe(true);
@@ -107,7 +107,7 @@ describe("error() with Zod schema validation", () => {
       });
 
       // Use addNotes directly on error
-      const e = new ValidationError({ field: "email" }).addNotes("Builder note");
+      const e = ValidationError({ field: "email" }).addNotes("Builder note");
 
       expect(e.notes).toEqual(["Builder note"]);
     });
@@ -119,7 +119,7 @@ describe("error() with Zod schema validation", () => {
       });
 
       // Chain addNotes calls on the error
-      const e = new ValidationError({ field: "email" }).addNotes("Note 1").addNotes("Note 2");
+      const e = ValidationError({ field: "email" }).addNotes("Note 1").addNotes("Note 2");
 
       expect(e.notes).toEqual(["Note 1", "Note 2"]);
     });
@@ -138,9 +138,9 @@ describe("error() with Zod schema validation", () => {
         schema: z.object({ host: z.string() }),
       });
 
-      const cause = new NetworkError({ host: "api.example.com" });
+      const cause = NetworkError({ host: "api.example.com" });
       // Use from directly on error
-      const e = new SizeError({ current: 3, wanted: 5 }).from(cause);
+      const e = SizeError({ current: 3, wanted: 5 }).from(cause);
 
       expect(e.cause.map(c => c.name).getOrElse(undefined)).toBe("NetworkError");
     });
@@ -159,9 +159,9 @@ describe("error() with Zod schema validation", () => {
         schema: z.object({ host: z.string() }),
       });
 
-      const causeResult = err(new NetworkError({ host: "api.example.com" }));
+      const causeResult = err(NetworkError({ host: "api.example.com" }));
       // Pass Err instead of Error - extract the error from the result
-      const e = new SizeError({ current: 3, wanted: 5 }).from(causeResult);
+      const e = SizeError({ current: 3, wanted: 5 }).from(causeResult);
 
       expect(e.cause.map(c => c.name).getOrElse(undefined)).toBe("NetworkError");
     });
@@ -180,9 +180,9 @@ describe("error() with Zod schema validation", () => {
         schema: z.object({ host: z.string() }),
       });
 
-      const cause = new NetworkError({ host: "api.example.com" });
+      const cause = NetworkError({ host: "api.example.com" });
       // from().addNotes() should preserve the cause
-      const e = new SizeError({ current: 3, wanted: 5 }).from(cause).addNotes("Note after from");
+      const e = SizeError({ current: 3, wanted: 5 }).from(cause).addNotes("Note after from");
 
       expect(e.cause.map(c => c.name).getOrElse(undefined)).toBe("NetworkError");
       expect(e.notes).toEqual(["Note after from"]);
@@ -202,9 +202,9 @@ describe("error() with Zod schema validation", () => {
         schema: z.object({ host: z.string() }),
       });
 
-      const cause = new NetworkError({ host: "api.example.com" });
+      const cause = NetworkError({ host: "api.example.com" });
       // addNotes().from() should work
-      const e = new SizeError({ current: 3, wanted: 5 }).addNotes("Initial note").from(cause);
+      const e = SizeError({ current: 3, wanted: 5 }).addNotes("Initial note").from(cause);
 
       expect(e.notes).toEqual(["Initial note"]);
       expect(e.cause.map(c => c.name).getOrElse(undefined)).toBe("NetworkError");
@@ -229,10 +229,10 @@ describe("error() with Zod schema validation", () => {
         schema: z.object({ token: z.string() }),
       });
 
-      const networkCause = new NetworkError({ host: "api.example.com" });
-      const authCause = new AuthError({ token: "abc123" });
+      const networkCause = NetworkError({ host: "api.example.com" });
+      const authCause = AuthError({ token: "abc123" });
       // from().from() should override the cause
-      const e = new SizeError({ current: 3, wanted: 5 }).from(networkCause).from(authCause);
+      const e = SizeError({ current: 3, wanted: 5 }).from(networkCause).from(authCause);
 
       expect(e.cause.map(c => c.name).getOrElse(undefined)).toBe("AuthError");
     });
@@ -245,7 +245,7 @@ describe("error() with Zod schema validation", () => {
         schema: z.object({ field: z.string() }),
       });
 
-      const e = new ValidationError({ field: "email" }).addNotes("Invalid format");
+      const e = ValidationError({ field: "email" }).addNotes("Invalid format");
 
       expect(e.notes).toEqual(["Invalid format"]);
     });
@@ -256,7 +256,7 @@ describe("error() with Zod schema validation", () => {
         schema: z.object({ field: z.string() }),
       });
 
-      const e = new ValidationError({ field: "email" })
+      const e = ValidationError({ field: "email" })
         .addNotes("First note")
         .addNotes("Second note");
 
@@ -269,8 +269,8 @@ describe("error() with Zod schema validation", () => {
         schema: z.object({ field: z.string() }),
       });
 
-      const withNotes = new ValidationError({ field: "email" }).addNotes("Context: API");
-      const withoutNotes = new ValidationError({ field: "email" });
+      const withNotes = ValidationError({ field: "email" }).addNotes("Context: API");
+      const withoutNotes = ValidationError({ field: "email" });
 
       expect(withNotes.notes).toEqual(["Context: API"]);
       expect(withoutNotes.notes).toEqual([]);
@@ -282,7 +282,7 @@ describe("error() with Zod schema validation", () => {
         schema: z.object({ field: z.string() }),
       });
 
-      const e = new ValidationError({ field: "email" })
+      const e = ValidationError({ field: "email" })
         .addNotes("Note 1")
         .addNotes("Note 2", "Note 3");
 
@@ -305,8 +305,8 @@ describe("error() with Zod schema validation", () => {
         schema: z.object({ host: z.string() }),
       });
 
-      const cause = new NetworkError({ host: "api.example.com" });
-      const e = new SizeError({ current: 3, wanted: 5 }).from(cause);
+      const cause = NetworkError({ host: "api.example.com" });
+      const e = SizeError({ current: 3, wanted: 5 }).from(cause);
 
       expect(e.cause.map(c => c.name).getOrElse(undefined)).toBe("NetworkError");
       expect(e.cause.map(c => c.args).getOrElse(undefined)).toEqual({ host: "api.example.com" });
@@ -326,8 +326,8 @@ describe("error() with Zod schema validation", () => {
         schema: z.object({ host: z.string() }),
       });
 
-      const causeResult = err(new NetworkError({ host: "api.example.com" }));
-      const e = new SizeError({ current: 3, wanted: 5 }).from(causeResult);
+      const causeResult = err(NetworkError({ host: "api.example.com" }));
+      const e = SizeError({ current: 3, wanted: 5 }).from(causeResult);
 
       expect(e.cause.map(c => c.name).getOrElse(undefined)).toBe("NetworkError");
     });
@@ -344,7 +344,7 @@ describe("error() with Zod schema validation", () => {
       // Pass a None-like object (ok: false but no value or error property)
       // @ts-expect-error - intentionally testing invalid input
       const noneLike = { ok: false };
-      const e = new SizeError({ current: 3, wanted: 5 }).from(noneLike);
+      const e = SizeError({ current: 3, wanted: 5 }).from(noneLike);
 
       // Should result in None (no cause)
       expect(e.cause.isNone()).toBe(true);
@@ -362,7 +362,7 @@ describe("error() with Zod schema validation", () => {
       // Pass an invalid object
       // @ts-expect-error - intentionally testing invalid input
       const invalid = {};
-      const e = new SizeError({ current: 3, wanted: 5 }).from(invalid);
+      const e = SizeError({ current: 3, wanted: 5 }).from(invalid);
 
       // Should result in None (no valid cause)
       expect(e.cause.isNone()).toBe(true);
@@ -384,8 +384,8 @@ describe("error() with Zod schema validation", () => {
         schema: z.object({ host: z.string() }),
       });
 
-      const cause = new NetworkError({ host: "api.example.com" });
-      const e = new SizeError({ current: 3, wanted: 5 })
+      const cause = NetworkError({ host: "api.example.com" });
+      const e = SizeError({ current: 3, wanted: 5 })
         .addNotes("Operation: upload")
         .from(cause);
 
@@ -408,8 +408,8 @@ describe("exceptionGroup()", () => {
     });
 
     const group = exceptionGroup([
-      new SizeError({ value: 10 }),
-      new ValidationError({ field: "email" }),
+      SizeError({ value: 10 }),
+      ValidationError({ field: "email" }),
     ]);
 
     expect(group.name).toBe("ExceptionGroup");
@@ -424,7 +424,7 @@ describe("exceptionGroup()", () => {
       schema: z.object({ value: z.number() }),
     });
 
-    const group = exceptionGroup([new SizeError({ value: 10 })]);
+    const group = exceptionGroup([SizeError({ value: 10 })]);
 
     expect(Object.isFrozen(group)).toBe(true);
     expect(Object.isFrozen(group.exceptions)).toBe(true);
@@ -458,7 +458,7 @@ describe("exceptionGroup()", () => {
       schema: z.object({ value: z.number() }),
     });
 
-    const innerGroup = exceptionGroup([new SizeError({ value: 10 })]);
+    const innerGroup = exceptionGroup([SizeError({ value: 10 })]);
     const outerGroup = exceptionGroup([innerGroup]);
 
     expect(outerGroup.exceptions).toHaveLength(1);
@@ -477,7 +477,7 @@ describe("raise()", () => {
     });
 
     // raise() throws the error and returns never
-    expect(() => raise(new SizeError({ current: 3, wanted: 5 }))).toThrow();
+    expect(() => raise(SizeError({ current: 3, wanted: 5 }))).toThrow();
   });
 
   it("should throw with the correct error object", () => {
@@ -489,7 +489,7 @@ describe("raise()", () => {
       }),
     });
 
-    const errorObj = new SizeError({ current: 3, wanted: 5 });
+    const errorObj = SizeError({ current: 3, wanted: 5 });
 
     try {
       raise(errorObj);
@@ -507,7 +507,7 @@ describe("isError()", () => {
       schema: z.object({ value: z.number() }),
     });
 
-    const e = new SizeError({ value: 10 });
+    const e = SizeError({ value: 10 });
 
     expect(isError(e)).toBe(true);
   });
@@ -552,7 +552,7 @@ describe("isErrorGroup()", () => {
       schema: z.object({ value: z.number() }),
     });
 
-    const group = exceptionGroup([new SizeError({ value: 10 })]);
+    const group = exceptionGroup([SizeError({ value: 10 })]);
 
     expect(isErrorGroup(group)).toBe(true);
   });
@@ -568,7 +568,7 @@ describe("isErrorGroup()", () => {
       schema: z.object({ value: z.number() }),
     });
 
-    const e = new SizeError({ value: 10 });
+    const e = SizeError({ value: 10 });
     expect(isErrorGroup(e)).toBe(false);
   });
 
@@ -587,7 +587,7 @@ describe("getErrorMessage()", () => {
       }),
     });
 
-    const e = new SizeError({ current: 3, wanted: 5 });
+    const e = SizeError({ current: 3, wanted: 5 });
 
     expect(getErrorMessage(e)).toBe('SizeError: {"current":3,"wanted":5}');
   });
@@ -599,8 +599,8 @@ describe("getErrorMessage()", () => {
     });
 
     const group = exceptionGroup([
-      new SizeError({ value: 10 }),
-      new SizeError({ value: 20 }),
+      SizeError({ value: 10 }),
+      SizeError({ value: 20 }),
     ]);
 
     expect(getErrorMessage(group)).toBe("ExceptionGroup: 2 error(s)");
@@ -619,8 +619,8 @@ describe("flattenErrorGroup()", () => {
       schema: z.object({ field: z.string() }),
     });
 
-    const innerGroup = exceptionGroup([new SizeError({ value: 10 })]);
-    const outerGroup = exceptionGroup([innerGroup, new ValidationError({ field: "email" })]);
+    const innerGroup = exceptionGroup([SizeError({ value: 10 })]);
+    const outerGroup = exceptionGroup([innerGroup, ValidationError({ field: "email" })]);
 
     const flat = flattenErrorGroup(outerGroup);
 
@@ -635,7 +635,7 @@ describe("flattenErrorGroup()", () => {
       schema: z.object({ value: z.number() }),
     });
 
-    const e = new SizeError({ value: 10 });
+    const e = SizeError({ value: 10 });
     const flat = flattenErrorGroup(e);
 
     expect(flat).toHaveLength(1);
@@ -656,9 +656,9 @@ describe("filterErrorsByName()", () => {
     });
 
     const group = exceptionGroup([
-      new SizeError({ value: 10 }),
-      new ValidationError({ field: "email" }),
-      new SizeError({ value: 20 }),
+      SizeError({ value: 10 }),
+      ValidationError({ field: "email" }),
+      SizeError({ value: 20 }),
     ]);
 
     const sizeErrors = filterErrorsByName(group, "SizeError");
@@ -673,7 +673,7 @@ describe("filterErrorsByName()", () => {
       schema: z.object({ value: z.number() }),
     });
 
-    const group = exceptionGroup([new SizeError({ value: 10 })]);
+    const group = exceptionGroup([SizeError({ value: 10 })]);
 
     const notFound = filterErrorsByName(group, "NonExistent");
 
@@ -687,7 +687,7 @@ describe("error() without schema", () => {
       name: "SimpleError",
     });
 
-    const e = new SimpleError({ any: "args" });
+    const e = SimpleError({ any: "args" });
 
     expect(e.name).toBe("SimpleError");
     expect(e.args).toEqual({ any: "args" });
@@ -700,7 +700,7 @@ describe("error() without schema", () => {
       message: (args) => `Custom: ${JSON.stringify(args)}`,
     });
 
-    const e = new SimpleError({ key: "value" });
+    const e = SimpleError({ key: "value" });
 
     expect(e.message).toBe('Custom: {"key":"value"}');
   });
@@ -710,7 +710,7 @@ describe("error() without schema", () => {
       name: "SimpleError",
     });
 
-    const e = new SimpleError({ data: 42 }).addNotes("context");
+    const e = SimpleError({ data: 42 }).addNotes("context");
 
     expect(e.notes).toContain("context");
   });
@@ -723,7 +723,7 @@ describe("error() without schema", () => {
       name: "SimpleError",
     });
 
-    const e = new SimpleError({ data: 42 }).from(new CauseError({ reason: "bad" }));
+    const e = SimpleError({ data: 42 }).from(CauseError({ reason: "bad" }));
 
     expect(e.cause.isSome()).toBe(true);
   });
@@ -740,7 +740,7 @@ describe("integration with Result", () => {
     });
 
     // Wrap the error with err() to get Result methods
-    const initialErr = err(new SizeError({ current: 3, wanted: 5 }));
+    const initialErr = err(SizeError({ current: 3, wanted: 5 }));
     const result = initialErr.mapErr((e) => e);
 
     expect(isErr(result)).toBe(true);
@@ -755,7 +755,7 @@ describe("integration with Result", () => {
 
     const result = ok(10).flatMap((x) => {
       if (x <= 5) {
-        return err(new SizeError({ value: x }));
+        return err(SizeError({ value: x }));
       }
       return ok(x * 2);
     });
@@ -772,7 +772,7 @@ describe("integration with Result", () => {
 
     const result = ok(10).flatMap((x) => {
       if (x > 5) {
-        return err(new SizeError({ value: x }));
+        return err(SizeError({ value: x }));
       }
       return ok(x * 2);
     });
@@ -784,7 +784,7 @@ describe("integration with Result", () => {
   it("should allow using Error directly with err()", () => {
     const MyError = error({ name: "MyError" });
 
-    const domainError = new MyError({ detail: "something" });
+    const domainError = MyError({ detail: "something" });
 
     // domainError is a plain error object
     expect(isError(domainError)).toBe(true);
@@ -802,7 +802,7 @@ describe("sensitive data redaction", () => {
   it("should redact password field", () => {
     const CredentialsError = error({ name: "CredentialsError" });
 
-    const e = new CredentialsError({
+    const e = CredentialsError({
       username: "user@example.com",
       password: "super_secret_password",
     });
@@ -817,7 +817,7 @@ describe("sensitive data redaction", () => {
   it("should redact token field", () => {
     const AuthError = error({ name: "AuthError" });
 
-    const e = new AuthError({
+    const e = AuthError({
       userId: 12345,
       token: "sk_live_abc123",
     });
@@ -832,7 +832,7 @@ describe("sensitive data redaction", () => {
   it("should redact secret field", () => {
     const SecretError = error({ name: "SecretError" });
 
-    const e = new SecretError({ apiSecret: "my_secret_key" });
+    const e = SecretError({ apiSecret: "my_secret_key" });
 
     expect(e.message).toContain("apiSecret");
     expect(e.message).toContain("[REDACTED]");
@@ -842,7 +842,7 @@ describe("sensitive data redaction", () => {
   it("should redact api_key field", () => {
     const ConfigError = error({ name: "ConfigError" });
 
-    const e = new ConfigError({ api_key: "key_12345" });
+    const e = ConfigError({ api_key: "key_12345" });
 
     expect(e.message).toContain("api_key");
     expect(e.message).toContain("[REDACTED]");
@@ -852,7 +852,7 @@ describe("sensitive data redaction", () => {
   it("should redact credential field", () => {
     const ServiceError = error({ name: "ServiceError" });
 
-    const e = new ServiceError({ credential: "my_credential" });
+    const e = ServiceError({ credential: "my_credential" });
 
     expect(e.message).toContain("credential");
     expect(e.message).toContain("[REDACTED]");
@@ -862,7 +862,7 @@ describe("sensitive data redaction", () => {
   it("should redact nested sensitive fields", () => {
     const ComplexError = error({ name: "ComplexError" });
 
-    const e = new ComplexError({
+    const e = ComplexError({
       user: {
         name: "John",
         password: "secret123",
@@ -879,7 +879,7 @@ describe("sensitive data redaction", () => {
   it("should not redact non-sensitive fields", () => {
     const ValidationError = error({ name: "ValidationError" });
 
-    const e = new ValidationError({
+    const e = ValidationError({
       field: "email",
       value: "not_an_email",
     });
@@ -892,7 +892,7 @@ describe("sensitive data redaction", () => {
   it("should preserve args with sensitive fields intact", () => {
     const CredentialsError = error({ name: "CredentialsError" });
 
-    const e = new CredentialsError({
+    const e = CredentialsError({
       username: "user@example.com",
       password: "super_secret_password",
     });
@@ -913,7 +913,7 @@ describe("sensitive data redaction", () => {
       }),
     });
 
-    const e = new SecureError({
+    const e = SecureError({
       userId: 123,
       apiKey: "secret_api_key",
     });
@@ -928,7 +928,7 @@ describe("sensitive data redaction", () => {
   it("should be case-insensitive for sensitive field detection", () => {
     const TestError = error({ name: "TestError" });
 
-    const e = new TestError({
+    const e = TestError({
       PASSWORD: "secret1",
       Token: "secret2",
       SECRET: "secret3",

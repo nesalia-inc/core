@@ -94,7 +94,7 @@ export default tseslint.config(
       "unicorn/prefer-optional-catch-binding": "error",
       "unicorn/prefer-string-slice": "error",
       "unicorn/prefer-ternary": "off", // Ternaries can be harder to read
-      "unicorn/throw-new-error": "error",
+      "unicorn/throw-new-error": "off", // Disabled - this project uses error() factory, not new Class()
 
       // Security
       "security/detect-object-injection": "warn",

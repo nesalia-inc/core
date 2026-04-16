@@ -76,7 +76,7 @@ describe("Try", () => {
       const DatabaseError = error({ name: "DatabaseError" });
       const result = attempt(
         () => 42,
-        (caught) => new DatabaseError({ message: caught.message })
+        (caught) => DatabaseError({ message: caught.message })
       );
       expect(result.ok).toBe(true);
       expect(result.value).toBe(42);
@@ -86,7 +86,7 @@ describe("Try", () => {
       const DatabaseError = error({ name: "DatabaseError" });
       const result = attempt(
         () => { throw new Error("connection failed"); },
-        (caught) => new DatabaseError({ message: caught.message })
+        (caught) => DatabaseError({ message: caught.message })
       );
       expect(result.ok).toBe(false);
       expect(result.error.name).toBe("DatabaseError");
@@ -99,7 +99,7 @@ describe("Try", () => {
       const DatabaseError = error({ name: "DatabaseError" });
       const result = await attemptAsync(
         async () => 42,
-        (caught) => new DatabaseError({ message: caught.message })
+        (caught) => DatabaseError({ message: caught.message })
       );
       expect(result.ok).toBe(true);
       expect(result.value).toBe(42);
@@ -109,7 +109,7 @@ describe("Try", () => {
       const DatabaseError = error({ name: "DatabaseError" });
       const result = await attemptAsync(
         async () => { throw new Error("async connection failed"); },
-        (caught) => new DatabaseError({ message: caught.message })
+        (caught) => DatabaseError({ message: caught.message })
       );
       expect(result.ok).toBe(false);
       expect(result.error.name).toBe("DatabaseError");

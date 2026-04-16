@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { retryAsync, exponentialBackoff, linearBackoff, constantBackoff, calculateDelay, RetryAbortedError } from "../../src/retry/index.js";
+import { retryAsync, exponentialBackoff, linearBackoff, constantBackoff, calculateDelay, RetryAbortedError } from "../../src/retry.js";
 
 describe("Retry", () => {
   describe("retryAsync", () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { sleep, withTimeout, TimeoutError, sleepWithSignal, addJitter } from "../../src/sleep/index.js";
+import { sleep, withTimeout, TimeoutError, sleepWithSignal, addJitter } from "../../src/sleep.js";
 
 describe("Sleep", () => {
   describe("sleep", () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { pipe, flow, pipeAsync, flowAsync, tap, tapAsync, tapSafe } from "../../src/pipe/index.js";
+import { pipe, flow, pipeAsync, flowAsync, tap, tapAsync, tapSafe } from "../../src/pipe.js";
 
 describe("pipe", () => {
   it("should pipe a value through a single function", () => {
