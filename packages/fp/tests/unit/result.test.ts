@@ -18,6 +18,7 @@ import {
   all,
   unwrap,
   Result,
+  traverse,
 } from "../../src/result/index.js";
 
 describe("Result", () => {
@@ -513,6 +514,208 @@ describe("Result", () => {
         const error = new Error("something went wrong");
         expect(() => unwrap(err(error))).toThrow(error);
       });
+    });
+  });
+
+  describe("Ok instance methods", () => {
+    it("map method should transform value", () => {
+      const result = ok(2).map((x) => x * 2);
+      expect(isOk(result)).toBe(true);
+      if (isOk(result)) {
+        expect(result.value).toBe(4);
+      }
+    });
+
+    it("flatMap method should chain Results", () => {
+      const result = ok(2).flatMap((x) => ok(x * 2));
+      expect(isOk(result)).toBe(true);
+      if (isOk(result)) {
+        expect(result.value).toBe(4);
+      }
+    });
+
+    it("flatMap method should allow returning Err", () => {
+      const result = ok(2).flatMap((x) => (x > 0 ? ok(x) : err("negative")));
+      expect(isOk(result)).toBe(true);
+      if (isOk(result)) {
+        expect(result.value).toBe(2);
+      }
+    });
+
+    it("mapErr method should not transform value", () => {
+      const result = ok(42).mapErr((e) => new Error(String(e)));
+      expect(isOk(result)).toBe(true);
+      if (isOk(result)) {
+        expect(result.value).toBe(42);
+      }
+    });
+
+    it("getOrElse method should return value", () => {
+      const result = ok(42).getOrElse(0);
+      expect(result).toBe(42);
+    });
+
+    it("getOrCompute method should return value without calling function", () => {
+      let called = false;
+      const result = ok(42).getOrCompute(() => {
+        called = true;
+        return 0;
+      });
+      expect(result).toBe(42);
+      expect(called).toBe(false);
+    });
+
+    it("tap method should call function with value", () => {
+      let captured = 0;
+      const r = ok(5).tap((v) => {
+        captured = v;
+      });
+      expect(captured).toBe(5);
+      expect(r.ok).toBe(true);
+    });
+
+    it("tapErr method should not call function", () => {
+      let called = false;
+      const r = ok(5).tapErr(() => {
+        called = true;
+      });
+      expect(called).toBe(false);
+      expect(r.ok).toBe(true);
+    });
+
+    it("match method with object should call onSuccess", () => {
+      const result = ok(5).match({ onSuccess: (v) => v * 2, onError: () => 0 });
+      expect(result).toBe(10);
+    });
+
+    it("match method with function should call function directly", () => {
+      const result = ok(5).match((v) => v * 2);
+      expect(result).toBe(10);
+    });
+  });
+
+  describe("Err instance methods", () => {
+    it("map method should return self", () => {
+      const result = err("error").map((x) => x * 2);
+      expect(isErr(result)).toBe(true);
+      if (isErr(result)) {
+        expect(result.error).toBe("error");
+      }
+    });
+
+    it("flatMap method should return self", () => {
+      const result = err("error").flatMap((x) => ok(x * 2));
+      expect(isErr(result)).toBe(true);
+      if (isErr(result)) {
+        expect(result.error).toBe("error");
+      }
+    });
+
+    it("mapErr method should transform error", () => {
+      const result = err("error").mapErr((e) => new Error(`transformed: ${e}`));
+      expect(isErr(result)).toBe(true);
+      if (isErr(result)) {
+        expect(result.error).toBeInstanceOf(Error);
+        expect(result.error.message).toBe("transformed: error");
+      }
+    });
+
+    it("getOrElse method should return default value", () => {
+      const result = err("error").getOrElse(0);
+      expect(result).toBe(0);
+    });
+
+    it("getOrCompute method should call function and return result", () => {
+      let called = false;
+      const result = err("error").getOrCompute(() => {
+        called = true;
+        return 42;
+      });
+      expect(called).toBe(true);
+      expect(result).toBe(42);
+    });
+
+    it("tap method should return self without calling function", () => {
+      let called = false;
+      const r = err("error").tap(() => {
+        called = true;
+      });
+      expect(called).toBe(false);
+      expect(r.ok).toBe(false);
+    });
+
+    it("tapErr method should call function with error", () => {
+      let captured = "";
+      const r = err("error").tapErr((e) => {
+        captured = e;
+      });
+      expect(captured).toBe("error");
+      expect(r.ok).toBe(false);
+    });
+
+    it("match method with object should call onError", () => {
+      const result = err("error").match({ onSuccess: (v) => v * 2, onError: (e) => e.length });
+      expect(result).toBe(5);
+    });
+
+    it("match method with plain function should call function with error", () => {
+      const result = err("error").match((e) => e.length);
+      expect(result).toBe(5);
+    });
+  });
+
+  describe("traverse", () => {
+    it("should return Ok with transformed values when all are Ok", () => {
+      const parseNum = (s: string): Result<number, Error> =>
+        Number.isNaN(+s) ? err(new Error("not a number")) : ok(+s);
+
+      const result = traverse(["1", "2", "3"], parseNum);
+      expect(isOk(result)).toBe(true);
+      if (isOk(result)) {
+        expect(result.value).toEqual([1, 2, 3]);
+      }
+    });
+
+    it("should return Err on first failure (fail-fast)", () => {
+      const parseNum = (s: string): Result<number, Error> =>
+        Number.isNaN(+s) ? err(new Error(`not a number: ${s}`)) : ok(+s);
+
+      const result = traverse(["1", "a", "3"], parseNum);
+      expect(isErr(result)).toBe(true);
+      if (isErr(result)) {
+        expect(result.error.message).toBe("not a number: a");
+      }
+    });
+
+    it("should return Ok with empty array for empty input", () => {
+      const parseNum = (s: string): Result<number, Error> =>
+        Number.isNaN(+s) ? err(new Error("not a number")) : ok(+s);
+
+      const result = traverse([], parseNum);
+      expect(isOk(result)).toBe(true);
+      if (isOk(result)) {
+        expect(result.value).toEqual([]);
+      }
+    });
+
+    it("should work with custom error types", () => {
+      type ValidationError = { field: string; message: string };
+      const validate = (s: string): Result<number, ValidationError> =>
+        s === "" ? err({ field: "name", message: "empty" }) : ok(s.length);
+
+      const result = traverse(["a", "bb", "ccc"], validate);
+      expect(isOk(result)).toBe(true);
+      if (isOk(result)) {
+        expect(result.value).toEqual([1, 2, 3]);
+      }
+    });
+
+    it("should return Err when first item fails", () => {
+      const validate = (s: string): Result<number, Error> =>
+        s === "" ? err(new Error("empty")) : ok(s.length);
+
+      const result = traverse(["", "a", "b"], validate);
+      expect(isErr(result)).toBe(true);
     });
   });
 });
