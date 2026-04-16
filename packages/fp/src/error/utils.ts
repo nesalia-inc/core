@@ -2,8 +2,8 @@
  * Error utilities
  */
 
-import type { Error, ErrorGroup } from "./types";
-import { isErrorGroup } from "./guards";
+import { type Error, type ErrorGroup } from "./types.js";
+import { isErrorGroup } from "./guards.js";
 
 /**
  * Get the message from an Error or ErrorGroup

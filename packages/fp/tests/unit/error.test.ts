@@ -13,7 +13,7 @@ import {
   err,
   isOk,
   isErr,
-} from "../../src";
+} from "../../src/index.js";
 
 describe("error() with Zod schema validation", () => {
   describe("Zod schema validation", () => {
@@ -494,8 +494,8 @@ describe("raise()", () => {
     try {
       raise(errorObj);
       fail("Expected error to be thrown");
-    } catch (e) {
-      expect(e).toBe(errorObj);
+    } catch (error_) {
+      expect(error_).toBe(errorObj);
     }
   });
 });

@@ -48,10 +48,10 @@ export const yieldControl = (): Promise<void> => {
   if (typeof MessageChannel !== "undefined") {
     return new Promise((resolve) => {
       const channel = new MessageChannel();
-      channel.port1.onmessage = () => {
+      channel.port1.addEventListener("message", () => {
         channel.port1.close(); // Prevent memory leaks
         resolve();
-      };
+      });
       channel.port2.postMessage(null);
     });
   }

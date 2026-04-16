@@ -3,16 +3,18 @@
  * Async version of Result with Thenable implementation for async operations
  */
 
-import type {
-  AsyncResultInner,
-  AsyncOk,
-  AsyncErr,
-  AbortError,
-  FromPromiseOptions,
-  AsyncResult,
-} from "./types";
+ 
 
-import { error, type Error, isError } from "../error";
+import {
+  type AsyncResultInner,
+  type AsyncOk,
+  type AsyncErr,
+  type AbortError,
+  type FromPromiseOptions,
+  type AsyncResult,
+} from "./types.js";
+
+import { error, type Error, isError } from "../error/index.js";
 
 // Re-export types
 export type {
@@ -21,7 +23,7 @@ export type {
   AsyncErr,
   AbortError,
   FromPromiseOptions,
-} from "./types";
+} from "./types.js";
 
 /**
  * PanicError - wraps unexpected exceptions from rejected promises
@@ -61,18 +63,14 @@ function createAsyncResult<T, E>(promise: Promise<AsyncResultInner<T, E>>): Asyn
       onrejected?: (reason: E) => TResult2 | PromiseLike<TResult2>
     ): Promise<TResult1 | TResult2> {
       return promise.then(
-        (result) => {
-          if (onfulfilled) {
-            return onfulfilled(result);
-          }
-          return result as unknown as TResult1;
-        },
-        (reason) => {
-          if (onrejected) {
-            return onrejected(reason);
-          }
-          return reason as unknown as TResult2;
-        }
+        (result) =>
+          onfulfilled
+            ? Promise.resolve(onfulfilled(result))
+            : (Promise.resolve(result) as unknown as TResult1),
+        (error_) =>
+          onrejected
+            ? Promise.resolve(onrejected(error_))
+            : (Promise.resolve(error_) as unknown as TResult2)
       );
     },
 
@@ -288,14 +286,12 @@ export const fromPromise = <T, E = Error>(
 
       promise
         .then((value) => resolve({ ok: true as const, value }))
-        .catch((rawError) =>
-          resolve({
-            ok: false as const,
-            error: isError(rawError)
-              ? PanicError({ message: rawError.message }).from(rawError) as E
-              : PanicError({ message: String(rawError) }) as E,
-          })
-        );
+        .catch((rawError) => {
+          const error_ = isError(rawError)
+            ? PanicError({ message: rawError.message }).from(rawError)
+            : PanicError({ message: String(rawError) });
+          resolve({ ok: false as const, error: error_ as E });
+        });
     })
   );
 };
@@ -663,11 +659,18 @@ export const withSignal = <T, E = Error>(
 
       signal.addEventListener("abort", abortHandler, { once: true });
 
-      result.then((r) => {
-        // Remove the listener since the operation completed
-        signal.removeEventListener("abort", abortHandler);
-        resolve(r);
-      });
+      result.then(
+        (r) => {
+          // Remove the listener since the operation completed
+          signal.removeEventListener("abort", abortHandler);
+          resolve(r);
+        },
+        (error_) => {
+          // Handle rejection to avoid unhandled promise rejection
+          signal.removeEventListener("abort", abortHandler);
+          resolve({ ok: false as const, error: error_ as E | AbortError });
+        }
+      );
     })
   );
 };

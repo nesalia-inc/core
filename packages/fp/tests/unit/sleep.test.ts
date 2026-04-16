@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { sleep, withTimeout, TimeoutError, sleepWithSignal, addJitter } from "../../src/sleep";
+import { sleep, withTimeout, TimeoutError, sleepWithSignal, addJitter } from "../../src/sleep.js";
 
 describe("Sleep", () => {
   describe("sleep", () => {
@@ -21,7 +21,6 @@ describe("Sleep", () => {
   describe("addJitter", () => {
     it("should return delay unchanged when jitter is undefined", () => {
       expect(addJitter(1000)).toBe(1000);
-      expect(addJitter(1000, undefined)).toBe(1000);
     });
 
     it("should return delay unchanged when jitter is false", () => {
@@ -115,9 +114,9 @@ describe("Sleep", () => {
     it("should include timeout in error", async () => {
       try {
         await withTimeout(new Promise(() => {}), 50);
-      } catch (e) {
-        expect((e as TimeoutError).name).toBe("TIMEOUT");
-        expect((e as TimeoutError).timeout).toBe(50);
+      } catch (error) {
+        expect((error as TimeoutError).name).toBe("TIMEOUT");
+        expect((error as TimeoutError).timeout).toBe(50);
       }
     });
 
@@ -130,26 +129,26 @@ describe("Sleep", () => {
     it("should use custom error name", async () => {
       try {
         await withTimeout(new Promise(() => {}), 50, { name: "CUSTOM_TIMEOUT" });
-      } catch (e) {
-        expect((e as Error).name).toBe("CUSTOM_TIMEOUT");
+      } catch (error) {
+        expect((error as Error).name).toBe("CUSTOM_TIMEOUT");
       }
     });
 
     it("should not include elapsed when disabled", async () => {
       try {
         await withTimeout(new Promise(() => {}), 50, { includeElapsed: false });
-      } catch (e) {
-        expect((e as TimeoutError).timeout).toBe(50);
-        expect((e as TimeoutError).elapsed).toBeUndefined();
+      } catch (error) {
+        expect((error as TimeoutError).timeout).toBe(50);
+        expect((error as TimeoutError).elapsed).toBeUndefined();
       }
     });
 
     it("should include elapsed when enabled", async () => {
       try {
         await withTimeout(new Promise(() => {}), 50, { includeElapsed: true });
-      } catch (e) {
-        expect((e as TimeoutError).elapsed).toBeDefined();
-        expect((e as TimeoutError).elapsed).toBeGreaterThan(0);
+      } catch (error) {
+        expect((error as TimeoutError).elapsed).toBeDefined();
+        expect((error as TimeoutError).elapsed).toBeGreaterThan(0);
       }
     });
 

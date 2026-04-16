@@ -2,8 +2,8 @@
  * Result builder functions
  */
 
-import type { Ok, Err, Result } from "./types";
-import type { Error } from "../error/types";
+import { type Ok, type Err, type Result } from "./types.js";
+import { type Error } from "../error/types.js";
 
 /**
  * Creates an Ok with methods
@@ -243,13 +243,12 @@ export const match = <T, E extends Error, U>(
  *   TypeScript cannot express "T becomes the error" or "E becomes the value"
  *   without circular type constraints. The any is unavoidable for this operation.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const swap = (result: any): any =>
+
+/* eslint-disable @typescript-eslint/no-explicit-any -- swap operation requires any due to TypeScript limitations */
+export const swap = (result: Result<any, any>): unknown =>
   isOk(result)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ? createErr(result.value as any)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    : createOk(result.error as any);
+    ? createErr(result.value)
+    : createOk(result.error);
 
 /**
  * Converts Result to a nullable value
@@ -301,4 +300,39 @@ export const unwrap = <T, E extends Error>(result: Result<T, E>): T => {
     return result.value;
   }
   throw result.error;
+};
+
+/**
+ * Transforms an array of items by applying a Result-returning function to each,
+ * short-circuiting on the first Err (fail-fast semantics).
+ *
+ * @typeParam T - The type of the input items
+ * @typeParam U - The type of the transformed values
+ * @typeParam E - The type of the error
+ * @param items - The array of items to traverse
+ * @param fn - Function to apply to each item, returning a Result
+ * @returns Ok with array of values if all succeed, or the first Err
+ *
+ * @example
+ * import { traverse, ok, err } from '@deessejs/fp';
+ *
+ * const parseNum = (s: string): Result<number, Error> =>
+ *   isNaN(+s) ? err(new Error('not a number')) : ok(+s);
+ *
+ * traverse(['1', '2', '3'], parseNum); // Ok([1, 2, 3])
+ * traverse(['1', 'a', '3'], parseNum); // Err(Error('not a number'))
+ */
+export const traverse = <T, U, E extends Error>(
+  items: readonly T[],
+  fn: (item: T) => Result<U, E>
+): Result<U[], E> => {
+  const results: U[] = [];
+  for (const item of items) {
+    const result = fn(item);
+    if (isErr(result)) {
+      return result;
+    }
+    results.push(result.value);
+  }
+  return createOk(results);
 };
