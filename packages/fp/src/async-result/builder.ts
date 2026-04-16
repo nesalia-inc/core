@@ -3,7 +3,7 @@
  * Async version of Result with Thenable implementation for async operations
  */
 
-/* eslint-disable unicorn/throw-new-error -- PanicError and AbortError are factory functions, not constructors */
+ 
 
 import {
   type AsyncResultInner,

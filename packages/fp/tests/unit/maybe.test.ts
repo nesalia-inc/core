@@ -900,7 +900,7 @@ describe("Maybe", () => {
 
     it("should work with different result types", () => {
       const parse = (s: string): Maybe<number> =>
-        s !== "" ? some(parseInt(s, 10)) : none();
+        s !== "" ? some(Number.parseInt(s, 10)) : none();
 
       const result = traverse(["1", "2", "3"], parse);
       expect(isSome(result)).toBe(true);
