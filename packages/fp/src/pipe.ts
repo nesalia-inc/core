@@ -54,6 +54,7 @@ export function pipe(value: unknown, ...fns: AnyFn[]): unknown;
 export function pipe(value: unknown, ...fns: AnyFn[]): unknown {
   let result = value;
   for (let i = 0; i < fns.length; i++) {
+    // eslint-disable-next-line security/detect-object-injection -- Safe: fns is a local array, i is a loop counter
     result = fns[i](result);
   }
   return result;
@@ -114,6 +115,7 @@ export function flow(...fns: AnyFn[]): (...args: unknown[]) => unknown {
 
     // Subsequent functions are strictly unary
     for (let i = 1; i < fns.length; i++) {
+      // eslint-disable-next-line security/detect-object-injection -- Safe: fns is a local array, i is a loop counter
       result = fns[i](result);
     }
 
@@ -195,9 +197,9 @@ export const tapSafe = <T>(
 ) => (value: T): T => {
   try {
     fn(value);
-  } catch (e) {
+  } catch (error) {
     if (onError) {
-      onError(e);
+      onError(error);
     }
   }
   return value;
@@ -244,7 +246,9 @@ export async function pipeAsync(value: unknown, ...fns: AnyFn[]): Promise<unknow
   // Check initial value too to avoid unnecessary microtasks
   let result = isThenable(value) ? await (value as Promise<unknown>) : value;
   for (let i = 0; i < fns.length; i++) {
+    // eslint-disable-next-line security/detect-object-injection -- Safe: fns is a local array, i is a loop counter
     const next = fns[i](result);
+    // eslint-disable-next-line no-await-in-loop -- Sequential execution is required for pipe semantics
     result = isThenable(next) ? await (next as Promise<unknown>) : next;
   }
   return result;
@@ -293,10 +297,50 @@ export function flowAsync(...fns: AnyFn[]): (...args: unknown[]) => Promise<unkn
 
     let result = await fns[0](...args);
     for (let i = 1; i < fns.length; i++) {
+      // eslint-disable-next-line security/detect-object-injection -- Safe: fns is a local array, i is a loop counter
       const next = fns[i](result);
+      // eslint-disable-next-line no-await-in-loop -- Sequential execution is required for flow semantics
       result = isThenable(next) ? await (next as Promise<unknown>) : next;
     }
 
     return result;
   };
 }
+
+// ============================================================================
+// REDUCE (FUNCTIONAL ARRAY ACCUMULATION)
+// ============================================================================
+
+/**
+ * A curried reduce function for functional array accumulation.
+ * Enables pipe/flow composition by accepting the array as the final argument.
+ *
+ * @param initial - The initial accumulator value
+ * @param fn - The reduction function: (accumulator, currentValue, index) => newAccumulator
+ * @returns A unary function that accepts an array and returns the accumulated result
+ *
+ * @example
+ * import { pipe, reduce } from '@deessejs/fp';
+ *
+ * const sum = reduce(0, (acc, n) => acc + n);
+ * pipe([1, 2, 3, 4, 5], sum); // 15
+ *
+ * @example
+ * const toObject = reduce({} as Record<string, number>, (acc, val) => ({
+ *   ...acc,
+ *   [val]: (acc[val] ?? 0) + 1
+ * }));
+ * toObject(['a', 'b', 'a']); // { a: 2, b: 1 }
+ */
+export const reduce = <A, B>(
+  initial: B,
+  fn: (accumulator: B, value: A, index: number) => B
+): ((array: ReadonlyArray<A>) => B) =>
+  (array): B => {
+    let accumulator = initial;
+    for (let i = 0; i < array.length; i++) {
+      // eslint-disable-next-line security/detect-object-injection -- Safe: i is a loop counter
+      accumulator = fn(accumulator, array[i], i);
+    }
+    return accumulator;
+  };

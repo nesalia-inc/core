@@ -2,9 +2,9 @@
  * Maybe builder functions
  */
 
-import { ok, err, type Result } from "../result";
-import type { Error } from "../error/types";
-import type { Some, None, Maybe } from "./types";
+import { ok, err, type Result } from "../result/index.js";
+import { type Error } from "../error/types.js";
+import { type Some, type None, type Maybe } from "./types.js";
 
 /**
  * Creates a Some (present value)
@@ -250,7 +250,11 @@ export const equalsWith = <T>(
   a: Maybe<T>,
   b: Maybe<T>,
   comparator: (a: T, b: T) => boolean
-): boolean => a.equals(b, comparator);
+): boolean => {
+  if (!a.ok) return !b.ok;
+  if (!b.ok) return false;
+  return comparator(a.value, b.value);
+};
 
 /**
  * Combines multiple Maybes into one
@@ -305,3 +309,37 @@ export const toResult = <T>(
   onNone: () => Error<unknown>
 ): Result<T, Error<unknown>> =>
   isSome(maybe) ? ok(maybe.value) : err(onNone());
+
+/**
+ * Transforms an array of items by applying a Maybe-returning function to each,
+ * short-circuiting on the first None (fail-fast semantics).
+ *
+ * @typeParam T - The type of the input items
+ * @typeParam U - The type of the transformed values
+ * @param items - The array of items to traverse
+ * @param fn - Function to apply to each item, returning a Maybe
+ * @returns Some with array of values if all succeed, or None
+ *
+ * @example
+ * import { traverse, some, none } from '@deessejs/fp';
+ *
+ * const findById = (id: number): Maybe<string> =>
+ *   id > 0 ? some(`user-${id}`) : none();
+ *
+ * traverse([1, 2, 3], findById); // Some(['user-1', 'user-2', 'user-3'])
+ * traverse([1, -1, 3], findById); // None
+ */
+export const traverse = <T, U>(
+  items: readonly T[],
+  fn: (item: T) => Maybe<U>
+): Maybe<U[]> => {
+  const results: U[] = [];
+  for (const item of items) {
+    const result = fn(item);
+    if (result.ok === false) {
+      return result;
+    }
+    results.push(result.value);
+  }
+  return some(results);
+};

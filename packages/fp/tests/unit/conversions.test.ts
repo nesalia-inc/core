@@ -7,11 +7,11 @@ import {
   toMaybeFromResult,
   resultFromNullable,
   resultFromThrowable,
-} from "../../src/conversions";
-import { some, none } from "../../src/maybe";
-import { ok, err } from "../../src/result";
-import { error, exceptionGroup } from "../../src";
-import { assertIsError, assertIsErrorGroup } from "../../src/error/guards";
+} from "../../src/conversions.js";
+import { some, none } from "../../src/maybe/index.js";
+import { ok, err } from "../../src/result/index.js";
+import { error, exceptionGroup } from "../../src/index.js";
+import { assertIsError, assertIsErrorGroup } from "../../src/error/guards.js";
 
 describe("Conversions", () => {
   describe("fromMaybe (new naming)", () => {
@@ -110,6 +110,7 @@ describe("Conversions", () => {
 
     it("should wrap non-Error throws", () => {
       const result = resultFromThrowable(() => {
+        // eslint-disable-next-line no-throw-literal -- Testing library's ability to wrap non-Error throws
         throw "string error";
       });
       expect(result.ok).toBe(false);

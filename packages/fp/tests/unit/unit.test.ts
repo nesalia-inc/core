@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { unit, isUnit, type Unit } from "../../src/unit";
+import { unit, isUnit, type Unit } from "../../src/unit.js";
 
 describe("Unit", () => {
   describe("unit singleton", () => {

@@ -9,28 +9,28 @@ export type {
   Result,
   Success,
   ExtractResultError,
-} from "./types";
+} from "./types.js";
 
 // Builder functions
-export { ok, err } from "./builder";
+export { ok, err } from "./builder.js";
 
 // Type guards
-export { isOk, isErr } from "./builder";
+export { isOk, isErr } from "./builder.js";
 
 // Chainable functions
-export { map, flatMap, mapErr } from "./builder";
+export { map, flatMap, mapErr } from "./builder.js";
 
 // Accessors
-export { getOrElse, getOrCompute, unwrap } from "./builder";
+export { getOrElse, getOrCompute, unwrap } from "./builder.js";
 
 // Side effects
-export { tap, tapErr } from "./builder";
+export { tap, tapErr } from "./builder.js";
 
 // Pattern matching
-export { match } from "./builder";
+export { match } from "./builder.js";
 
 // Conversion
-export { toNullable, toUndefined, swap } from "./builder";
+export { toNullable, toUndefined, swap } from "./builder.js";
 
 // Combinators
-export { all } from "./builder";
+export { all, traverse } from "./builder.js";

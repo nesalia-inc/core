@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { z } from "zod";
-import { error } from "../../src";
+import { error } from "../../src/index.js";
 import {
   some,
   none,
@@ -22,7 +22,8 @@ import {
   all,
   filter,
   toResult,
-} from "../../src/maybe";
+  traverse,
+} from "../../src/maybe/index.js";
 
 describe("Maybe", () => {
   describe("some", () => {
@@ -762,6 +763,150 @@ describe("Maybe", () => {
           expect(result.error.name).toBe("NoAgeError");
         }
       });
+    });
+  });
+
+  describe("None instance methods", () => {
+    it("map method should return None", () => {
+      const result = none().map((x) => x * 2);
+      expect(isNone(result)).toBe(true);
+    });
+
+    it("flatMap method should return None", () => {
+      const result = none().flatMap((x) => some(x * 2));
+      expect(isNone(result)).toBe(true);
+    });
+
+    it("filter method should return None", () => {
+      const result = none().filter((x) => x > 0);
+      expect(isNone(result)).toBe(true);
+    });
+
+    it("equals method should return true for None vs None", () => {
+      expect(none().equals(none())).toBe(true);
+    });
+
+    it("equals method should return false for None vs Some", () => {
+      expect(none().equals(some(42))).toBe(false);
+    });
+
+    it("toResult method should return Err", () => {
+      const TooYoungError = error({
+        name: "TooYoungError",
+        schema: z.object({ age: z.number() }),
+      });
+      const result = none().toResult(() => TooYoungError({ age: 15 }));
+      expect(result.ok).toBe(false);
+    });
+  });
+
+  describe("Some instance methods", () => {
+    it("map method should transform value", () => {
+      const result = some(2).map((x) => x * 2);
+      expect(isSome(result)).toBe(true);
+      if (isSome(result)) {
+        expect(result.value).toBe(4);
+      }
+    });
+
+    it("flatMap method should chain Maybes", () => {
+      const result = some(2).flatMap((x) => some(x * 2));
+      expect(isSome(result)).toBe(true);
+      if (isSome(result)) {
+        expect(result.value).toBe(4);
+      }
+    });
+
+    it("flatMap method should allow returning None", () => {
+      const result = some(2).flatMap((x) => (x > 0 ? some(x) : none()));
+      expect(isSome(result)).toBe(true);
+      if (isSome(result)) {
+        expect(result.value).toBe(2);
+      }
+    });
+
+    it("filter method should return Some if predicate passes", () => {
+      const result = some(25).filter((age) => age >= 18);
+      expect(isSome(result)).toBe(true);
+      if (isSome(result)) {
+        expect(result.value).toBe(25);
+      }
+    });
+
+    it("filter method should return None if predicate fails", () => {
+      const result = some(15).filter((age) => age >= 18);
+      expect(isNone(result)).toBe(true);
+    });
+
+    it("equals method should return true for same value", () => {
+      expect(some(42).equals(some(42))).toBe(true);
+    });
+
+    it("equals method should return false for different values", () => {
+      expect(some(42).equals(some(100))).toBe(false);
+    });
+
+    it("equals method should return false for Some vs None", () => {
+      expect(some(42).equals(none())).toBe(false);
+    });
+
+    it("toResult method should return Ok", () => {
+      const result = some(25).toResult(() => error({ name: "TestError", schema: z.object({}) }));
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value).toBe(25);
+      }
+    });
+  });
+
+  describe("traverse", () => {
+    it("should return Some with transformed values when all are Some", () => {
+      const findById = (id: number): Maybe<string> =>
+        id > 0 ? some(`user-${id}`) : none();
+
+      const result = traverse([1, 2, 3], findById);
+      expect(isSome(result)).toBe(true);
+      if (isSome(result)) {
+        expect(result.value).toEqual(["user-1", "user-2", "user-3"]);
+      }
+    });
+
+    it("should return None on first failure (fail-fast)", () => {
+      const findById = (id: number): Maybe<string> =>
+        id > 0 ? some(`user-${id}`) : none();
+
+      const result = traverse([1, -1, 3], findById);
+      expect(isNone(result)).toBe(true);
+    });
+
+    it("should return Some with empty array for empty input", () => {
+      const findById = (id: number): Maybe<string> =>
+        id > 0 ? some(`user-${id}`) : none();
+
+      const result = traverse([], findById);
+      expect(isSome(result)).toBe(true);
+      if (isSome(result)) {
+        expect(result.value).toEqual([]);
+      }
+    });
+
+    it("should return None when first item is None", () => {
+      const findById = (id: number): Maybe<string> =>
+        id > 0 ? some(`user-${id}`) : none();
+
+      const result = traverse([-1, 1, 2], findById);
+      expect(isNone(result)).toBe(true);
+    });
+
+    it("should work with different result types", () => {
+      const parse = (s: string): Maybe<number> =>
+        s !== "" ? some(Number.parseInt(s, 10)) : none();
+
+      const result = traverse(["1", "2", "3"], parse);
+      expect(isSome(result)).toBe(true);
+      if (isSome(result)) {
+        expect(result.value).toEqual([1, 2, 3]);
+      }
     });
   });
 });

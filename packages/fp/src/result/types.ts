@@ -3,7 +3,7 @@
  * Used for simple error handling without domain richness
  */
 
-import type { Error } from "../error/types";
+import { type Error } from "../error/types.js";
 
 /**
  * Match handlers for Result - used with match({ onSuccess, onError })

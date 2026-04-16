@@ -2,7 +2,7 @@
  * Try builder functions
  */
 
-import type { Try, TrySuccess, TryFailure } from "./types";
+import { type Try, type TrySuccess, type TryFailure } from "./types.js";
 
 /**
  * Creates a TrySuccess with methods
@@ -65,8 +65,8 @@ export function attempt<T, E extends Error>(
 ): Try<T, Error | E> {
   try {
     return createTrySuccess(fn());
-  } catch (e) {
-    const err = e instanceof Error ? e : new Error(String(e));
+  } catch (error) {
+    const err = error instanceof Error ? error : new Error(String(error));
     return createTryFailure(onError ? onError(err) : err) as Try<T, Error | E>;
   }
 }
@@ -99,8 +99,8 @@ export async function attemptAsync<T, E extends Error>(
 ): Promise<Try<T, Error | E>> {
   try {
     return createTrySuccess(await fn());
-  } catch (e) {
-    const err = e instanceof Error ? e : new Error(String(e));
+  } catch (error) {
+    const err = error instanceof Error ? error : new Error(String(error));
     return createTryFailure(onError ? onError(err) : err) as Try<T, Error | E>;
   }
 }
