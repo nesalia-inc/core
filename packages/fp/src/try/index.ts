@@ -1,27 +1,14 @@
 /**
  * Try module - wraps try/catch in a type-safe way
+ *
+ * DEPRECATED: The Try type is deprecated. Use Result for synchronous operations
+ * and AsyncResult for asynchronous operations instead.
+ *
+ * - attempt() returns Result<T, Error> instead of Try<T, Error>
+ * - attemptAsync() returns AsyncResult<T, Error> instead of Promise<Try<T, Error>>
  */
 
-// Types
-export type { Try, TrySuccess, TryFailure } from "./types.js";
+// NOTE: Try type has been removed - use Result and AsyncResult instead
+// attempt and attemptAsync are now the only exports (they return Result/AsyncResult)
 
-// Builder functions
-export { createTrySuccess, createTryFailure, attempt, attemptAsync } from "./builder.js";
-
-// Type guards
-export { isOk, isErr } from "./builder.js";
-
-// Chainable functions
-export { map, flatMap } from "./builder.js";
-
-// Accessors
-export { getOrElse, getOrCompute } from "./builder.js";
-
-// Side effects
-export { tap, tapErr } from "./builder.js";
-
-// Pattern matching
-export { match } from "./builder.js";
-
-// Conversion
-export { toNullable, toUndefined } from "./builder.js";
+export { attempt, attemptAsync } from "./builder.js";

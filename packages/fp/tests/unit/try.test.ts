@@ -7,17 +7,17 @@ import {
   map,
   flatMap,
   getOrElse,
-  getOrCompute,
+  getOrComputeResult,
   tap,
   tapErr,
   match,
-  toNullable,
-  toUndefined,
-  Try,
-} from "../../src/try/index.js";
+  toNullableResult,
+  toUndefinedResult,
+  Result,
+} from "../../src/index.js";
 import { error } from "../../src/error/index.js";
 
-describe("Try", () => {
+describe("attempt/attemptAsync (formerly Try)", () => {
   describe("attempt", () => {
     it("should return success with value", () => {
       const result = attempt(() => 42);
@@ -131,7 +131,7 @@ describe("Try", () => {
     });
 
     it("should narrow type correctly", () => {
-      const value: Try<number> = attempt(() => 42);
+      const value: Result<number, Error> = attempt(() => 42);
       if (isOk(value)) {
         expect(value.value).toBe(42);
       }
@@ -173,7 +173,7 @@ describe("Try", () => {
   });
 
   describe("flatMap", () => {
-    it("should chain Tries if success", () => {
+    it("should chain Results if success", () => {
       const result = flatMap(attempt(() => 2), (x) => attempt(() => x * 2));
       expect(isOk(result)).toBe(true);
       if (isOk(result)) {
@@ -211,12 +211,12 @@ describe("Try", () => {
 
   describe("getOrCompute", () => {
     it("should return value if success", () => {
-      const result = getOrCompute(attempt(() => 42), () => 0);
+      const result = getOrComputeResult(attempt(() => 42), () => 0);
       expect(result).toBe(42);
     });
 
     it("should return computed value if failure", () => {
-      const result = getOrCompute(
+      const result = getOrComputeResult(
         attempt(() => {
           throw new Error();
         }),
@@ -292,12 +292,12 @@ describe("Try", () => {
 
   describe("toNullable", () => {
     it("should return value if success", () => {
-      const result = toNullable(attempt(() => 42));
+      const result = toNullableResult(attempt(() => 42));
       expect(result).toBe(42);
     });
 
     it("should return null if failure", () => {
-      const result = toNullable(
+      const result = toNullableResult(
         attempt(() => {
           throw new Error();
         })
@@ -308,12 +308,12 @@ describe("Try", () => {
 
   describe("toUndefined", () => {
     it("should return value if success", () => {
-      const result = toUndefined(attempt(() => 42));
+      const result = toUndefinedResult(attempt(() => 42));
       expect(result).toBe(42);
     });
 
     it("should return undefined if failure", () => {
-      const result = toUndefined(
+      const result = toUndefinedResult(
         attempt(() => {
           throw new Error();
         })
@@ -322,86 +322,96 @@ describe("Try", () => {
     });
   });
 
-  describe("methods (TrySuccess)", () => {
-    it("should have map method that returns TrySuccess", () => {
+  describe("methods (Result)", () => {
+    it("should have map method that returns Result", () => {
       const result = attempt(() => 2);
-      const mapped = result.map((x) => x * 2);
-      expect(mapped.ok).toBe(true);
-      expect(mapped.value).toBe(4);
+      const mapped = map(result, (x) => x * 2);
+      expect(isOk(mapped)).toBe(true);
+      if (isOk(mapped)) {
+        expect(mapped.value).toBe(4);
+      }
     });
 
-    it("should have flatMap method that chains Tries", () => {
+    it("should have flatMap method that chains Results", () => {
       const result = attempt(() => 2);
-      const chained = result.flatMap((x) => attempt(() => x * 2));
-      expect(chained.ok).toBe(true);
-      expect(chained.value).toBe(4);
+      const chained = flatMap(result, (x) => attempt(() => x * 2));
+      expect(isOk(chained)).toBe(true);
+      if (isOk(chained)) {
+        expect(chained.value).toBe(4);
+      }
     });
 
     it("should have getOrElse method", () => {
       const result = attempt(() => 42);
-      expect(result.getOrElse(0)).toBe(42);
+      expect(getOrElse(result, 0)).toBe(42);
     });
 
     it("should have getOrCompute method", () => {
       const result = attempt(() => 42);
-      expect(result.getOrCompute(() => 0)).toBe(42);
+      expect(getOrComputeResult(result, () => 0)).toBe(42);
     });
 
-    it("should have tap method", () => {
+    it("should have tap function work", () => {
       const result = attempt(() => 5);
       let captured = 0;
-      result.tap((v) => { captured = v; });
+      tap(result, (v) => { captured = v; });
       expect(captured).toBe(5);
     });
 
-    it("should have match method", () => {
+    it("should have match function work", () => {
       const result = attempt(() => 5);
-      const matched = result.match((v) => v * 2, () => 0);
+      const matched = match(result, (v) => v * 2, () => 0);
       expect(matched).toBe(10);
     });
 
-    it("should allow chaining methods", () => {
-      const result = attempt(() => 1)
-        .map((x) => x + 1)
-        .map((x) => x * 2)
-        .getOrElse(0);
+    it("should allow chaining functions", () => {
+      const result = getOrElse(
+        map(
+          flatMap(
+            attempt(() => 1),
+            (x) => attempt(() => x + 1)
+          ),
+          (x) => x * 2
+        ),
+        0
+      );
       expect(result).toBe(4);
     });
   });
 
-  describe("methods (TryFailure)", () => {
-    it("should have map method that returns TryFailure", () => {
+  describe("methods (Err)", () => {
+    it("should have map method that returns Err", () => {
       const result = attempt(() => { throw new Error("fail"); });
-      const mapped = result.map((x) => x * 2);
-      expect(mapped.ok).toBe(false);
+      const mapped = map(result, (x) => x * 2);
+      expect(isErr(mapped)).toBe(true);
     });
 
-    it("should have flatMap method that returns TryFailure", () => {
+    it("should have flatMap method that returns Err", () => {
       const result = attempt(() => { throw new Error("fail"); });
-      const chained = result.flatMap((x) => attempt(() => x * 2));
-      expect(chained.ok).toBe(false);
+      const chained = flatMap(result, (x) => attempt(() => x * 2));
+      expect(isErr(chained)).toBe(true);
     });
 
     it("should have getOrElse method", () => {
       const result = attempt(() => { throw new Error("fail"); });
-      expect(result.getOrElse(42)).toBe(42);
+      expect(getOrElse(result, 42)).toBe(42);
     });
 
     it("should have getOrCompute method", () => {
       const result = attempt(() => { throw new Error("fail"); });
-      expect(result.getOrCompute(() => 42)).toBe(42);
+      expect(getOrComputeResult(result, () => 42)).toBe(42);
     });
 
-    it("should have tap method", () => {
+    it("should have tap function not call on failure", () => {
       const result = attempt(() => { throw new Error("fail"); });
       let called = false;
-      result.tap(() => { called = true; });
+      tap(result, () => { called = true; });
       expect(called).toBe(false);
     });
 
-    it("should have match method", () => {
+    it("should have match function call errFn on failure", () => {
       const result = attempt(() => { throw new Error("fail"); });
-      const matched = result.match(() => 0, (e) => e.message);
+      const matched = match(result, () => 0, (e) => e.message);
       expect(matched).toBe("fail");
     });
   });
