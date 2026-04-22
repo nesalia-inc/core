@@ -10,37 +10,37 @@
 
 import { ok, err, type Result } from "../result/index.js";
 import { okAsync, errAsync, type AsyncResult } from "../async-result/index.js";
-import type { Error } from "../error/types.js";
+import type { Error as FpError } from "../error/types.js";
 
 /**
  * Wraps a synchronous function in a try/catch
  * @typeParam T - The type of the value
  * @param fn - The function to try
- * @returns Result<T, Error>
+ * @returns Result<T, FpError>
  */
-export function attempt<T>(fn: () => T): Result<T, Error>;
+export function attempt<T>(fn: () => T): Result<T, FpError>;
 /**
  * Wraps a synchronous function in a try/catch with custom error handler
  * @typeParam T - The type of the value
- * @typeParam E - The type of the error (must extend Error)
+ * @typeParam E - The type of the error (must extend FpError)
  * @param fn - The function to try
  * @param onError - Error handler to transform caught error into typed error
  * @returns Result<T, E>
  */
-export function attempt<T, E extends Error>(fn: () => T, onError: (caught: Error) => E): Result<T, E>;
+export function attempt<T, E extends FpError>(fn: () => T, onError: (caught: FpError) => E): Result<T, E>;
 /**
  * Implementation
  */
-export function attempt<T, E extends Error = Error>(
+export function attempt<T, E extends FpError = FpError>(
   fn: () => T,
-  onError?: (caught: Error) => E
+  onError?: (caught: FpError) => E
 ): Result<T, E> {
   try {
     return ok(fn());
   } catch (error) {
-    const err_ = error instanceof Error ? error : new Error(String(error));
-    // Cast to unknown first since native Error is not compatible with library Error
-    const finalError = onError ? onError(err_ as unknown as Error) : (err_ as unknown as E);
+    const err_ = error instanceof globalThis.Error ? error : new globalThis.Error(String(error));
+    // Cast to unknown first since native Error is not compatible with library FpError
+    const finalError = onError ? onError(err_ as unknown as FpError) : (err_ as unknown as E);
     return err(finalError) as Result<T, E>;
   }
 }
@@ -49,34 +49,34 @@ export function attempt<T, E extends Error = Error>(
  * Wraps an async function in a try/catch
  * @typeParam T - The type of the value
  * @param fn - The async function to try
- * @returns AsyncResult<T, Error>
+ * @returns AsyncResult<T, FpError>
  */
-export function attemptAsync<T>(fn: () => Promise<T>): AsyncResult<T, Error>;
+export function attemptAsync<T>(fn: () => Promise<T>): AsyncResult<T, FpError>;
 /**
  * Wraps an async function in a try/catch with custom error handler
  * @typeParam T - The type of the value
- * @typeParam E - The type of the error (must extend Error)
+ * @typeParam E - The type of the error (must extend FpError)
  * @param fn - The async function to try
  * @param onError - Error handler to transform caught error into typed error
  * @returns AsyncResult<T, E>
  */
-export function attemptAsync<T, E extends Error>(
+export function attemptAsync<T, E extends FpError>(
   fn: () => Promise<T>,
-  onError: (caught: Error) => E
+  onError: (caught: FpError) => E
 ): AsyncResult<T, E>;
 /**
  * Implementation
  */
-export function attemptAsync<T, E extends Error = Error>(
+export function attemptAsync<T, E extends FpError = FpError>(
   fn: () => Promise<T>,
-  onError?: (caught: Error) => E
+  onError?: (caught: FpError) => E
 ): AsyncResult<T, E> {
   return okAsync(null).then(async () => {
     return ok(await fn());
   }).catch((error) => {
-    const err_ = error instanceof Error ? error : new Error(String(error));
-    // Cast to unknown first since native Error is not compatible with library Error
-    const finalError = onError ? onError(err_ as unknown as Error) : (err_ as unknown as E);
+    const err_ = error instanceof globalThis.Error ? error : new globalThis.Error(String(error));
+    // Cast to unknown first since native Error is not compatible with library FpError
+    const finalError = onError ? onError(err_ as unknown as FpError) : (err_ as unknown as E);
     return errAsync(finalError) as unknown as AsyncResult<T, E>;
   }) as unknown as AsyncResult<T, E>;
 }
