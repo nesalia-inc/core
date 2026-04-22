@@ -121,7 +121,7 @@ if (isErr(result)) {
 
 ---
 
-### Transformation Methods
+### Transformation Functions
 
 #### `map(t, fn)` - Transform the value
 

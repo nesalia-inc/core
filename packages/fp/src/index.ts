@@ -69,9 +69,10 @@ export {
   isErr as isTryErr,
   map as mapTry,
   flatMap as flatMapTry,
+  tap as tapTry,
+  tapErr as tapErrTry,
   getOrElse as getOrElseTry,
   getOrCompute as getOrComputeTry,
-  tap as tapTry,
   match as matchTry,
   toNullable as toNullableTry,
   toUndefined as toUndefinedTry,
@@ -108,6 +109,12 @@ export {
   toUndefined as toUndefinedAsyncResult,
   withSignal,
 } from "./async-result/index.js";
+
+// Success/Error aliases (alternative to ok/err)
+export { ok as success } from "./result/index.js";
+export { err as failure } from "./result/index.js";
+export { ok as successAsync } from "./async-result/index.js";
+export { err as failureAsync } from "./async-result/index.js";
 
 // Sleep
 export { sleep, withTimeout, sleepWithSignal, addJitter } from "./sleep.js";
