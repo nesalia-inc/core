@@ -1,6 +1,6 @@
 # HTTP API Error Handling
 
-This example demonstrates how to use `@deessejs/core` for robust HTTP API error handling.
+This example demonstrates how to use `@deessejs/fp` for robust HTTP API error handling.
 
 ## What You'll Learn
 
@@ -22,7 +22,7 @@ tsx examples/http-api/index.ts
 ### 1. Basic Fetch with AsyncResult
 
 ```typescript
-import { fromPromise } from "@deessejs/core";
+import { fromPromise } from "@deessejs/fp";
 
 const result = await fromPromise(fetchUserFromApi(id)).mapErr((error) => ({
   type: "NETWORK",
@@ -39,7 +39,7 @@ if (result.isOk()) {
 ### 2. Adding Timeout
 
 ```typescript
-import { withTimeout } from "@deessejs/core";
+import { withTimeout } from "@deessejs/fp";
 
 const result = await fromPromise(fetchUserFromApi(id))
   .flatMap((user) =>
@@ -55,7 +55,7 @@ const result = await fromPromise(fetchUserFromApi(id))
 ### 3. Automatic Retry
 
 ```typescript
-import { retryAsync } from "@deessejs/core";
+import { retryAsync } from "@deessejs/fp";
 
 const result = await retryAsync(
   () => fromPromise(fetchUserFromApi(id)),

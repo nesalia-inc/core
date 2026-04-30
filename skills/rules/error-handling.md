@@ -53,7 +53,7 @@ const parse = (s: string): Result<number, Error> => {
 For domain errors, use the Error system:
 
 ```typescript
-import { error } from '@deessejs/core';
+import { error } from '@deessejs/fp';
 import { z } from 'zod';
 
 const ValidationError = error({
@@ -113,7 +113,7 @@ const fetchUser = (id: string): Promise<AsyncResult<User, Error>> =>
 Chain causes, don't lose context:
 
 ```typescript
-import { error } from '@deessejs/core';
+import { error } from '@deessejs/fp';
 
 const LowLevelError = error({ name: 'LowLevelError', message: (a) => a.msg });
 const HighLevelError = error({ name: 'HighLevelError', message: (a) => a.context });
@@ -154,7 +154,7 @@ class ValidationError extends Error {
   }
 }
 
-// Good - structured Error from @deessejs/core
+// Good - structured Error from @deessejs/fp
 const ValidationError = error({
   name: 'ValidationError',
   schema: z.object({ field: z.string() }),
@@ -191,7 +191,7 @@ const validateUser = (email: string, age: number): Result<User, Error> =>
 When you must catch external exceptions:
 
 ```typescript
-import { attempt, isError } from '@deessejs/core';
+import { attempt, isError } from '@deessejs/fp';
 
 // Wrap throwing functions with attempt
 const parsed = attempt(() => JSON.parse(input));

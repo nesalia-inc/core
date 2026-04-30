@@ -1,9 +1,9 @@
 {
-  "name": "@deessejs/core",
-  "version": "0.1.7",
+  "name": "@deessejs/fp",
+  "version": "3.0.0",
   "private": true,
   "type": "module",
-  "description": "Monorepo for @deessejs/core - Type-safe error handling for TypeScript",
+  "description": "Monorepo for @deessejs/fp - Type-safe error handling for TypeScript",
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
@@ -16,11 +16,15 @@
   "devDependencies": {
     "@changesets/cli": "^2.27.0",
     "@eslint/js": "^9.0.0",
-    "eslint": "^9.0.0",
+    "eslint": "^10.2.0",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-security": "^4.0.0",
+    "eslint-plugin-sonarjs": "^4.0.2",
+    "eslint-plugin-unicorn": "^64.0.0",
     "husky": "^9.0.0",
     "prettier": "^3.0.0",
-    "turbo": "^2.0.0",
-    "typescript-eslint": "^8.0.0"
+    "turbo": "^2.9.5",
+    "typescript-eslint": "^8.58.1"
   },
   "packageManager": "pnpm@9.0.0",
   "engines": {
@@ -31,14 +35,14 @@
     "changelog": false,
     "commit": false,
     "fixed": [
-      "@deessejs/core"
+      "@deessejs/fp"
     ],
     "linked": [],
     "access": "restricted"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/nesalia-inc/core.git"
+    "url": "https://github.com/nesalia-inc/fp.git"
   },
   "keywords": [
     "typescript",

@@ -17,7 +17,7 @@ Use Try when:
 ## Creating Try
 
 ```typescript
-import { attempt, isOk, isErr, Try } from '@deessejs/core';
+import { attempt, isOk, isErr, Try } from '@deessejs/fp';
 
 // attempt wraps a function that might throw
 const result: Try<number, Error> = attempt(() => JSON.parse('{"valid": true}'));
@@ -49,7 +49,7 @@ const parseJSON = (input: string): Try<object, Error> =>
 ## Type Guards
 
 ```typescript
-import { attempt, isOk, isErr } from '@deessejs/core';
+import { attempt, isOk, isErr } from '@deessejs/fp';
 
 const result = attempt(() => JSON.parse('{"valid": true}'));
 
@@ -65,7 +65,7 @@ if (isErr(result)) {
 ## Transforming
 
 ```typescript
-import { attempt, map, flatMap } from '@deessejs/core';
+import { attempt, map, flatMap } from '@deessejs/fp';
 
 // map transforms the success value
 const doubled = map(attempt(() => 21), x => x * 2); // Try(42)
@@ -80,7 +80,7 @@ const parseAndDouble = (s: string): Try<number, Error> =>
 ## Extraction
 
 ```typescript
-import { attempt, getOrElse, getOrCompute, unwrap } from '@deessejs/core';
+import { attempt, getOrElse, getOrCompute, unwrap } from '@deessejs/fp';
 
 // getOrElse returns default if failure
 const value = getOrElse(attempt(() => 42), 0); // 42
@@ -100,7 +100,7 @@ unwrap(attempt(() => { throw new Error('fail'); })); // throws
 ## Pattern Matching
 
 ```typescript
-import { attempt, match } from '@deessejs/core';
+import { attempt, match } from '@deessejs/fp';
 
 const result = attempt(() => 42);
 
@@ -114,7 +114,7 @@ const message = match(
 ## Conversions
 
 ```typescript
-import { attempt, toNullable, toUndefined } from '@deessejs/core';
+import { attempt, toNullable, toUndefined } from '@deessejs/fp';
 
 // To nullable
 toNullable(attempt(() => 42)); // 42
@@ -128,7 +128,7 @@ toUndefined(attempt(() => { throw new Error('oops'); })); // undefined
 ## Real-World Example: JSON Parsing
 
 ```typescript
-import { attempt, getOrElse, err } from '@deessejs/core';
+import { attempt, getOrElse, err } from '@deessejs/fp';
 
 interface User {
   id: number;
@@ -149,13 +149,13 @@ const user = getOrElse(parseUser('{"id": 1, "name": "Alice"}'), { id: 0, name: '
 ## Async Try
 
 ```typescript
-import { attemptAsync, isOk } from '@deessejs/core';
+import { attemptAsync, isOk } from '@deessejs/fp';
 
 // attemptAsync wraps async functions that might reject
 const result = await attemptAsync(fetch('https://api.example.com'));
 
 // It works with Try<Promise<T>> - use with flatMap
-import { flatMap } from '@deessejs/core';
+import { flatMap } from '@deessejs/fp';
 
 const fetchAndParse = (url: string) =>
   flatMap(

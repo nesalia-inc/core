@@ -1,8 +1,8 @@
 # Test Quality Report
 
 **Generated:** 2026-04-01
-**Project:** @deessejs/core
-**Package analyzed:** packages/core
+**Project:** @deessejs/fp
+**Package analyzed:** packages/fp
 
 ## Executive Summary
 
@@ -284,7 +284,7 @@ These are minor observations, not critical issues.
 
 ```mermaid
 graph TD
-    A[packages/core] --> B[Result 98%]
+    A[packages/fp] --> B[Result 98%]
     A --> C[Maybe 92%]
     A --> D[AsyncResult 99%]
     A --> E[Error 91%]
@@ -315,7 +315,7 @@ graph TD
 
 **Overall Assessment: A (Excellent)**
 
-The @deessejs/core test suite is of exceptionally high quality:
+The @deessejs/fp test suite is of exceptionally high quality:
 
 - **501 tests** covering all functional patterns
 - **96%+ statement and line coverage** across most modules

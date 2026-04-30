@@ -9,7 +9,7 @@ The unit type for void-like returns in functional composition.
 ## What is Unit?
 
 ```typescript
-import { unit, isUnit } from '@deessejs/core';
+import { unit, isUnit } from '@deessejs/fp';
 
 unit; // The single value of type Unit
 
@@ -29,7 +29,7 @@ In functional programming, `void` and `undefined` are problematic because:
 ## Usage with Result
 
 ```typescript
-import { unit, ok, err, map } from '@deessejs/core';
+import { unit, ok, err, map } from '@deessejs/fp';
 
 // When you need to return Result but have no meaningful value
 const logResult = (message: string): Result<Unit, Error> => {
@@ -52,7 +52,7 @@ pipe(
 ## Usage with Maybe
 
 ```typescript
-import { unit, some, none, map, flatMap } from '@deessejs/core';
+import { unit, some, none, map, flatMap } from '@deessejs/fp';
 
 // When you need Maybe but have no value
 const findDefault = (): Maybe<Unit> => {
@@ -86,7 +86,7 @@ flatMap(findDefault(), () => doSomething());
 ## Pattern: Command Result
 
 ```typescript
-import { unit, ok, err, map, flatMap } from '@deessejs/core';
+import { unit, ok, err, map, flatMap } from '@deessejs/fp';
 
 type CommandResult = Result<Unit, Error>;
 
@@ -112,7 +112,7 @@ if (isErr(result)) {
 ## Pattern: Optional Action
 
 ```typescript
-import { unit, some, none, flatMap } from '@deessejs/core';
+import { unit, some, none, flatMap } from '@deessejs/fp';
 
 interface Action {
   execute(): void;
@@ -136,7 +136,7 @@ if (isSome(result)) {
 ## Unit in Async Context
 
 ```typescript
-import { unit, okAsync, errAsync } from '@deessejs/core';
+import { unit, okAsync, errAsync } from '@deessejs/fp';
 
 const cleanup = async (): Promise<AsyncResult<Unit, Error>> => {
   try {

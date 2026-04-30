@@ -1,13 +1,13 @@
 /**
  * Authentication Flow Example
  *
- * This example demonstrates how to use @deessejs/core for:
+ * This example demonstrates how to use @deessejs/fp for:
  * - Handling authentication flows with Result
  * - Token validation and refresh
  * - Multi-factor authentication
  */
 
-import { fromPromise, okAsync, errAsync, ok, err, some, none, Maybe } from "@deessejs/core";
+import { fromPromise, okAsync, errAsync, ok, err, some, none, Maybe } from "@deessejs/fp";
 
 // ============================================================================
 // Types
@@ -380,7 +380,7 @@ const completeAuthFlow = async () => {
 
 const main = async () => {
   console.log("╔════════════════════════════════════════════════════════════╗");
-  console.log("║   Authentication Flow with @deessejs/core                 ║");
+  console.log("║   Authentication Flow with @deessejs/fp                 ║");
   console.log("╚════════════════════════════════════════════════════════════╝");
 
   try {

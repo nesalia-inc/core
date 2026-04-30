@@ -7,7 +7,7 @@ paths:
 
 ## Use the Native Error System
 
-Any feature related to error handling must use the native Error system from `@deessejs/core` instead of JavaScript's native `Error`.
+Any feature related to error handling must use the native Error system from `@deessejs/fp` instead of JavaScript's native `Error`.
 
 ### Why This Matters
 
@@ -19,7 +19,7 @@ Any feature related to error handling must use the native Error system from `@de
 
 1. **Use `error()` factory** to create domain-specific errors:
    ```typescript
-   import { error } from "@deessejs/core";
+   import { error } from "@deessejs/fp";
 
    const SizeError = error({
      name: "SizeError",
@@ -29,7 +29,7 @@ Any feature related to error handling must use the native Error system from `@de
 
 2. **Wrap all Promise rejections** in `fromPromise` which automatically converts to `PanicError`:
    ```typescript
-   import { fromPromise } from "@deessejs/core";
+   import { fromPromise } from "@deessejs/fp";
 
    // Good
    const result = fromPromise(fetch("/api"));
@@ -39,13 +39,13 @@ Any feature related to error handling must use the native Error system from `@de
 
 3. **Use `AbortError`** from the error system for cancellation:
    ```typescript
-   import { error } from "@deessejs/core";
+   import { error } from "@deessejs/fp";
    const AbortError = error({ name: "AbortError", message: () => "Operation aborted" });
    ```
 
 4. **Error enrichment** is only available on structured errors:
    ```typescript
-   import { mapErr } from "@deessejs/core";
+   import { mapErr } from "@deessejs/fp";
 
    // Good - supports addNotes(), from()
    result.mapErr(e => e.addNotes("Additional context"));
@@ -59,7 +59,7 @@ Any feature related to error handling must use the native Error system from `@de
 Always use the `error()` factory with optional Zod validation:
 
 ```typescript
-import { error } from "@deessejs/core";
+import { error } from "@deessejs/fp";
 import { z } from "zod";
 
 const ValidationError = error({
@@ -77,4 +77,4 @@ const ValidationError = error({
 
 ### Reference
 
-See `packages/core/src/error/` for the complete Error system implementation.
+See `packages/fp/src/error/` for the complete Error system implementation.

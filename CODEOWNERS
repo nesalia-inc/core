@@ -5,4 +5,4 @@
 
 # Require 2 approvals for these paths
 .github/ @AliiiBenn
-packages/core/src/ @AliiiBenn
+packages/fp/src/ @AliiiBenn

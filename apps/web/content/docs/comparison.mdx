@@ -1,17 +1,17 @@
 ---
 title: Comparison
-description: How @deessejs/core compares to other error handling libraries
+description: How @deessejs/fp compares to other error handling libraries
 icon: GitCompare
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout';
 import { Cards, Card } from 'fumadocs-ui/components/card';
 
-How does `@deessejs/core` compare to other error handling libraries in the TypeScript ecosystem?
+How does `@deessejs/fp` compare to other error handling libraries in the TypeScript ecosystem?
 
 ## Quick Comparison
 
-| Feature | @deessejs/core | fp-ts | neverthrow | ts-results |
+| Feature | @deessejs/fp | fp-ts | neverthrow | ts-results |
 |---------|----------------|-------|------------|------------|
 | **Size (min+gzip)** | ~5KB | ~40KB | ~6KB | ~8KB |
 | **Runtime deps** | 0 | 1 (fp-ts) | 0 | 0 |
@@ -19,7 +19,7 @@ How does `@deessejs/core` compare to other error handling libraries in the TypeS
 | **Async support** | Yes | Yes | No | No |
 | **Exhaustiveness checking** | Yes | Yes | Partial | Yes |
 
-## @deessejs/core vs fp-ts
+## @deessejs/fp vs fp-ts
 
 fp-ts is a comprehensive functional programming library with many types and utilities.
 
@@ -29,17 +29,17 @@ fp-ts is a comprehensive functional programming library with many types and util
 - Rich ecosystem of abstractions
 - Requires FP knowledge
 
-**@deessejs/core:**
+**@deessejs/fp:**
 - ~5KB (lightweight)
 - Simple, pragmatic API
 - Focused on error handling only
 - No FP jargon
 
 <Callout>
-  Use fp-ts if you need the full ecosystem of functional programming abstractions. Use @deessejs/core if you just want type-safe error handling.
+  Use fp-ts if you need the full ecosystem of functional programming abstractions. Use @deessejs/fp if you just want type-safe error handling.
 </Callout>
 
-## @deessejs/core vs neverthrow
+## @deessejs/fp vs neverthrow
 
 neverthrow is a Result type library for TypeScript.
 
@@ -48,17 +48,17 @@ neverthrow is a Result type library for TypeScript.
 - No async support
 - Similar size (~6KB)
 
-**@deessejs/core:**
+**@deessejs/fp:**
 - 4 types (Result, Maybe, Try, AsyncResult)
 - Built-in async handling
 - Conversion utilities between types
 - Slightly smaller
 
 <Callout>
-  If you only need Result, neverthrow is a solid choice. @deessejs/core gives you more types in a similar footprint.
+  If you only need Result, neverthrow is a solid choice. @deessejs/fp gives you more types in a similar footprint.
 </Callout>
 
-## @deessejs/core vs ts-results
+## @deessejs/fp vs ts-results
 
 ts-results is another Result type implementation.
 
@@ -67,14 +67,14 @@ ts-results is another Result type implementation.
 - No Maybe or Try
 - Larger bundle (~8KB)
 
-**@deessejs/core:**
+**@deessejs/fp:**
 - More types for different scenarios
 - Smaller bundle
 - Additional utilities (retry, sleep)
 
-## When to Choose @deessejs/core
+## When to Choose @deessejs/fp
 
-Choose @deessejs/core when you want:
+Choose @deessejs/fp when you want:
 
 - **Lightweight** - ~5KB, zero runtime deps
 - **Comprehensive** - 5 types for different error scenarios
@@ -83,6 +83,30 @@ Choose @deessejs/core when you want:
 - **Async-ready** - Built-in AsyncResult for network operations
 
 ## Migration from other libraries
+
+### From try/catch
+
+Ready to make the switch? Here's the simplest example:
+
+```typescript
+// try/catch
+try {
+  const data = JSON.parse(input);
+} catch (e) {
+  console.error('Parse failed:', e.message);
+}
+
+// @deessejs/fp
+import { attempt } from '@deessejs/fp';
+
+const result = attempt(() => JSON.parse(input));
+result.match({
+  onSuccess: (data) => console.log(data),
+  onError: (e) => console.error('Parse failed:', e.message)
+});
+```
+
+[Read more about why to switch](/docs#the-problem-with-traditional-error-handling)
 
 ### From neverthrow
 
@@ -95,8 +119,8 @@ const divide = (a: number, b: number): Result<number, string> => {
   return ok(a / b);
 };
 
-// @deessejs/core - almost identical!
-import { ok, err, Result } from "@deessejs/core";
+// @deessejs/fp - almost identical!
+import { ok, err, Result } from "@deessejs/fp";
 
 const divide = (a: number, b: number): Result<number, string> => {
   if (b === 0) return err("Division by zero");
@@ -116,8 +140,8 @@ const parseJson = (json: string) =>
     () => new Error("Parse failed")
   );
 
-// @deessejs/core - simpler!
-import { attempt } from "@deessejs/core";
+// @deessejs/fp - simpler!
+import { attempt } from "@deessejs/fp";
 
 const parseJson = (json: string) => attempt(() => JSON.parse(json));
 ```
@@ -131,8 +155,8 @@ function divide(a: number, b: number): number {
   return a / b;
 }
 
-// After @deessejs/core
-import { ok, err, Result } from "@deessejs/core";
+// After @deessejs/fp
+import { ok, err, Result } from "@deessejs/fp";
 
 const divide = (a: number, b: number): Result<number, string> => {
   if (b === 0) return err("Division by zero");
@@ -145,6 +169,9 @@ const divide = (a: number, b: number): Result<number, string> => {
 <Cards>
   <Card title="Getting Started" href="/docs">
     Quick introduction
+  </Card>
+  <Card title="Why not try/catch?" href="/docs#the-problem-with-traditional-error-handling">
+    The case for type-safe error handling
   </Card>
   <Card title="Result" href="/docs/reference/result">
     Deep dive into Result type

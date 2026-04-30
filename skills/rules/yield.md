@@ -17,7 +17,7 @@ Use yield when:
 ## Basic Usage
 
 ```typescript
-import { yieldControl, yield as yieldFn } from '@deessejs/core';
+import { yieldControl, yield as yieldFn } from '@deessejs/fp';
 
 // yieldControl() pauses the current async operation
 async function longOperation() {
@@ -40,7 +40,7 @@ async function anotherLongOperation() {
 For yielding at the next tick without delay:
 
 ```typescript
-import { immediate } from '@deessejs/core';
+import { immediate } from '@deessejs/fp';
 
 // immediate() schedules work for the next microtask
 async function scheduleWork() {
@@ -52,7 +52,7 @@ async function scheduleWork() {
 ## Pattern: Cooperative Multitasking
 
 ```typescript
-import { yieldControl } from '@deessejs/core';
+import { yieldControl } from '@deessejs/fp';
 
 async function processBatch(items: string[], batchSize: number = 100) {
   const results = [];
@@ -73,7 +73,7 @@ async function processBatch(items: string[], batchSize: number = 100) {
 ## Pattern: Responsive Loops
 
 ```typescript
-import { yieldControl } from '@deessejs/core';
+import { yieldControl } from '@deessejs/fp';
 
 async function processLargeArray<T, R>(
   items: T[],
@@ -97,7 +97,7 @@ updateUI(results); // UI stays responsive
 ## With AsyncResult
 
 ```typescript
-import { yieldControl, fromPromise, map } from '@deessejs/core';
+import { yieldControl, fromPromise, map } from '@deessejs/fp';
 
 const processWithYield = async <T, E>(promise: Promise<T>) =>
   fromPromise(promise)
@@ -111,13 +111,13 @@ const result = await fetchData();
 ## Platform Detection
 
 ```typescript
-import { yieldControl } from '@deessejs/core';
+import { yieldControl } from '@deessejs/fp';
 
 // Browser/Node.js compatible
 await yieldControl();
 
 // Microtask version
-import { immediate } from '@deessejs/core';
+import { immediate } from '@deessejs/fp';
 await immediate(); // setImmediate / process.nextTick equivalent
 ```
 
@@ -168,7 +168,7 @@ async function process() {
 ## Real-World Example
 
 ```typescript
-import { yieldControl, fromPromise } from '@deessejs/core';
+import { yieldControl, fromPromise } from '@deessejs/fp';
 
 async function crawl(urls: string[], concurrency = 5): Promise<CrawlResult[]> {
   const queue = [...urls];
@@ -205,7 +205,7 @@ async function crawl(urls: string[], concurrency = 5): Promise<CrawlResult[]> {
 ## With Sleep for Rate Limiting
 
 ```typescript
-import { yieldControl, sleep } from '@deessejs/core';
+import { yieldControl, sleep } from '@deessejs/fp';
 
 async function rateLimitedFetch(urls: string[], delayMs: number = 100) {
   const results = [];
@@ -223,7 +223,7 @@ async function rateLimitedFetch(urls: string[], delayMs: number = 100) {
 ## Browser Compatibility
 
 ```typescript
-import { yieldControl } from '@deessejs/core';
+import { yieldControl } from '@deessejs/fp';
 
 // Works in:
 // - Node.js (all versions)

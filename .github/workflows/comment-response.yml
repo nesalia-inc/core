@@ -22,7 +22,7 @@ jobs:
     if: ${{ github.event.sender.type != 'Bot' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # Check if comment is from a bot account
       - name: Check if bot comment
@@ -144,7 +144,7 @@ jobs:
       - name: Generate Marty token
         if: steps.mention-check.outputs.should_respond == 'true' && steps.already-responded.outputs.already_done != 'true' && steps.rate-limit.outputs.rate_limited != 'true'
         id: marty-token
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ secrets.MARTY_APP_ID }}
           private-key: ${{ secrets.MARTY_APP_PRIVATE_KEY }}

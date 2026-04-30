@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Comprehensive usage examples for `@deessejs/core`
+- Comprehensive usage examples for `@deessejs/fp`
 - 12 complete examples demonstrating real-world scenarios
 - Documentation for Result, Maybe, Try, and AsyncResult types
 
@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Core library `@deessejs/core` with:
+- Core library `@deessejs/fp` with:
   - `Result` type for error handling
   - `Maybe` type for optional values
   - `Try` type for exception handling

@@ -1,6 +1,6 @@
 # Documentation Guide
 
-This guide establishes the standards for writing `@deessejs/core` documentation. It is inspired by best practices from Next.js, React, TypeScript, and fp-ts documentation.
+This guide establishes the standards for writing `@deessejs/fp` documentation. It is inspired by best practices from Next.js, React, TypeScript, and fp-ts documentation.
 
 > **Important**: This guide documents the *current state* of our thinking. See [VERSION_NOTES.md](./VERSION_NOTES.md) for V2 plans that address fundamental issues with this approach.
 
@@ -576,7 +576,7 @@ Why use Maybe?
 
 ## Functional Approach
 
-[Code with @deessejs/core]
+[Code with @deessejs/fp]
 
 ## Common Patterns
 

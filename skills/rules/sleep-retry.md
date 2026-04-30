@@ -7,7 +7,7 @@ Resilience patterns for handling delays and transient failures.
 ### Basic Sleep
 
 ```typescript
-import { sleep } from '@deessejs/core';
+import { sleep } from '@deessejs/fp';
 
 await sleep(1000); // Sleep for 1 second
 ```
@@ -17,7 +17,7 @@ await sleep(1000); // Sleep for 1 second
 Jitter prevents thundering herd problems:
 
 ```typescript
-import { sleep } from '@deessejs/core';
+import { sleep } from '@deessejs/fp';
 
 // Add randomness to prevent synchronized retries
 await sleep(1000, { jitter: true }); // 500-1500ms
@@ -29,7 +29,7 @@ await sleep(1000, { jitter: 0.2 }); // 800-1200ms (20% variance)
 ### Basic Timeout
 
 ```typescript
-import { withTimeout } from '@deessejs/core';
+import { withTimeout } from '@deessejs/fp';
 
 const result = await withTimeout(
   fetch('/api/data'),
@@ -42,7 +42,7 @@ const result = await withTimeout(
 For fine-grained abort control:
 
 ```typescript
-import { withTimeout } from '@deessejs/core';
+import { withTimeout } from '@deessejs/fp';
 
 const controller = new AbortController();
 
@@ -65,7 +65,7 @@ controller.abort();
 ### Timeout Options
 
 ```typescript
-import { withTimeout } from '@deessejs/core';
+import { withTimeout } from '@deessejs/fp';
 
 const result = await withTimeout(
   fetch('/api/data'),
@@ -83,7 +83,7 @@ const result = await withTimeout(
 ### Basic Retry
 
 ```typescript
-import { retryAsync } from '@deessejs/core';
+import { retryAsync } from '@deessejs/fp';
 
 const result = await retryAsync(
   () => fetch('/api/data').then(r => r.json()),
@@ -94,7 +94,7 @@ const result = await retryAsync(
 ### Retry with Backoff
 
 ```typescript
-import { retryAsync, exponentialBackoff, linearBackoff, constantBackoff } from '@deessejs/core';
+import { retryAsync, exponentialBackoff, linearBackoff, constantBackoff } from '@deessejs/fp';
 
 // Exponential backoff (default): 1s, 2s, 4s
 await retryAsync(fn, { backoff: 'exponential', delay: 1000 });
@@ -126,7 +126,7 @@ await retryAsync(fn, {
 Retry only on specific errors:
 
 ```typescript
-import { retryAsync } from '@deessejs/core';
+import { retryAsync } from '@deessejs/fp';
 
 const isTransientError = (e: Error) =>
   e.message.includes('ECONNRESET') ||
@@ -146,7 +146,7 @@ await retryAsync(
 Track retry attempts:
 
 ```typescript
-import { retryAsync } from '@deessejs/core';
+import { retryAsync } from '@deessejs/fp';
 
 await retryAsync(
   () => fetch('/api/data').then(r => r.json()),
@@ -175,7 +175,7 @@ await retryAsync(fn, {
 Cancel retries mid-attempt:
 
 ```typescript
-import { retryAsync } from '@deessejs/core';
+import { retryAsync } from '@deessejs/fp';
 
 const controller = new AbortController();
 
@@ -196,7 +196,7 @@ controller.abort();
 For CPU-bound operations that might throw:
 
 ```typescript
-import { retry } from '@deessejs/core';
+import { retry } from '@deessejs/fp';
 
 // WARNING: Blocks the event loop if delay > 0
 const result = retry(
@@ -213,7 +213,7 @@ const result = retry(
 Abort sleep mid-wait:
 
 ```typescript
-import { sleepWithSignal } from '@deessejs/core';
+import { sleepWithSignal } from '@deessejs/fp';
 
 const controller = new AbortController();
 
@@ -232,7 +232,7 @@ controller.abort();
 ## Backoff Strategies
 
 ```typescript
-import { exponentialBackoff, linearBackoff, constantBackoff } from '@deessejs/core';
+import { exponentialBackoff, linearBackoff, constantBackoff } from '@deessejs/fp';
 
 // Exponential: delay * 2^(attempt-1)
 exponentialBackoff(1, 1000); // 1000
@@ -253,7 +253,7 @@ constantBackoff(3, 1000); // 1000
 ## Complete Example
 
 ```typescript
-import { retryAsync, sleep, withTimeout } from '@deessejs/core';
+import { retryAsync, sleep, withTimeout } from '@deessejs/fp';
 
 const fetchWithRetry = async (url: string, options = {}) => {
   const {

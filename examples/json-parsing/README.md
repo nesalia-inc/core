@@ -20,7 +20,7 @@ tsx examples/json-parsing/index.ts
 ### 1. Basic Safe Parsing
 
 ```typescript
-import { attempt } from "@deessejs/core";
+import { attempt } from "@deessejs/fp";
 
 const result = attempt(() => JSON.parse(jsonString))
   .mapErr(error => ({

@@ -27,7 +27,7 @@ error.cause;    // Maybe<Error> - the original cause
 ## Creating Domain Errors
 
 ```typescript
-import { error } from '@deessejs/core';
+import { error } from '@deessejs/fp';
 import { z } from 'zod';
 
 const ValidationError = error({
@@ -63,7 +63,7 @@ interface Error {
 Notes add debugging context without creating new error types:
 
 ```typescript
-import { error, err } from '@deessejs/core';
+import { error, err } from '@deessejs/fp';
 
 const ValidationError = error({
   name: 'ValidationError',
@@ -82,7 +82,7 @@ enriched.notes; // ['Input received at API endpoint', 'Timestamp: 2024-01-15T10:
 Trace error provenance through the call stack:
 
 ```typescript
-import { error, err } from '@deessejs/core';
+import { error, err } from '@deessejs/fp';
 
 const NetworkError = error({
   name: 'NetworkError',
@@ -103,7 +103,7 @@ result.error.cause.map(e => e.name).getOrElse('no cause'); // 'NetworkError'
 ## Using Errors with Result
 
 ```typescript
-import { error, err, ok, isOk, mapErr } from '@deessejs/core';
+import { error, err, ok, isOk, mapErr } from '@deessejs/fp';
 
 const ValidationError = error({
   name: 'ValidationError',
@@ -126,7 +126,7 @@ const result = validateEmail('invalid')
 ## Guard Functions
 
 ```typescript
-import { isError, isErrorGroup, assertIsError } from '@deessejs/core';
+import { isError, isErrorGroup, assertIsError } from '@deessejs/fp';
 
 if (isError(value)) {
   console.log(value.name); // TypeScript knows value is Error
@@ -140,7 +140,7 @@ assertIsError(unknownValue);
 ## Error Groups
 
 ```typescript
-import { error, exceptionGroup, isErrorGroup } from '@deessejs/core';
+import { error, exceptionGroup, isErrorGroup } from '@deessejs/fp';
 
 const ValidationError = error({
   name: 'ValidationError',
@@ -158,14 +158,14 @@ errors.name;           // 'ExceptionGroup'
 errors.exceptions;      // [ValidationError, ValidationError, ValidationError]
 
 // Filter errors by type
-import { filterErrorsByName } from '@deessejs/core';
+import { filterErrorsByName } from '@deessejs/fp';
 const validationErrors = filterErrorsByName(errors, 'ValidationError');
 ```
 
 ## Flattening Error Groups
 
 ```typescript
-import { error, exceptionGroup, flattenErrorGroup } from '@deessejs/core';
+import { error, exceptionGroup, flattenErrorGroup } from '@deessejs/fp';
 
 const errors = exceptionGroup('MultipleErrors', [err1, err2, err3]);
 const flattened = flattenErrorGroup(errors);
@@ -177,7 +177,7 @@ const flattened = flattenErrorGroup(errors);
 For unrecoverable errors that should propagate:
 
 ```typescript
-import { error, raise } from '@deessejs/core';
+import { error, raise } from '@deessejs/fp';
 
 const SystemError = error({
   name: 'SystemError',
@@ -212,7 +212,7 @@ const processOrder = (orderId: string): Result<Order, Error> => {
 ## Schema Validation with Zod
 
 ```typescript
-import { error } from '@deessejs/core';
+import { error } from '@deessejs/fp';
 import { z } from 'zod';
 
 const ConfigError = error({

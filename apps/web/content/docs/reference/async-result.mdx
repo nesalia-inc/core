@@ -20,7 +20,7 @@ const user = await fetchUser(id);
 ### The AsyncResult Solution
 
 ```typescript
-import { fromPromise, isOk } from '@deessejs/core';
+import { fromPromise, isOk } from '@deessejs/fp';
 
 const result = fromPromise(fetchUser(id));
 
@@ -52,7 +52,7 @@ Key concepts:
 | `AsyncErr<E>` | Async failure | `ok: false`, `error: E` |
 
 ```typescript
-import { okAsync, errAsync } from '@deessejs/core';
+import { okAsync, errAsync } from '@deessejs/fp';
 
 // Success
 const success = await okAsync({ id: 1, name: 'John' });
@@ -68,7 +68,7 @@ const failure = await errAsync({ code: 'NOT_FOUND', message: 'User not found' })
 AsyncResult implements the Thenable pattern, allowing direct `await` and chaining:
 
 ```typescript
-import { fromPromise } from '@deessejs/core';
+import { fromPromise } from '@deessejs/fp';
 
 // Direct await
 const result = await fromPromise(fetch('/api/user'));
@@ -106,7 +106,7 @@ fromPromise(Promise.reject(new Error('failed')));
 Creates an async success result.
 
 ```typescript
-import { ok, okAsync } from '@deessejs/core';
+import { ok, okAsync } from '@deessejs/fp';
 
 ok(42);        // AsyncOk(42)
 okAsync('hello'); // AsyncOk('hello')
@@ -117,7 +117,7 @@ okAsync('hello'); // AsyncOk('hello')
 Creates an async error result.
 
 ```typescript
-import { err, errAsync } from '@deessejs/core';
+import { err, errAsync } from '@deessejs/fp';
 
 err('Something went wrong');           // AsyncErr('Something went wrong')
 errAsync({ code: 'NOT_FOUND' });      // AsyncErr({ code: 'NOT_FOUND' })
@@ -128,7 +128,7 @@ errAsync({ code: 'NOT_FOUND' });      // AsyncErr({ code: 'NOT_FOUND' })
 Wraps a Promise. Resolves to AsyncOk if the promise succeeds, AsyncErr if it rejects.
 
 ```typescript
-import { fromPromise } from '@deessejs/core';
+import { fromPromise } from '@deessejs/fp';
 
 const result = await fromPromise(fetch('/api/user'));
 ```
@@ -138,7 +138,7 @@ const result = await fromPromise(fetch('/api/user'));
 Wraps a Promise with a custom error handler.
 
 ```typescript
-import { fromPromise, error } from '@deessejs/core';
+import { fromPromise, error } from '@deessejs/fp';
 import { z } from 'zod';
 
 const NetworkError = error({
@@ -158,7 +158,7 @@ const result = fromPromise(
 Wraps a Promise with AbortSignal support.
 
 ```typescript
-import { fromPromise } from '@deessejs/core';
+import { fromPromise } from '@deessejs/fp';
 
 const controller = new AbortController();
 const result = fromPromise(
@@ -172,7 +172,7 @@ const result = fromPromise(
 Creates an AsyncResult that resolves after a delay.
 
 ```typescript
-import { fromValue } from '@deessejs/core';
+import { fromValue } from '@deessejs/fp';
 
 fromValue(42, 1000); // Resolves to AsyncOk(42) after 1 second
 ```
@@ -182,7 +182,7 @@ fromValue(42, 1000); // Resolves to AsyncOk(42) after 1 second
 Creates an AsyncResult that rejects after a delay.
 
 ```typescript
-import { fromError } from '@deessejs/core';
+import { fromError } from '@deessejs/fp';
 
 fromError({ code: 'TIMEOUT' }, 1000); // Resolves to AsyncErr({ code: 'TIMEOUT' }) after 1 second
 ```
@@ -194,7 +194,7 @@ fromError({ code: 'TIMEOUT' }, 1000); // Resolves to AsyncErr({ code: 'TIMEOUT' 
 Type guard that narrows to the AsyncOk branch.
 
 ```typescript
-import { fromPromise, isOk } from '@deessejs/core';
+import { fromPromise, isOk } from '@deessejs/fp';
 
 const result = await fromPromise(Promise.resolve(42));
 
@@ -208,7 +208,7 @@ if (isOk(result)) {
 Type guard that narrows to the AsyncErr branch.
 
 ```typescript
-import { fromPromise, isErr } from '@deessejs/core';
+import { fromPromise, isErr } from '@deessejs/fp';
 
 const result = await fromPromise(Promise.reject('oops'));
 
@@ -222,7 +222,7 @@ if (isErr(result)) {
 Checks if an error is an AbortError.
 
 ```typescript
-import { isAbortError } from '@deessejs/core';
+import { isAbortError } from '@deessejs/fp';
 
 if (isAbortError(error)) {
   console.log('Operation was aborted');
@@ -236,7 +236,7 @@ if (isAbortError(error)) {
 Transforms the value if AsyncOk. Handles both sync and async functions. Passes errors through unchanged.
 
 ```typescript
-import { fromPromise, map } from '@deessejs/core';
+import { fromPromise, map } from '@deessejs/fp';
 
 // Sync transformation
 map(ok(2), x => x * 2); // AsyncOk(4)
@@ -259,7 +259,7 @@ ok(2).map(x => x * 2); // AsyncOk(4)
 Chains AsyncResults. If AsyncOk, applies the function. If AsyncErr, returns AsyncErr. Handles both sync and async functions.
 
 ```typescript
-import { ok, flatMap } from '@deessejs/core';
+import { ok, flatMap } from '@deessejs/fp';
 
 const fetchUser = (id: number) =>
   id > 0 ? ok({ id, name: 'John' }) : err('Invalid id');
@@ -279,7 +279,7 @@ ok(1).flatMap(fetchUser); // AsyncOk({ id: 1, name: 'John' })
 Transforms the error. Passes success through unchanged.
 
 ```typescript
-import { err, mapErr } from '@deessejs/core';
+import { err, mapErr } from '@deessejs/fp';
 
 mapErr(err('not found'), e => ({ ...e, code: 'NOT_FOUND' }));
 // AsyncErr({ ...original error, code: 'NOT_FOUND' })
@@ -298,7 +298,7 @@ err('not found').mapErr(e => ({ ...e, code: 'NOT_FOUND' }));
 Returns the value if AsyncOk, or a default if AsyncErr.
 
 ```typescript
-import { ok, err, getOrElse } from '@deessejs/core';
+import { ok, err, getOrElse } from '@deessejs/fp';
 
 getOrElse(ok(42), 0);  // 42
 getOrElse(err('oops'), 0); // 0
@@ -315,7 +315,7 @@ ok(42).getOrElse(0); // 42
 Returns the value if AsyncOk, or computes one lazily if AsyncErr.
 
 ```typescript
-import { ok, err, getOrCompute } from '@deessejs/core';
+import { ok, err, getOrCompute } from '@deessejs/fp';
 
 const expensive = () => { console.log('computing...'); return 0; };
 
@@ -334,7 +334,7 @@ err('oops').getOrCompute(() => 0); // 0
 Extracts the value if AsyncOk, throws the error if AsyncErr.
 
 ```typescript
-import { ok, err, unwrap } from '@deessejs/core';
+import { ok, err, unwrap } from '@deessejs/fp';
 
 unwrap(ok(42));      // 42
 unwrap(err('oops')); // throws 'oops'
@@ -351,7 +351,7 @@ ok(42).unwrap(); // 42
 Extracts the value if AsyncOk, returns default if AsyncErr.
 
 ```typescript
-import { ok, err, unwrapOr } from '@deessejs/core';
+import { ok, err, unwrapOr } from '@deessejs/fp';
 
 unwrapOr(ok(42), 0);  // 42
 unwrapOr(err('oops'), 0); // 0
@@ -364,7 +364,7 @@ unwrapOr(err('oops'), 0); // 0
 Executes a function on the value without changing it. Useful for logging.
 
 ```typescript
-import { ok, tap } from '@deessejs/core';
+import { ok, tap } from '@deessejs/fp';
 
 tap(ok(42), x => console.log('Got:', x)); // Logs: 'Got: 42', returns AsyncOk(42)
 tap(err('oops'), x => console.log('Got:', x)); // Nothing logged, returns AsyncErr('oops')
@@ -381,7 +381,7 @@ ok(42).tap(x => console.log(x)); // AsyncOk(42)
 Executes a function on the error without changing it.
 
 ```typescript
-import { err, tapErr } from '@deessejs/core';
+import { err, tapErr } from '@deessejs/fp';
 
 tapErr(ok(42), e => console.error('Error:', e));                 // Nothing logged
 tapErr(err('oops'), e => console.error('Error:', e));            // Logs: 'Error: oops'
@@ -400,7 +400,7 @@ err('oops').tapErr(e => console.error(e)); // AsyncErr('oops')
 Handles both AsyncOk and AsyncErr cases, returning a single Promise value.
 
 ```typescript
-import { ok, match } from '@deessejs/core';
+import { ok, match } from '@deessejs/fp';
 
 match(
   ok(42),
@@ -416,7 +416,7 @@ match(
 Converts to `Promise<T | null>`.
 
 ```typescript
-import { ok, err, toNullable } from '@deessejs/core';
+import { ok, err, toNullable } from '@deessejs/fp';
 
 toNullable(ok(42));   // Promise<42>
 toNullable(err('x')); // Promise<null>
@@ -427,7 +427,7 @@ toNullable(err('x')); // Promise<null>
 Converts to `Promise<T | undefined>`.
 
 ```typescript
-import { ok, err, toUndefined } from '@deessejs/core';
+import { ok, err, toUndefined } from '@deessejs/fp';
 
 toUndefined(ok(42));   // Promise<42>
 toUndefined(err('x')); // Promise<undefined>
@@ -440,7 +440,7 @@ toUndefined(err('x')); // Promise<undefined>
 Runs multiple AsyncResults in parallel. Returns AsyncOk with array of values if all succeed, or the first AsyncErr (fail-fast).
 
 ```typescript
-import { fromPromise, all } from '@deessejs/core';
+import { fromPromise, all } from '@deessejs/fp';
 
 all(
   fromPromise(fetch('/api/user/1')),
@@ -454,7 +454,7 @@ all(
 Runs multiple AsyncResults in parallel. Returns AsyncOk with tuple of values and errors, regardless of success or failure.
 
 ```typescript
-import { fromPromise, allSettled } from '@deessejs/core';
+import { fromPromise, allSettled } from '@deessejs/fp';
 
 allSettled(
   fromPromise(fetch('/api/user/1')),
@@ -468,7 +468,7 @@ allSettled(
 Returns the value of the first AsyncResult to resolve. Throws if the first one rejects.
 
 ```typescript
-import { fromPromise, race, errAsync } from '@deessejs/core';
+import { fromPromise, race, errAsync } from '@deessejs/fp';
 
 race(
   fromPromise(fetch('/api/fast')),
@@ -481,7 +481,7 @@ race(
 Maps over items in parallel, running an async function for each.
 
 ```typescript
-import { fromPromise, traverse } from '@deessejs/core';
+import { fromPromise, traverse } from '@deessejs/fp';
 
 const ids = [1, 2, 3];
 
@@ -497,7 +497,7 @@ traverse(ids, id =>
 Wraps an AsyncResult to abort when the AbortSignal is triggered.
 
 ```typescript
-import { fromPromise, withSignal } from '@deessejs/core';
+import { fromPromise, withSignal } from '@deessejs/fp';
 
 const controller = new AbortController();
 
@@ -515,7 +515,7 @@ controller.abort();
 AsyncResult supports fluent chaining through its Thenable interface:
 
 ```typescript
-import { fromPromise } from '@deessejs/core';
+import { fromPromise } from '@deessejs/fp';
 
 const result = await fromPromise(fetchUser(id))
   .map(user => ({ ...user, fullName: user.name.toUpperCase() }))
@@ -529,7 +529,7 @@ const result = await fromPromise(fetchUser(id))
 ### Chained API Calls
 
 ```typescript
-import { fromPromise, ok, flatMap, isOk } from '@deessejs/core';
+import { fromPromise, ok, flatMap, isOk } from '@deessejs/fp';
 
 interface User { id: number; name: string; }
 interface Post { id: number; title: string; }
@@ -568,7 +568,7 @@ if (isOk(result)) {
 ### Parallel Data Fetching
 
 ```typescript
-import { fromPromise, all, traverse } from '@deessejs/core';
+import { fromPromise, all, traverse } from '@deessejs/fp';
 
 const fetchDashboard = async (userId: number) => {
   const [user, stats, notifications] = await all(
@@ -592,7 +592,7 @@ const processItems = async (ids: number[]) => {
 ### Error Recovery
 
 ```typescript
-import { fromPromise, ok, err, isOk } from '@deessejs/core';
+import { fromPromise, ok, err, isOk } from '@deessejs/fp';
 
 const fetchWithFallback = async (primaryUrl: string, fallbackUrl: string) => {
   const primary = await fromPromise(fetch(primaryUrl));

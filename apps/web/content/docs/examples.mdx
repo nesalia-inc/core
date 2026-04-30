@@ -1,16 +1,16 @@
 ---
 title: Examples
-description: Real-world usage examples for @deessejs/core
+description: Real-world usage examples for @deessejs/fp
 ---
 
-Real-world patterns showing how to apply `@deessejs/core` in your applications. These examples build on the concepts from the core type documentation.
+Real-world patterns showing how to apply `@deessejs/fp` in your applications. These examples build on the concepts from the core type documentation.
 
 ## HTTP API with Retry
 
 Network requests can fail for many reasons—timeout, server error, or intermittent connectivity. This pattern shows how to wrap API calls with retry logic:
 
 ```typescript
-import { retryAsync, okAsync, errAsync } from "@deessejs/core";
+import { retryAsync, okAsync, errAsync } from "@deessejs/fp";
 
 const fetchWithRetry = async <T>(url: string): Promise<T> => {
   return retryAsync(
@@ -37,7 +37,7 @@ const user = await fetchWithRetry<User>("/api/user/1");
 Environment variables come as strings but need to be parsed into their proper types. This pattern shows how to handle optional configuration with defaults:
 
 ```typescript
-import { fromNullable, map, getOrElse } from "@deessejs/core";
+import { fromNullable, map, getOrElse } from "@deessejs/fp";
 
 interface Config {
   apiUrl: string;
@@ -63,7 +63,7 @@ const getConfig = (env: Record<string, string>): Config => ({
 ## Form Validation
 
 ```typescript
-import { ok, err, Result, map2, map3 } from "@deessejs/core";
+import { ok, err, Result, map2, map3 } from "@deessejs/fp";
 
 interface User {
   name: string;
@@ -104,7 +104,7 @@ const validateUser = (data: User): Result<User, string[]> => {
 ## JSON Parsing
 
 ```typescript
-import { attempt, map, getOrElse } from "@deessejs/core";
+import { attempt, map, getOrElse } from "@deessejs/fp";
 
 interface User {
   id: number;
@@ -123,7 +123,7 @@ const user = parseJson<User>('{"id": 1, "name": "John"}');
 ## Database Queries
 
 ```typescript
-import { ok, err, Result } from "@deessejs/core";
+import { ok, err, Result } from "@deessejs/fp";
 
 interface User {
   id: number;
@@ -148,7 +148,7 @@ const result = await findUser("123")
 ## Parallel API Calls
 
 ```typescript
-import { okAsync, all, traverse, map } from "@deessejs/core";
+import { okAsync, all, traverse, map } from "@deessejs/fp";
 
 interface User {
   id: number;
@@ -174,7 +174,7 @@ const fetchUserWithPosts = async (userId: number) => {
 ## Error Logging
 
 ```typescript
-import { ok, tapErr } from "@deessejs/core";
+import { ok, tapErr } from "@deessejs/fp";
 
 const logError = (error: unknown) => {
   console.error(`[ERROR]`, error);
@@ -190,7 +190,7 @@ const failed = err("error")
 ## Chaining Operations
 
 ```typescript
-import { ok, err, flatMap, map } from "@deessejs/core";
+import { ok, err, flatMap, map } from "@deessejs/fp";
 
 const parseNumber = (s: string): Result<number, string> => {
   const n = Number(s);
@@ -211,7 +211,7 @@ console.log(result.value); // 10
 ## Optional Values
 
 ```typescript
-import { some, none, fromNullable, map, getOrElse } from "@deessejs/core";
+import { some, none, fromNullable, map, getOrElse } from "@deessejs/fp";
 
 interface Config {
   debug?: boolean;
@@ -228,7 +228,7 @@ const processConfig = (config: Record<string, unknown>): Config => ({
 ## Structured Errors with Error System
 
 ```typescript
-import { error, err, isErrWithError, exceptionGroup, filterErrorsByName } from "@deessejs/core";
+import { error, err, isErrWithError, exceptionGroup, filterErrorsByName } from "@deessejs/fp";
 
 // Define error types like Python exception classes
 const ValidationError = error({
@@ -260,7 +260,7 @@ if (isErrWithError(result)) {
 ## Error Chaining
 
 ```typescript
-import { error, err, raise, flatMap } from "@deessejs/core";
+import { error, err, raise, flatMap } from "@deessejs/fp";
 
 const NetworkError = error({
   name: "NetworkError",
@@ -293,7 +293,7 @@ const processed = ok("https://api.example.com")
 ## Error Groups
 
 ```typescript
-import { error, exceptionGroup, filterErrorsByName } from "@deessejs/core";
+import { error, exceptionGroup, filterErrorsByName } from "@deessejs/fp";
 
 const ValidationError = error({
   name: "ValidationError",

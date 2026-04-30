@@ -1,14 +1,14 @@
 /**
  * Safe JSON Parsing Example
  *
- * This example demonstrates how to use @deessejs/core for:
+ * This example demonstrates how to use @deessejs/fp for:
  * - Safe JSON parsing with Try/attempt
  * - Schema validation after parsing
  * - Handling malformed JSON gracefully
  * - Parsing configuration files
  */
 
-import { attempt, ok, err } from "@deessejs/core";
+import { attempt, ok, err } from "@deessejs/fp";
 
 // ============================================================================
 // Types
@@ -297,7 +297,7 @@ const parseUserArray = (jsonString: string): Result<Array<{ id: number; name: st
 
 const main = () => {
   console.log("╔════════════════════════════════════════════════════════════╗");
-  console.log("║   Safe JSON Parsing with @deessejs/core                   ║");
+  console.log("║   Safe JSON Parsing with @deessejs/fp                   ║");
   console.log("╚════════════════════════════════════════════════════════════╝");
 
   try {

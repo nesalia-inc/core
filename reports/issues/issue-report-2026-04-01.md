@@ -1,7 +1,7 @@
 # Issue Triage Report
 
 **Generated:** 2026-04-01
-**Repository:** nesalia-inc/core
+**Repository:** nesalia-inc/fp
 **Report Location:** reports/issues/issue-report-2026-04-01.md
 
 ## Overall Health Score: 82/100 (Good)

@@ -1,0 +1,72 @@
+{
+  "name": "@deessejs/fp",
+  "version": "4.0.0",
+  "type": "module",
+  "description": "TypeScript error handling that actually works. Result, Maybe, Try, and AsyncResult monads with perfect type inference, zero runtime deps, and React 19 support.",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./public/*": "./public/*"
+  },
+  "scripts": {
+    "build": "tsup && tsc --declaration --emitDeclarationOnly",
+    "test": "vitest run",
+    "test:coverage": "vitest --coverage",
+    "lint": "eslint src tests",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@deessejs/type-testing": "^0.3.4",
+    "@vitest/coverage-v8": "^4.1.4",
+    "tsup": "^8.5.1",
+    "typescript": "^5.0.0",
+    "vite": "^8.0.8",
+    "vitest": "^4.1.4"
+  },
+  "keywords": [
+    "typescript",
+    "functional-programming",
+    "result",
+    "result-type",
+    "maybe",
+    "option",
+    "try",
+    "error-handling",
+    "error-handling-typescript",
+    "typed-errors",
+    "exception-handling",
+    "monad",
+    "async",
+    "either",
+    "fp-ts-alternative",
+    "neverthrow-alternative",
+    "typescript-error-handling",
+    "typescript-fp",
+    "type-safe-errors"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nesalia-inc/fp.git",
+    "directory": "packages/fp"
+  },
+  "homepage": "https://fp.deessejs.com",
+  "bugs": {
+    "url": "https://github.com/nesalia-inc/fp/issues"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/nesalia-inc"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "zod": "^4.0.0"
+  }
+}

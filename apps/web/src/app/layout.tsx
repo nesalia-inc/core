@@ -2,25 +2,32 @@ import { baseUrl, createMetadata } from "@/lib/metadata";
 import { RootProvider } from 'fumadocs-ui/provider/next';
 import { TooltipProvider } from "@/components/ui/tooltip";
 import './global.css';
-import { Inter } from 'next/font/google';
+import { Space_Grotesk, Space_Mono } from 'next/font/google';
 
 export const metadata = createMetadata({
   title: {
-    template: "%s | Deesse Core",
-    default: "Deesse Core",
+    template: "%s | Deesse FP",
+    default: "@deessejs/fp - Type-Safe Error Handling for TypeScript",
   },
   metadataBase: baseUrl,
 });
 
 
-const inter = Inter({
+const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
+  variable: '--font-sans',
+});
+
+const spaceMono = Space_Mono({
+  weight: ['400', '700'],
+  subsets: ['latin'],
+  variable: '--font-mono',
 });
 
 export default function Layout({ children }: LayoutProps<'/'>) {
   return (
-    <html lang="en" className={inter.className} suppressHydrationWarning>
-      <body className="flex flex-col min-h-screen">
+    <html lang="en" className={`${spaceGrotesk.variable} ${spaceMono.variable}`} suppressHydrationWarning>
+      <body className="flex flex-col min-h-screen bg-black text-white antialiased">
         <TooltipProvider>
           <RootProvider>{children}</RootProvider>
         </TooltipProvider>

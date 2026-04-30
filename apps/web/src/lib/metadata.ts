@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 
-const baseUrl = "https://core.deessejs.com";
+const baseUrl = "https://fp.deessejs.com";
 
 export function createMetadata(override: Metadata): Metadata {
   return {
     ...override,
     openGraph: {
       type: "website",
-      siteName: "DeesseJS Core",
+      siteName: "@deessejs/fp",
       ...override.openGraph,
     },
     twitter: {
