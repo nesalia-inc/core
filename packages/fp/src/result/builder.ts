@@ -2,75 +2,75 @@
  * Result builder functions
  */
 
-import { type Ok, type Err, type Result } from "./types.js";
+import { type Result } from "./types.js";
 import { type Error } from "../error/types.js";
 
 /**
- * Creates an Ok with methods
+ * Ok class - internal implementation
  * @typeParam T - The type of the value
  * @typeParam E - The type of the error
- * @param value - The success value
- * @returns Ok<T, E>
  */
-const createOk = <T, E extends Error = Error>(value: T): Ok<T, E> => {
-  const self: Ok<T, E> = {
-    ok: true as const,
-    value,
-    isOk() { return true; },
-    isErr() { return false; },
-    map(fn) { return createOk(fn(value)); },
-    flatMap<U>(fn: (value: T) => Result<U, E>) { return fn(value) as Result<U, E>; },
-     
-    mapErr(_fn) { return self; },
-    getOrElse() { return value; },
-    getOrCompute() { return value; },
-    tap(fn) { fn(value); return self; },
-    tapErr() { return self; },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    match(fn: any) {
-      if (typeof fn === 'object' && fn !== null && 'onSuccess' in fn) {
-        return fn.onSuccess(value);
-      }
-      return fn(value);
-    },
-    unwrap() { return value; },
-  };
-  return Object.freeze(self);
-};
+class Ok<T, E extends Error = Error> {
+  readonly ok = true as const;
+  constructor(readonly value: T) {}
+
+  isOk(): true { return true; }
+  isErr(): false { return false; }
+
+  map<U>(fn: (value: T) => U): Ok<U, E> { return new Ok(fn(this.value)); }
+
+  flatMap<U>(fn: (value: T) => Result<U, E>): Result<U, E> { return fn(this.value); }
+
+  mapErr<F extends Error>(_fn: (error: never) => F): Ok<T, E> { return this; }
+
+  getOrElse(): T { return this.value; }
+  getOrCompute(): T { return this.value; }
+
+  tap(fn: (value: T) => void): Ok<T, E> { fn(this.value); return this; }
+  tapErr(): Ok<T, E> { return this; }
+
+  match<U>(fn: ((value: unknown) => U) | { onSuccess: (value: T) => U; onError: (error: E) => U }): U {
+    if (typeof fn === "object" && fn != null && "onSuccess" in fn) {
+      return fn.onSuccess(this.value);
+    }
+    return fn(this.value);
+  }
+
+  unwrap(): T { return this.value; }
+}
 
 /**
- * Creates an Err with methods
- * @typeParam E - The type of the error (must extend Error)
- * @param error - The error value
- * @returns Err<E>
+ * Err class - internal implementation
+ * @typeParam E - The type of the error
  */
-const createErr = <E extends Error>(error: E): Err<E> => {
-  const self: Err<E> = {
-    ok: false as const,
-    error,
-    isOk() { return false; },
-    isErr() { return true; },
-     
-    map(_fn) { return self; },
-     
-    flatMap(_fn) { return self; },
-    mapErr<F extends Error>(fn: (error: E) => F): Err<F> { return createErr(fn(error)); },
-    getOrElse(defaultValue) { return defaultValue; },
-    getOrCompute(fn) { return fn(); },
-     
-    tap(_fn) { return self; },
-    tapErr(fn) { fn(error); return self; },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    match(fn: any) {
-      if (typeof fn === 'object' && fn !== null && 'onError' in fn) {
-        return fn.onError(error);
-      }
-      return fn(error);
-    },
-    unwrap() { throw error; },
-  };
-  return Object.freeze(self);
-};
+class Err<E extends Error = Error> {
+  readonly ok = false as const;
+  constructor(readonly error: E) {}
+
+  isOk(): false { return false; }
+  isErr(): true { return true; }
+
+  map<U>(_fn: (value: never) => U): Err<E> { return this; }
+
+  flatMap<U>(_fn: (value: never) => Result<U, E>): Err<E> { return this; }
+
+  mapErr<F extends Error>(fn: (error: E) => F): Err<F> { return new Err(fn(this.error)); }
+
+  getOrElse<T>(defaultValue: T): T { return defaultValue; }
+  getOrCompute<T>(fn: () => T): T { return fn(); }
+
+  tap(): Err<E> { return this; }
+  tapErr(fn: (error: E) => void): Err<E> { fn(this.error); return this; }
+
+  match<U>(fn: ((value: unknown) => U) | { onSuccess: (value: unknown) => U; onError: (error: E) => U }): U {
+    if (typeof fn === "object" && fn != null && "onError" in fn) {
+      return fn.onError(this.error);
+    }
+    return fn(this.error);
+  }
+
+  unwrap(): never { throw this.error; }
+}
 
 /**
  * Creates an Ok (success result)
@@ -79,7 +79,8 @@ const createErr = <E extends Error>(error: E): Err<E> => {
  * @param value - The success value
  * @returns Ok<T, E>
  */
-export const ok = <T, E extends Error = Error>(value: T): Ok<T, E> => createOk(value);
+export const ok = <T, E extends Error = Error>(value: T): Ok<T, E> =>
+  Object.freeze(new Ok(value)) as Ok<T, E>;
 
 /**
  * Creates an Err (error result)
@@ -87,7 +88,8 @@ export const ok = <T, E extends Error = Error>(value: T): Ok<T, E> => createOk(v
  * @param error - The error value
  * @returns Err<E>
  */
-export const err = <E extends Error>(error: E): Err<E> => createErr(error);
+export const err = <E extends Error>(error: E): Err<E> =>
+  Object.freeze(new Err(error)) as Err<E>;
 
 /**
  * Type guard to check if Result is Ok
@@ -122,7 +124,7 @@ export const map = <T, E extends Error, U>(
   result: Result<T, E>,
   fn: (value: T) => U
 ): Result<U, E> =>
-  isOk(result) ? createOk(fn(result.value)) : createErr(result.error);
+  isOk(result) ? ok(fn(result.value)) : err((result as Err<E>).error);
 
 /**
  * Chains Results - function if Ok, returns Err otherwise
@@ -136,7 +138,7 @@ export const map = <T, E extends Error, U>(
 export const flatMap = <T, E extends Error, U>(
   result: Result<T, E>,
   fn: (value: T) => Result<U, E>
-): Result<U, E> => (isOk(result) ? fn(result.value) : createErr(result.error));
+): Result<U, E> => (isOk(result) ? fn(result.value) : err((result as Err<E>).error));
 
 /**
  * Maps the error of Result if Err, returns Ok otherwise
@@ -151,7 +153,7 @@ export const mapErr = <T, E extends Error, F extends Error>(
   result: Result<T, E>,
   fn: (error: E) => F
 ): Result<T, F> =>
-  isErr(result) ? createErr(fn(result.error)) : createOk(result.value);
+  isErr(result) ? err(fn(result.error)) : ok((result as Ok<T, E>).value);
 
 /**
  * Gets the value or a default
@@ -229,7 +231,7 @@ export const match = <T, E extends Error, U>(
   result: Result<T, E>,
   ok: (value: T) => U,
   err: (error: E) => U
-): U => (isOk(result) ? ok(result.value) : err(result.error));
+): U => (isOk(result) ? ok(result.value) : err((result as Err<E>).error));
 
 /**
  * Swaps Ok and Err variants
@@ -247,8 +249,8 @@ export const match = <T, E extends Error, U>(
 /* eslint-disable @typescript-eslint/no-explicit-any -- swap operation requires any due to TypeScript limitations */
 export const swap = (result: Result<any, any>): unknown =>
   isOk(result)
-    ? createErr(result.value)
-    : createOk(result.error);
+    ? err((result as Ok<any, any>).value)
+    : ok((result as Err<any>).error);
 
 /**
  * Converts Result to a nullable value
@@ -282,9 +284,9 @@ export const toUndefined = <T, E extends Error>(result: Result<T, E>): T | undef
 export const all = <T, E extends Error>(...results: Array<Result<T, E>>): Result<T[], E> => {
   const firstErr = results.find(isErr);
   if (firstErr) {
-    return createErr(firstErr.error);
+    return err(firstErr.error);
   }
-  return createOk(results.map((r) => (r as Ok<T, E>).value));
+  return ok(results.map((r) => (r as Ok<T, E>).value));
 };
 
 /**
@@ -299,7 +301,7 @@ export const unwrap = <T, E extends Error>(result: Result<T, E>): T => {
   if (isOk(result)) {
     return result.value;
   }
-  throw result.error;
+  throw (result as Err<E>).error;
 };
 
 /**
@@ -332,7 +334,7 @@ export const traverse = <T, U, E extends Error>(
     if (isErr(result)) {
       return result;
     }
-    results.push(result.value);
+    results.push((result as Ok<U, E>).value);
   }
-  return createOk(results);
+  return ok(results);
 };
