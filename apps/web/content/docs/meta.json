@@ -2,9 +2,9 @@
   "title": "@deessejs/fp",
   "pages": [
     "---Getting Started---",
-    "introduction",
-    "installation",
     "index",
+    "introduction",
+    "comparison",
     "---Core Types---",
     "core/result",
     "core/error",
