@@ -6,12 +6,5 @@ export function baseOptions(): BaseLayoutProps {
       title: '@deessejs/fp',
     },
     githubUrl: 'https://github.com/nesalia-inc/fp',
-    links: [
-      {
-        text: 'Documentation',
-        url: '/docs',
-        active: 'none',
-      },
-    ],
   };
 }
