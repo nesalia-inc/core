@@ -4,7 +4,7 @@
     "---Getting Started---",
     "introduction",
     "installation",
-    "quick-start",
+    "index",
     "---Core Types---",
     "core/result",
     "core/error",
