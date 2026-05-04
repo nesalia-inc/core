@@ -462,6 +462,14 @@ Each package should have:
 }
 ```
 
+## GitHub Issue Creation
+
+When creating GitHub issues via `gh issue create`, unset the `GITHUB_TOKEN` env var to avoid credential conflicts:
+
+```bash
+env -u GITHUB_TOKEN gh issue create -t "..." --body-file "temp/issue.md" -l refactor
+```
+
 ## GitHub Labels
 
 When creating GitHub issues, **always apply these labels**:
