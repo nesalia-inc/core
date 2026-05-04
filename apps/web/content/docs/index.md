@@ -4,7 +4,6 @@ description: Get started with @deessejs/fp in 5 minutes
 icon: Zap
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout';
 import { Cards, Card } from 'fumadocs-ui/components/card';
 
 This guide walks you through the essentials of @deessejs/fp. You'll learn how to handle errors explicitly in your TypeScript code without relying on try/catch.
