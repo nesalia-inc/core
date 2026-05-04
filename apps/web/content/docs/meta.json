@@ -3,7 +3,7 @@
   "pages": [
     "---Getting Started---",
     "index",
-    "introduction",
+    "what-is",
     "comparison",
     "---Core Types---",
     "core/result",
