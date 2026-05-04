@@ -1,0 +1,551 @@
+---
+title: Result
+description: Explicit success and failure with typed errors and generator composition
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+The `Result` type represents a value that can be either a success (`Ok`) or a failure (`Err`). It's the foundation of explicit error handling in @deessejs/fp.
+
+## Why Result?
+
+TypeScript promises type safety, but traditional error handling with exceptions breaks that promise. When a function can throw, the type system cannot help you handle errors — they're invisible until runtime.
+
+### The Problem with Exceptions
+
+```typescript
+// This function CAN throw, but the type says it returns User
+function processUser(data: string): User {
+  return JSON.parse(data); // No error in the type!
+}
+
+// Callers have no idea this can fail
+try {
+  const user = processUser(data);
+} catch (e) {
+  // But what if you forget?
+}
+```
+
+**Problems:**
+- Errors are **invisible in the type signature**
+- TypeScript cannot enforce error handling at compile time
+- Easy to forget try/catch, leading to unhandled exceptions
+
+### The Result Solution
+
+With Result, **errors become explicit in the type**:
+
+```typescript
+import { ok, err, error } from '@deessejs/fp';
+import { z } from 'zod';
+
+const ParseError = error({
+  name: 'ParseError',
+  schema: z.object({ message: z.string() }),
+  message: (args) => `Parse failed: ${args.message}`,
+});
+
+const parseUser = (data: string) => {
+  try {
+    return ok(JSON.parse(data));
+  } catch (e) {
+    return err(ParseError({ message: e instanceof Error ? e.message : 'Unknown' }));
+  }
+};
+
+const result = parseUser(data);
+
+if (result.ok) {
+  console.log(result.value);
+} else {
+  console.error('Failed:', result.error.message);
+}
+```
+
+**Key concepts:**
+
+- **`Result<T, E>`** — Two generic types: success value (`T`) and error type (`E`)
+- **`ok(value)`** — Factory function for success
+- **`err(error)`** — Factory function for failure
+- **`Result.map(fn)`** — Transform the value inside Ok (pipeable)
+- **`Result.flatMap(fn)`** — Chain operations that can fail (pipeable)
+- **`Result.gen`** — Generator-based composition for linear code flow
+
+## Core Concepts
+
+### Ok and Err
+
+`Result<T, E>` has two possible states:
+
+| State | Description | Properties |
+|-------|-------------|-------------|
+| `Ok<T>` | Success | `ok: true`, `value: T` |
+| `Err<E>` | Failure | `ok: false`, `error: E` |
+
+```typescript
+import { ok, err } from '@deessejs/fp';
+
+// Success
+const success = ok({ id: '123', name: 'Alice' });
+// { ok: true, value: { id: '123', name: 'Alice' } }
+
+// Failure
+const failure = err({ code: 'NOT_FOUND', message: 'User not found' });
+// { ok: false, error: { code: 'NOT_FOUND', message: 'User not found' } }
+```
+
+### Generator Composition with Result.gen
+
+`Result.gen` enables linear, readable error handling using async generators:
+
+```typescript
+import { Result, ok, err, error } from '@deessejs/fp';
+import { z } from 'zod';
+
+const NotFoundError = error({
+  name: 'NotFoundError',
+  schema: z.object({ id: z.string() }),
+});
+
+const ValidationError = error({
+  name: 'ValidationError',
+  schema: z.object({ field: z.string() }),
+});
+
+async function getUserResource(userId: string, resourceId: string) {
+  return Result.gen(async function* () {
+    const user = yield* ok({ id: userId, name: 'Alice', active: true });
+
+    if (!user.active) {
+      yield* ValidationError({ field: 'user.active' });
+    }
+
+    const resource = yield* ok({ id: resourceId, ownerId: userId });
+
+    return { user, resource };
+  });
+}
+```
+
+## Factory Functions
+
+### `ok(value)`
+
+Creates a success result:
+
+```typescript
+import { ok } from '@deessejs/fp';
+
+ok(42);        // Ok(42)
+ok('hello');   // Ok('hello')
+ok({ id: 1 }); // Ok({ id: 1 })
+```
+
+### `err(error)`
+
+Creates a failure result:
+
+```typescript
+import { err } from '@deessejs/fp';
+
+err('error');                              // Err('error')
+err({ code: 404, message: 'Not found' }); // Err({ code: 404, message: 'Not found' })
+```
+
+## Static Methods
+
+### Wrapping Throwing Functions
+
+#### `Result.attempt(fn, catch?)`
+
+Wraps a synchronous function that may throw:
+
+```typescript
+import { Result, error } from '@deessejs/fp';
+import { z } from 'zod';
+
+const ParseError = error({
+  name: 'ParseError',
+  schema: z.object({ message: z.string() }),
+});
+
+const parseResult = Result.attempt(
+  () => JSON.parse(input),
+  (cause) => ParseError({ message: cause instanceof Error ? cause.message : 'Unknown' })
+);
+```
+
+#### `Result.attemptAsync(fn, catch?)`
+
+Wraps an async function that may throw:
+
+```typescript
+import { Result, error } from '@deessejs/fp';
+
+const NetworkError = error({
+  name: 'NetworkError',
+  schema: z.object({ url: z.string() }),
+});
+
+const fetchResult = await Result.attemptAsync(
+  async () => {
+    const response = await fetch('/api/user');
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  },
+  (cause) => NetworkError({ url: '/api/user', cause })
+);
+```
+
+### Type Guards
+
+#### `Result.isOk(result)`
+
+Type guard that narrows to the success branch:
+
+```typescript
+import { Result } from '@deessejs/fp';
+
+if (Result.isOk(result)) {
+  result.value; // Fully narrowed
+}
+```
+
+#### `Result.isErr(result)`
+
+Type guard that narrows to the failure branch:
+
+```typescript
+import { Result } from '@deessejs/fp';
+
+if (Result.isErr(result)) {
+  result.error; // Error type
+}
+```
+
+### Transformation
+
+#### `Result.map(fn)` (pipeable)
+
+Transforms the Ok value. Passes errors through unchanged.
+
+```typescript
+import { Result, pipe, ok } from '@deessejs/fp';
+
+const doubled = pipe(ok(2), Result.map(x => x * 2));
+// Ok(4)
+
+// Also available as method
+ok(2).map(x => x * 2);
+```
+
+#### `Result.flatMap(fn)` (pipeable)
+
+Chains operations that can fail:
+
+```typescript
+import { Result, pipe, ok } from '@deessejs/fp';
+
+const userResult = pipe(
+  ok({ userId: '123' }),
+  Result.flatMap(({ userId }) => fetchUser(userId))
+);
+```
+
+#### `Result.mapErr(fn)` (pipeable)
+
+Transforms the error. Passes success through unchanged:
+
+```typescript
+import { Result, pipe, err } from '@deessejs/fp';
+
+const mapped = pipe(
+  err('not found'),
+  Result.mapErr(e => new Error(e))
+);
+// Err(Error: 'not found')
+```
+
+### Observation
+
+#### `Result.tap(fn)` (pipeable)
+
+Executes a function on the value without changing it:
+
+```typescript
+import { Result, pipe, ok } from '@deessejs/fp';
+
+pipe(
+  ok({ name: 'Alice' }),
+  Result.tap(user => console.log('User:', user.name))
+);
+```
+
+#### `Result.tapErr(fn)` (pipeable)
+
+Executes a function on the error:
+
+```typescript
+import { Result, pipe, err } from '@deessejs/fp';
+
+pipe(
+  err('oops'),
+  Result.tapErr(e => console.error('Error:', e))
+);
+```
+
+#### `Result.tapBoth({ ok, err })` (pipeable)
+
+Symmetric observation for both states:
+
+```typescript
+import { Result, pipe, ok, err } from '@deessejs/fp';
+
+pipe(
+  ok(42),
+  Result.tapBoth({
+    ok: (v) => console.log('Success:', v),
+    err: (e) => console.error('Failed:', e)
+  })
+);
+```
+
+### Extraction
+
+#### `Result.getOrElse(default)` (pipeable)
+
+Returns the value or a default:
+
+```typescript
+import { Result, pipe, ok, err } from '@deessejs/fp';
+
+pipe(ok(42), Result.getOrElse(0));     // 42
+pipe(err('oops'), Result.getOrElse(0)); // 0
+```
+
+#### `Result.getOrCompute(fn)` (pipeable)
+
+Lazily computes the fallback:
+
+```typescript
+import { Result, pipe, err } from '@deessejs/fp';
+
+pipe(err('oops'), Result.getOrCompute(() => expensiveDefault()));
+```
+
+#### `Result.unwrap()` (pipeable)
+
+Extracts the value or throws:
+
+```typescript
+import { Result, ok } from '@deessejs/fp';
+
+ok(42).unwrap(); // 42
+err('oops').unwrap(); // throws
+```
+
+#### `Result.unwrapOr(default)` (pipeable)
+
+Extracts or returns default:
+
+```typescript
+import { Result, err } from '@deessejs/fp';
+
+err('oops').unwrapOr(0); // 0
+```
+
+#### `Result.orElse(fn)` (pipeable)
+
+Transforms error to a new Result (for recovery):
+
+```typescript
+import { Result, pipe, ok, err } from '@deessejs/fp';
+
+pipe(
+  err('not found'),
+  Result.orElse(e => ok(defaultUser))
+);
+```
+
+### Pattern Matching
+
+#### `Result.match({ ok, err })` (pipeable)
+
+Handles both cases:
+
+```typescript
+import { Result, pipe, ok, err } from '@deessejs/fp';
+
+pipe(
+  ok(42),
+  Result.match({
+    ok: (v) => `Got: ${v}`,
+    err: (e) => `Error: ${e}`
+  })
+);
+```
+
+### Conversion
+
+#### `Result.toNullable()` (pipeable)
+
+Converts to `T | null`:
+
+```typescript
+import { Result, ok, err } from '@deessejs/fp';
+
+ok(42).toNullable();   // 42
+err('oops').toNullable(); // null
+```
+
+#### `Result.toUndefined()` (pipeable)
+
+Converts to `T | undefined`:
+
+```typescript
+import { Result } from '@deessejs/fp';
+
+ok(42).toUndefined();   // 42
+err('oops').toUndefined(); // undefined
+```
+
+#### `Result.toMaybe()` (pipeable)
+
+Converts to `Maybe<T>`:
+
+```typescript
+import { Result } from '@deessejs/fp';
+
+ok(42).toMaybe();   // Some(42)
+err('oops').toMaybe(); // None
+```
+
+### Combination
+
+#### `Result.all(...results)` (static)
+
+Combines multiple AsyncResults (fail-fast):
+
+```typescript
+import { Result } from '@deessejs/fp';
+
+const users = await Result.all(
+  fetchUser('1'),
+  fetchUser('2'),
+  fetchUser('3')
+);
+// Result<User[], UserError>
+```
+
+#### `Result.race(...results)` (static)
+
+First to resolve wins:
+
+```typescript
+import { Result } from '@deessejs/fp';
+
+const winner = await Result.race(
+  fetchFromPrimary(),
+  fetchFromSecondary()
+);
+```
+
+#### `Result.traverse(items, fn)` (static)
+
+Maps over array with fail-fast:
+
+```typescript
+import { Result } from '@deessejs/fp';
+
+const users = await Result.traverse(
+  ['1', '2', '3'],
+  (id) => fetchUser(id)
+);
+```
+
+#### `Result.allSettled(...results)` (static)
+
+All complete, results include status:
+
+```typescript
+import { Result } from '@deessejs/fp';
+
+const results = await Result.allSettled([
+  fetchUser('1'),
+  fetchUser('2')
+]);
+// Outcome<User, UserError>[] - each element has ok/value or ok:false/error
+```
+
+### Async Operations
+
+#### `Result.fromPromise(promise, catchFn)` (static)
+
+Convert a Promise to AsyncResult:
+
+```typescript
+import { Result } from '@deessejs/fp';
+
+const result = await Result.fromPromise(
+  fetch('/api/user'),
+  (cause) => NetworkError({ cause })
+);
+```
+
+#### `Result.await(asyncResult)` (static)
+
+Yield async in generator:
+
+```typescript
+const result = await Result.gen(async function* () {
+  const user = yield* Result.await(fetchUser(id));
+  const posts = yield* Result.await(fetchPosts(user.id));
+  return { user, posts };
+});
+```
+
+### Serialization
+
+#### `Result.serialize(result)` (static)
+
+Serializes to plain object:
+
+```typescript
+import { Result, ok } from '@deessejs/fp';
+
+const json = Result.serialize(ok({ id: '123' }));
+// { _tag: 'Ok', value: { id: '123' } }
+```
+
+#### `Result.deserialize(errorRegistry, json)` (static)
+
+Reconstructs from plain object:
+
+```typescript
+import { Result, ok } from '@deessejs/fp';
+
+const result = Result.deserialize(
+  { NotFoundError, ValidationError },
+  { _tag: 'Ok', value: { id: '123' } }
+);
+```
+
+### Retry
+
+See [Retry](../async/retry.mdx) for `Result.retry()` and `Result.retryAsync()`.
+
+### Timeout
+
+See [Timeout](../async/timeout.mdx) for `Result.timeout()`.
+
+### Repeat
+
+See [Repeat](../async/repeat.mdx) for `Result.repeat()` and `Result.repeatUntil()`.
+
+## See Also
+
+- [Maybe](./maybe.mdx) — For optional values (null/undefined)
+- [Error](./error.mdx) — For structured errors with enrichment
+- [Try](./try.mdx) — For wrapping sync functions that might throw
+- [Composition](./composition.mdx) — pipe, flow, tap for function composition

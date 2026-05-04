@@ -1,0 +1,195 @@
+---
+title: Sleep
+description: Delayed execution utilities with jitter and AbortController support
+---
+
+The `sleep` module provides utilities for deliberate delays, essential for rate limiting, debouncing, and retry backoff.
+
+## Why Sleep?
+
+Sometimes you need to wait — for rate limiting, debouncing, or honoring API quotas:
+
+```typescript
+// Without sleep - all requests fire immediately
+const results = await Promise.all(
+  users.map(user => api.updateUser(user)) // Might hit rate limit
+);
+
+// With sleep - respects API limits
+for (const user of users) {
+  await api.updateUser(user);
+  await sleep(100); // Wait 100ms between requests
+}
+```
+
+## sleep(millis, options?)
+
+Creates a Promise that resolves after a specified delay:
+
+```typescript
+import { sleep } from '@deessejs/fp';
+
+// Simple delay
+await sleep(1000); // Wait 1 second
+
+// With AbortSignal
+const controller = new AbortController();
+await sleep(5000, { signal: controller.signal });
+```
+
+## sleepUntil(predicate, options)
+
+Pauses until a predicate returns true or timeout is reached:
+
+```typescript
+import { sleepUntil } from '@deessejs/fp';
+
+// Poll until condition is met (max 5 seconds)
+const ready = await sleepUntil(
+  () => fetchStatus().ok,
+  { timeout: 5000, interval: 100 }
+);
+
+// Async predicate
+const ready = await sleepUntil(
+  async () => {
+    const status = await fetchStatus();
+    return status.ok;
+  },
+  { timeout: 5000, interval: 100 }
+);
+```
+
+**Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `timeout` | `number` | `Infinity` | Maximum wait time in ms |
+| `interval` | `number` | `10` | Polling interval in ms |
+| `signal` | `AbortSignal` | — | External abort signal |
+
+**Returns:** `Promise<boolean>` — `true` if predicate succeeded, `false` if timeout/abort.
+
+## sleepRandom(min, max, options?)
+
+Pauses for a random duration within a range:
+
+```typescript
+import { sleepRandom } from '@deessejs/fp';
+
+// Sleep for 100-500ms (useful for jitter)
+const actualDuration = await sleepRandom(100, 500);
+```
+
+**Returns:** `Promise<number>` — The actual time slept.
+
+**Validation:**
+- `min < 0` or `max < 0` — throws `ValidationError`
+- `min > max` — throws `ValidationError`
+
+## SleepOptions
+
+```typescript
+interface SleepOptions {
+  /** Add jitter to prevent thundering herd */
+  jitter?: boolean | number;
+
+  /** AbortSignal for cancellation */
+  signal?: AbortSignal;
+}
+```
+
+## Cancellation
+
+Sleep operations can be cancelled using AbortSignal:
+
+```typescript
+import { sleep } from '@deessejs/fp';
+
+const controller = new AbortController();
+
+try {
+  await sleep(5000, { signal: controller.signal });
+  console.log('Sleep completed');
+} catch (error) {
+  if (error._tag === 'AbortError') {
+    console.log('Sleep was cancelled');
+  }
+}
+
+// Cancel after 1 second
+setTimeout(() => controller.abort(), 1000);
+```
+
+## Edge Cases
+
+| Scenario | Behavior |
+|----------|----------|
+| `sleep(0)` | Yields to event loop, resolves on next tick |
+| Negative duration | Treated as `0` |
+| Duration > platform max | Clamped to platform maximum (~24.8 days) |
+| Abort before start | Resolves immediately if signal already aborted |
+| Abort during sleep | Rejects with `AbortError` |
+| `sleepRandom(min, max)` with `min > max` | Throws `ValidationError` |
+
+## Real-World Examples
+
+### Rate-Limited API Calls
+
+```typescript
+import { sleep } from '@deessejs/fp';
+
+const fetchWithRateLimit = async <T>(
+  urls: string[],
+  delay: number
+): Promise<T[]> => {
+  const results: T[] = [];
+
+  for (let i = 0; i < urls.length; i++) {
+    results.push(await fetch(urls[i]) as T);
+    if (i < urls.length - 1) {
+      await sleep(delay);
+    }
+  }
+
+  return results;
+};
+```
+
+### Polling for Condition
+
+```typescript
+import { sleepUntil } from '@deessejs/fp';
+
+const waitForService = async (serviceId: string, deadline: number) => {
+  const ready = await sleepUntil(
+    async () => {
+      const status = await checkServiceHealth(serviceId);
+      return status === 'healthy';
+    },
+    { timeout: deadline, interval: 500 }
+  );
+
+  return ready
+    ? { success: true }
+    : { success: false, reason: 'timeout' };
+};
+```
+
+### Jittered Backoff
+
+```typescript
+import { sleepRandom } from '@deessejs/fp';
+
+const jitteredBackoff = async (baseDelay: number, maxDelay: number) => {
+  const delay = Math.min(baseDelay * 2, maxDelay);
+  const actual = await sleepRandom(delay / 2, delay);
+  return actual;
+};
+```
+
+## See Also
+
+- [Retry](./retry.mdx) — Uses sleep internally for backoff
+- [Timeout](./timeout.mdx) — For time-bound operations
+- [Repeat](./repeat.mdx) — Repeated operation execution

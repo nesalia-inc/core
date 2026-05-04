@@ -1,6 +1,6 @@
 ---
 title: Introduction
-description: Type-safe error handling for TypeScript with Result, Maybe, Try, AsyncResult, and Error monads
+description: Type-safe error handling for TypeScript with Result, Maybe, and AsyncResult monads
 icon: Shield
 ---
 
@@ -10,7 +10,7 @@ import { Cards, Card } from 'fumadocs-ui/components/card';
 **@deessejs/fp** is a TypeScript library that brings functional programming patterns to error handling. It provides zero-runtime-dependency monads with a clean, composable API.
 
 <Callout>
-  This library is inspired by fp-ts, Rust's std::result, and other functional programming traditions—adapted for idiomatic TypeScript.
+  This library is inspired by fp-ts, Rust's std::result, and other functional programming traditions — adapted for idiomatic TypeScript.
 </Callout>
 
 ## The Problem with Traditional Error Handling
@@ -46,7 +46,7 @@ function fetchUser(id: string): User {
 }
 ```
 
-With try/catch, the type system can't tell you what can fail.
+With try/catch, the type system cannot tell you what can fail.
 
 ### 3. Nested try/catch is Ugly
 
@@ -69,7 +69,7 @@ try {
 
 ### The Result Alternative
 
-@deessejs/fp makes errors explicit in your types:
+@deessejs/fp makes errors **explicit in your types**:
 
 ```typescript
 import { fromPromise, ok, err } from '@deessejs/fp';
@@ -90,10 +90,6 @@ const result = await fromPromise(fetchUser(id))
 | Nested mess | Flat, composable chains |
 | Silent failures possible | Compiler enforces handling |
 | Unknown failure modes | Explicit error types |
-
-<Callout type="warning">
-  Did you notice the function signature says it returns `number`, but it can actually throw? TypeScript doesn't tell you about the potential for failure.
-</Callout>
 
 ## Enter Result: Explicit Error Handling
 
@@ -135,17 +131,17 @@ console.log(result); // 5
 Our library provides multiple types for different scenarios:
 
 <Cards>
-  <Card title="Maybe" href="/docs/reference/maybe">
-    Handle optional values without null/undefined
-  </Card>
-  <Card title="Result" href="/docs/reference/result">
+  <Card title="Result" href="/docs/core/result">
     Explicit success/failure with typed errors
   </Card>
-  <Card title="Try" href="/docs/reference/try">
+  <Card title="Maybe" href="/docs/core/maybe">
+    Handle optional values without null/undefined
+  </Card>
+  <Card title="Try" href="/docs/core/try">
     Wrap synchronous functions that might throw
   </Card>
-  <Card title="AsyncResult" href="/docs/reference/async-result">
-    Async operations with proper error typing
+  <Card title="Error" href="/docs/core/error">
+    Structured domain errors with enrichment
   </Card>
 </Cards>
 
@@ -191,14 +187,14 @@ Ready to dive in? Here's where to go next:
   <Card title="Installation" href="/docs/installation">
     Set up @deessejs/fp in your project
   </Card>
-  <Card title="Maybe" href="/docs/reference/maybe">
-    Start with optional values
+  <Card title="Quick Start" href="/docs/quick-start">
+    5-minute getting started guide
   </Card>
-  <Card title="Result" href="/docs/reference/result">
+  <Card title="Result" href="/docs/core/result">
     The foundation of explicit error handling
   </Card>
-  <Card title="Examples" href="/docs/examples">
-    Real-world usage patterns
+  <Card title="Maybe" href="/docs/core/maybe">
+    Start with optional values
   </Card>
 </Cards>
 

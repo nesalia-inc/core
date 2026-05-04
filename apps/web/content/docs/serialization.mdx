@@ -1,0 +1,290 @@
+---
+title: Serialization
+description: Converting types to/from plain data for storage and transmission
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+Serialization utilities allow you to convert `Result`, `Maybe`, and `Error` types to and from plain data for storage, transmission, or logging.
+
+## Core Concept: Tagged JSON Format
+
+All types use a consistent JSON format with a `_tag` discriminator for reliable reconstruction:
+
+```typescript
+// Result Ok serialized
+{ "_tag": "Ok", "value": { ... } }
+
+// Result Err serialized
+{ "_tag": "Err", "error": { ... } }
+
+// Maybe Some serialized
+{ "_tag": "Some", "value": { ... } }
+
+// Maybe None serialized
+{ "_tag": "None" }
+```
+
+## Result Serialization
+
+### `Result.serialize(result)` (static)
+
+Serializes a Result to a plain object:
+
+```typescript
+import { Result, ok } from '@deessejs/fp';
+
+const success = ok({ id: '123', name: 'Alice' });
+const serialized = Result.serialize(success);
+// { _tag: 'Ok', value: { id: '123', name: 'Alice' } }
+
+const failed = err(NotFoundError({ id: '123' }));
+const serialized = Result.serialize(failed);
+// { _tag: 'Err', error: { name: 'NotFoundError', _tag: 'NotFoundError', args: { id: '123' }, message: '...' } }
+```
+
+### `Result.deserialize(errorRegistry, json)` (static)
+
+Reconstructs a Result from a plain object:
+
+```typescript
+import { Result } from '@deessejs/fp';
+
+// Deserialize success
+const json = { _tag: 'Ok', value: { id: '123', name: 'Alice' } };
+const result = Result.deserialize({ NotFoundError, ValidationError }, json);
+// Ok<{ id: string, name: string }>
+
+// Deserialize error
+const json = { _tag: 'Err', error: { name: 'NotFoundError', _tag: 'NotFoundError', args: { id: '123' } } };
+const result = Result.deserialize({ NotFoundError }, json);
+// Err<NotFoundError>
+
+// Invalid data
+const invalid = { _tag: 'Unknown' };
+const badResult = Result.deserialize({ NotFoundError }, invalid);
+// Err<ResultDeserializationError>
+```
+
+## Maybe Serialization
+
+### `Maybe.serialize(maybe)` (static)
+
+Serializes a Maybe to a plain object:
+
+```typescript
+import { Maybe, some, none } from '@deessejs/fp';
+
+const present = some({ id: '123', name: 'Alice' });
+const serialized = Maybe.serialize(present);
+// { _tag: 'Some', value: { id: '123', name: 'Alice' } }
+
+const absent = none();
+const serialized = Maybe.serialize(absent);
+// { _tag: 'None' }
+```
+
+### `Maybe.deserialize(json)` (static)
+
+Reconstructs a Maybe from a plain object:
+
+```typescript
+import { Maybe } from '@deessejs/fp';
+
+const json = { _tag: 'Some', value: { id: '123', name: 'Alice' } };
+const maybe = Maybe.deserialize(json);
+// Some<{ id: string, name: string }>
+
+const json = { _tag: 'None' };
+const maybe = Maybe.deserialize(json);
+// None
+```
+
+## Error Serialization
+
+Errors serialize naturally to JSON-compatible objects:
+
+```typescript
+import { error } from '@deessejs/fp';
+import { z } from 'zod';
+
+const NotFoundError = error({
+  name: 'NotFoundError',
+  schema: z.object({ id: z.string(), resource: z.string() })
+});
+
+const err = NotFoundError({ id: '123', resource: 'user' });
+
+// JSON.stringify handles error serialization (TaggedError implements toJSON)
+const json = JSON.stringify(err);
+// '{"name":"NotFoundError","_tag":"NotFoundError","args":{"id":"123","resource":"user"},"message":"Resource not found: user"}'
+```
+
+### `Error.reviver`
+
+A standard JSON reviver function for reconstructing error instances with prototype pollution protection:
+
+```typescript
+import { error } from '@deessejs/fp';
+
+const json = '{"name":"NotFoundError","_tag":"NotFoundError","args":{"id":"123","resource":"user"},"message":"Resource not found: user"}';
+
+const restored = JSON.parse(json, Error.reviver);
+// NotFoundError instance (instanceof check works)
+```
+
+**Security:** The reviver rejects keys that could cause prototype pollution (`__proto__`, `constructor`, `prototype`). Malicious JSON is safely converted to a plain object.
+
+## ResultDeserializationError
+
+When deserialization fails, the library returns a structured error:
+
+```typescript
+const ResultDeserializationError = error({
+  name: 'ResultDeserializationError',
+  schema: z.object({
+    reason: z.string(),
+    input: z.unknown()
+  })
+});
+```
+
+**Causes of deserialization failure:**
+- Invalid JSON structure
+- Missing required fields (`_tag`, `value`)
+- Unknown `_tag` value
+- Invalid error tag in Err
+
+## Error Registry
+
+Domain errors must be registered for proper reconstruction during deserialization:
+
+```typescript
+// Define error constructors
+const NotFoundError = error({
+  name: 'NotFoundError',
+  schema: z.object({ id: z.string() })
+});
+
+const ValidationError = error({
+  name: 'ValidationError',
+  schema: z.object({ field: z.string(), message: z.string() })
+});
+
+// Register error constructors for deserialization
+const errorRegistry = { NotFoundError, ValidationError };
+
+// Deserialize with error registry
+const result = Result.deserialize(errorRegistry, json);
+```
+
+## Type Signatures
+
+```typescript
+// Result serialization
+function Result.serialize<T, E>(result: Result<T, E>): ResultJSON<T, E>;
+function Result.deserialize<E>(
+  errorCtors: ErrorRegistry,
+  json: unknown
+): Result<unknown, E>;
+
+// Maybe serialization
+function Maybe.serialize<T>(maybe: Maybe<T>): MaybeJSON<T>;
+function Maybe.deserialize<T>(json: unknown): Maybe<T>;
+
+// Error reviver
+function Error.reviver(key: string, value: unknown): unknown;
+
+// Error registry
+interface ErrorRegistry {
+  [tag: string]: ErrorConstructor | ((args: unknown) => TaggedError);
+}
+```
+
+## Type Definitions
+
+```typescript
+// JSON representation of Ok
+interface OkJSON<T> {
+  _tag: 'Ok';
+  value: T;
+  _version?: number;
+}
+
+// JSON representation of Err
+interface ErrJSON<E> {
+  _tag: 'Err';
+  error: E;
+  _version?: number;
+}
+
+// JSON representation of Result
+type ResultJSON<T, E> = OkJSON<T> | ErrJSON<E>;
+
+// JSON representation of Some
+interface SomeJSON<T> {
+  _tag: 'Some';
+  value: T;
+}
+
+// JSON representation of None
+interface NoneJSON {
+  _tag: 'None';
+}
+
+// JSON representation of Maybe
+type MaybeJSON<T> = SomeJSON<T> | NoneJSON;
+```
+
+## Real-World Examples
+
+### Cache Failures
+
+Serialize both `Ok` and `Err` results to avoid redundant operations:
+
+```typescript
+// Cache both success and failure
+cache.set(key, Result.serialize(result));
+
+// Later, restore and use
+const cached = cache.get(key);
+if (!cached) return;
+
+const result = Result.deserialize(errorRegistry, cached);
+```
+
+### Session Storage
+
+```typescript
+// Save to session
+sessionStorage.setItem('searchState', JSON.stringify(Result.serialize(result)));
+
+// Restore from session
+const stored = sessionStorage.getItem('searchState');
+if (stored) {
+  const result = Result.deserialize(errorRegistry, JSON.parse(stored));
+}
+```
+
+## Edge Cases
+
+| Scenario | Behavior |
+|----------|----------|
+| `undefined` in value | Serialized as-is, may cause issues in some JSON parsers |
+| `null` in value | Serialized as `null` correctly |
+| Circular references | Throws `TypeError` - flatten your data first |
+| `NaN` / `Infinity` | Serialized as `null` in JSON (JSON spec limitation) |
+| `Date` object in value | Serialized as ISO string via `toISOString()` |
+| `BigInt` in value | Throws `TypeError` - convert to string or number first |
+| Prototype pollution attempt | Rejected by reviver, returns plain object instead |
+| Unknown error tag in JSON | Deserialized as base `Error` type |
+
+<Callout type="note">
+  For full type-safe serialization/deserialization with domain errors, implement your own `toJSON()` and `fromJSON()` methods that handle error type reconstruction.
+</Callout>
+
+## See Also
+
+- [Result](../core/result.mdx) — Result type
+- [Maybe](../core/maybe.mdx) — Maybe type
+- [Error](../core/error.mdx) — Error type

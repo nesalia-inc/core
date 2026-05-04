@@ -3,6 +3,8 @@ title: Maybe
 description: Explicit optional values with Some and None
 ---
 
+import { Callout } from 'fumadocs-ui/components/callout';
+
 The `Maybe` type represents a value that can be either present (`Some`) or absent (`None`). It's the functional alternative to `null` and `undefined`.
 
 ## Why Maybe?
@@ -34,14 +36,13 @@ if (isSome(user)) {
 }
 ```
 
-Key concepts:
+**Key concepts:**
 
-- **`Maybe<T>`** - Two states: `Some<T>` (present) or `None` (absent)
-- **`some(value)`** - Wraps a present value: `{ ok: true, value: T }`
-- **`none()`** - Represents absence: `{ ok: false }`
-- **`fromNullable(value)`** - Converts null/undefined to None, other values to Some
-- **`isSome()`** - Type guard that narrows to the success branch
-
+- **`Maybe<T>`** — Two states: `Some<T>` (present) or `None` (absent)
+- **`some(value)`** — Wraps a present value
+- **`none()`** — Represents absence (singleton)
+- **`fromNullable(value)`** — Converts null/undefined to None, other values to Some
+- **`isSome()`** — Type guard that narrows to the success branch
 
 ## Core Concepts
 
@@ -50,33 +51,35 @@ Key concepts:
 `Maybe<T>` has two possible states:
 
 | State | Description | Properties |
-|-------|-------------|------------|
-| `Some<T>` | Present value | `ok: true`, `value: T` |
-| `None` | Absent value | `ok: false` |
+|-------|-------------|-------------|
+| `Some<T>` | Present value | `_tag: "Some"`, `value: T` |
+| `None` | Absent value | `_tag: "None"` |
 
 ```typescript
 import { some, none, Maybe } from '@deessejs/fp';
 
 // Present value
 const present: Maybe<number> = some(42);
+// { _tag: "Some", value: 42 }
 
 // Absent value
 const absent: Maybe<number> = none();
+// { _tag: "None" }
 ```
 
 ### The Difference from null
 
-`fromNullable` only treats `null` and `undefined` as absent. This is intentional - `0`, `''`, and `false` are valid values:
+`fromNullable` only treats `null` and `undefined` as absent. This is intentional — `0`, `''`, and `false` are valid values:
 
 ```typescript
 import { fromNullable } from '@deessejs/fp';
 
 fromNullable(42);        // Some(42)
-fromNullable(null);      // None
-fromNullable(undefined); // None
-fromNullable(0);         // Some(0) - NOT None!
-fromNullable('');        // Some('') - NOT None!
-fromNullable(false);     // Some(false) - NOT None!
+fromNullable(null);       // None
+fromNullable(undefined);  // None
+fromNullable(0);         // Some(0) — NOT None!
+fromNullable('');         // Some('') — NOT None!
+fromNullable(false);      // Some(false) — NOT None!
 ```
 
 ## Reference
@@ -182,7 +185,7 @@ const getEmail = (user: { name: string }) =>
   some(user.name.toLowerCase() + '@example.com');
 
 flatMap(some(1), findUser);                            // Some({ id: 1, name: 'John' })
-flatMap(some(-1), findUser);                            // None
+flatMap(some(-1), findUser);                           // None
 flatMap(some(1), x => flatMap(findUser(x.id), getEmail)); // Some('john@example.com')
 ```
 
@@ -200,8 +203,8 @@ Returns Some if the predicate passes. Returns None if the predicate fails or if 
 import { some, none, filter } from '@deessejs/fp';
 
 filter(some(42), x => x > 10);    // Some(42)
-filter(some(5), x => x > 10);    // None
-filter(none(), x => x > 10);     // None
+filter(some(5), x => x > 10);     // None
+filter(none(), x => x > 10);      // None
 ```
 
 Also available as a method:
@@ -218,7 +221,7 @@ Flattens a nested Maybe. Turns `Maybe<Maybe<T>>` into `Maybe<T>`.
 import { some, flatten } from '@deessejs/fp';
 
 flatten(some(some(42))); // Some(42)
-flatten(some(none()));   // None
+flatten(some(none()));     // None
 flatten(none());          // None
 ```
 
@@ -238,14 +241,14 @@ Returns the value if Some, or a default if None.
 import { some, none, getOrElse } from '@deessejs/fp';
 
 getOrElse(some(42), 0);   // 42
-getOrElse(none(), 0);      // 0
+getOrElse(none(), 0);     // 0
 ```
 
 Also available as a method:
 
 ```typescript
 some(42).getOrElse(0);   // 42
-none().getOrElse(0);     // 0
+none().getOrElse(0);      // 0
 ```
 
 #### `getOrCompute(maybe, fn)`
@@ -258,7 +261,7 @@ import { some, none, getOrCompute } from '@deessejs/fp';
 const expensive = () => { console.log('computing...'); return 0; };
 
 getOrCompute(some(42), expensive); // 42 (never logs)
-getOrCompute(none(), expensive);   // logs 'computing...', returns 0
+getOrCompute(none(), expensive);    // logs 'computing...', returns 0
 ```
 
 Also available as a method:
@@ -277,7 +280,7 @@ Executes a function on the value without changing it. Useful for logging.
 import { some, none, tap } from '@deessejs/fp';
 
 tap(some(42), x => console.log('Got:', x)); // Logs: 'Got: 42', returns Some(42)
-tap(none(), x => console.log('Got:', x));  // Nothing logged, returns None
+tap(none(), x => console.log('Got:', x));     // Nothing logged, returns None
 ```
 
 Also available as a method:
@@ -288,7 +291,7 @@ some(42).tap(x => console.log(x)); // Some(42)
 
 ### Pattern Matching
 
-#### `match(maybe, someFn, noneFn)`
+#### `match(maybe, onSome, onNone)`
 
 Handles both Some and None cases, returning a single value.
 
@@ -304,7 +307,7 @@ Returns different types:
 ```typescript
 match(
   some('hello'),
-  value => value.length,  // string -> number
+  value => value.length,  // string → number
   () => -1                // fallback
 ); // 5
 ```
@@ -313,7 +316,42 @@ Also available as a method with object syntax:
 
 ```typescript
 some(42).match({ onSome: x => x * 2, onNone: () => 0 }); // 84
-none().match({ onSome: x => x * 2, onNone: () => 0 });   // 0
+none().match({ onSome: x => x * 2, onNone: () => 0 });    // 0
+```
+
+### Comparison
+
+#### `equals(a, b)`
+
+Compares two Maybes for equality. Both Some with equal values or both None return true.
+
+```typescript
+import { some, none, equals } from '@deessejs/fp';
+
+equals(some(42), some(42)); // true
+equals(some(42), some(10)); // false
+equals(some(42), none());    // false
+equals(none(), none());      // true
+```
+
+Also available as a method:
+
+```typescript
+some(42).equals(some(42)); // true
+```
+
+#### `equalsWith(a, b, comparator)`
+
+Compares two Maybes using a custom comparator function.
+
+```typescript
+import { some, equalsWith } from '@deessejs/fp';
+
+equalsWith(
+  some({ id: 1, name: 'John' }),
+  some({ id: 2, name: 'John' }),
+  (a, b) => a.name === b.name
+); // true (comparing by name only)
 ```
 
 ### Conversion
@@ -342,7 +380,7 @@ toUndefined(none());    // undefined
 
 #### `toResult(maybe, onNone)`
 
-Converts to `Result<T, Error>`. Some becomes Ok, None becomes Err using the provided error.
+Converts to `Result<T, E>`. Some becomes Ok, None becomes Err using the provided error.
 
 ```typescript
 import { some, none, toResult, error } from '@deessejs/fp';
@@ -355,45 +393,10 @@ const NotFoundError = error({
 });
 
 toResult(some(42), () => NotFoundError({ key: 'value' })); // Ok(42)
-toResult(none(), () => NotFoundError({ key: 'value' }));    // Err(NotFoundError({ key: 'value' }))
+toResult(none(), () => NotFoundError({ key: 'value' }));    // Err(NotFoundError)
 ```
 
 For more on structured errors, see [Error](./error.mdx).
-
-### Comparison
-
-#### `equals(a, b)`
-
-Compares two Maybes for equality. Both Some with equal values or both None return true.
-
-```typescript
-import { some, none, equals } from '@deessejs/fp';
-
-equals(some(42), some(42)); // true
-equals(some(42), some(10)); // false
-equals(some(42), none());   // false
-equals(none(), none());     // true
-```
-
-Also available as a method:
-
-```typescript
-some(42).equals(some(42)); // true
-```
-
-#### `equalsWith(a, b, comparator)`
-
-Compares two Maybes using a custom comparator function.
-
-```typescript
-import { some, equalsWith } from '@deessejs/fp';
-
-equalsWith(
-  some({ id: 1, name: 'John' }),
-  some({ id: 2, name: 'John' }),
-  (a, b) => a.name === b.name
-); // true (comparing by name only)
-```
 
 ### Combination
 
@@ -405,13 +408,27 @@ Combines multiple Maybes into one. Returns Some with array of values if all are 
 import { some, none, all } from '@deessejs/fp';
 
 all(some(1), some(2), some(3));   // Some([1, 2, 3])
-all(some(1), none(), some(3));     // None
+all(some(1), none(), some(3));      // None
 ```
 
 Also supports passing an array:
 
 ```typescript
 all([some(1), some(2), some(3)]); // Some([1, 2, 3])
+```
+
+#### `traverse(items, fn)`
+
+Maps over items, returning None if any result is None.
+
+```typescript
+import { some, none, traverse } from '@deessejs/fp';
+
+const findUser = (id: number) =>
+  id > 0 ? some({ id, name: 'John' }) : none();
+
+traverse([1, 2, 3], findUser);     // Some([{id: 1}, {id: 2}, {id: 3}])
+traverse([1, -1, 3], findUser);    // None
 ```
 
 ## Method Chaining
@@ -425,7 +442,7 @@ const result = some(5)
   .map(x => x * 2)                           // Some(10)
   .map(x => x + 1)                           // Some(11)
   .filter(x => x > 10)                       // Some(11)
-  .flatMap(x => x > 10 ? some(x) : none());  // Some(11)
+  .flatMap(x => x > 10 ? some(x) : none()); // Some(11)
 ```
 
 ## Real-World Examples
@@ -532,5 +549,4 @@ const user = fetchUser(id); // Result<User, FetchError>
 
 - [Result](./result.mdx) - For operations that can fail with an error
 - [Try](./try.mdx) - For wrapping sync functions that might throw
-- [AsyncResult](./async-result.mdx) - For async operations with error handling
-- [Error](./error.mdx) - For structured errors with enrichment
+- [Conversions](../conversions.mdx) - Convert between Maybe and Result

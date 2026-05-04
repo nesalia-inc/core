@@ -3,7 +3,9 @@ title: Try
 description: Wraps synchronous and asynchronous functions that might throw
 ---
 
-The `Try` type wraps functions that might throw in a type-safe container. It's the bridge between imperative exception handling and functional error management.
+import { Callout } from 'fumadocs-ui/components/callout';
+
+The `Try` pattern wraps functions that might throw in a type-safe container. It's the bridge between imperative exception handling and functional error management.
 
 ## Why Try?
 
@@ -14,7 +16,7 @@ JavaScript exceptions can crash your app. When a function can throw, TypeScript 
 ```typescript
 // This can throw, but we do not see it in the type
 const data = JSON.parse(userInput); // Can throw SyntaxError
-const user = readFileSync(path); // Can throw on missing file
+const user = readFileSync(path);     // Can throw on missing file
 
 // No compile-time safety for error handling
 console.log(data.name); // Might crash if parse failed
@@ -36,25 +38,24 @@ if (isOk(result)) {
 }
 ```
 
-Key concepts:
+**Key concepts:**
 
-- **`Try<T, E = Error>`** - Two states: success with value or failure with error
-- **`attempt(fn)`** - Wraps a synchronous function in try/catch
-- **`attemptAsync(fn)`** - Wraps an async function in try/catch
-- **`isOk()`** - Type guard that narrows to the success branch
-- **`E = Error`** - Default error type, but you can use custom error handlers
-
+- **`Result<T, E>`** — Two states: success with value or failure with error
+- **`attempt(fn)`** — Wraps a synchronous function in try/catch
+- **`attemptAsync(fn)`** — Wraps an async function in try/catch
+- **`isOk()`** — Type guard that narrows to the success branch
+- **`catch`** — Optional transform function to map thrown errors to custom types
 
 ## Core Concepts
 
 ### Success and Failure
 
-`Try<T, E>` has two possible states:
+`Result<T, E>` from Try has two possible states:
 
 | State | Description | Properties |
-|-------|-------------|------------|
-| `TrySuccess<T>` | Function succeeded | `ok: true`, `value: T` |
-| `TryFailure<E>` | Function threw | `ok: false`, `error: E` |
+|-------|-------------|-------------|
+| `Ok<T>` | Function succeeded | `ok: true`, `value: T` |
+| `Err<E>` | Function threw | `ok: false`, `error: E` |
 
 ```typescript
 import { attempt } from '@deessejs/fp';
@@ -76,15 +77,14 @@ Non-Error throws are converted to Error objects:
 
 ```typescript
 // Strings are wrapped in Error
-attempt(() => { throw 'oops'; });     // TryFailure(Error: 'oops')
+attempt(() => { throw 'oops'; });     // Err(Error: 'oops')
 
 // Numbers are wrapped in Error
-attempt(() => { throw 42; });         // TryFailure(Error: '42')
+attempt(() => { throw 42; });         // Err(Error: '42')
 
 // Objects are stringified
-attempt(() => { throw { code: 500 }; }); // TryFailure(Error: '[object Object]')
+attempt(() => { throw { code: 500 }; }); // Err(Error: '[object Object]')
 ```
-
 
 ## Reference
 
@@ -92,16 +92,16 @@ attempt(() => { throw { code: 500 }; }); // TryFailure(Error: '[object Object]')
 
 #### `attempt(fn)`
 
-Wraps a synchronous function in try/catch. Returns TrySuccess if the function succeeds, TryFailure if it throws.
+Wraps a synchronous function in try/catch. Returns Ok if the function succeeds, Err if it throws.
 
 ```typescript
 import { attempt } from '@deessejs/fp';
 
-attempt(() => 42);                           // TrySuccess(42)
-attempt(() => { throw new Error('oops'); });  // TryFailure(Error: 'oops')
+attempt(() => 42);                           // Ok(42)
+attempt(() => { throw new Error('oops'); });  // Err(Error: 'oops')
 ```
 
-#### `attempt(fn, onError)`
+#### `attempt(fn, catchFn)`
 
 Wraps a synchronous function with a custom error handler. The handler transforms the caught error into a custom error type.
 
@@ -118,13 +118,19 @@ const ParseError = error({
 const parseJson = (input: string) =>
   attempt(
     () => JSON.parse(input),
-    (caught) => ParseError({ message: caught.message })
+    (cause) => ParseError({ message: cause instanceof Error ? cause.message : 'Unknown' })
   );
+
+// Usage
+const result = parseJson('{"valid": true}');
+if (result.ok) {
+  console.log(result.value); // { valid: true }
+}
 ```
 
 #### `attemptAsync(fn)`
 
-Wraps an async function in try/catch. Returns `Promise<TrySuccess>` if the function succeeds, `Promise<TryFailure>` if it rejects.
+Wraps an async function in try/catch. Returns `Promise<Result<T, E>>`.
 
 ```typescript
 import { attemptAsync } from '@deessejs/fp';
@@ -135,7 +141,7 @@ const result = await attemptAsync(async () => {
 });
 ```
 
-#### `attemptAsync(fn, onError)`
+#### `attemptAsync(fn, catchFn)`
 
 Wraps an async function with a custom error handler.
 
@@ -156,15 +162,15 @@ const fetchData = (url: string) =>
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       return response.json();
     },
-    (caught) => NetworkError({ url })
+    (cause) => NetworkError({ url })
   );
 ```
 
 ### Type Guards
 
-#### `isOk(t)`
+#### `isOk(result)`
 
-Type guard that narrows to the TrySuccess branch.
+Type guard that narrows to the Ok branch.
 
 ```typescript
 import { attempt, isOk } from '@deessejs/fp';
@@ -176,9 +182,9 @@ if (isOk(result)) {
 }
 ```
 
-#### `isErr(t)`
+#### `isErr(result)`
 
-Type guard that narrows to the TryFailure branch.
+Type guard that narrows to the Err branch.
 
 ```typescript
 import { attempt, isErr } from '@deessejs/fp';
@@ -192,24 +198,24 @@ if (isErr(result)) {
 
 ### Transformation
 
-#### `map(t, fn)`
+#### `map(result, fn)`
 
 Transforms the success value. Passes failures through unchanged.
 
 ```typescript
 import { attempt, map } from '@deessejs/fp';
 
-map(attempt(() => 2), x => x * 2);                           // TrySuccess(4)
-map(attempt(() => { throw new Error(); }), x => x * 2);      // TryFailure(Error)
+map(attempt(() => 2), x => x * 2);                           // Ok(4)
+map(attempt(() => { throw new Error(); }), x => x * 2);     // Err(Error)
 ```
 
 Also available as a method:
 
 ```typescript
-attempt(() => 2).map(x => x * 2); // TrySuccess(4)
+attempt(() => 2).map(x => x * 2); // Ok(4)
 ```
 
-#### `flatMap(t, fn)`
+#### `flatMap(result, fn)`
 
 Chains operations that can throw. If success, applies the function. If failure, returns failure.
 
@@ -223,19 +229,19 @@ const parseNumber = (s: string) =>
     return n;
   });
 
-flatMap(attempt(() => '21'), parseNumber);   // TrySuccess(21)
-flatMap(attempt(() => 'abc'), parseNumber);  // TryFailure(Error: 'Invalid number')
+flatMap(attempt(() => '21'), parseNumber);   // Ok(21)
+flatMap(attempt(() => 'abc'), parseNumber);  // Err(Error: 'Invalid number')
 ```
 
 Also available as a method:
 
 ```typescript
-attempt(() => '21').flatMap(parseNumber); // TrySuccess(21)
+attempt(() => '21').flatMap(parseNumber); // Ok(21)
 ```
 
 ### Extraction
 
-#### `getOrElse(t, defaultValue)`
+#### `getOrElse(result, defaultValue)`
 
 Returns the success value, or a default if failure.
 
@@ -252,7 +258,7 @@ Also available as a method:
 attempt(() => 42).getOrElse(0); // 42
 ```
 
-#### `getOrCompute(t, fn)`
+#### `getOrCompute(result, fn)`
 
 Returns the success value, or computes one lazily if failure. Useful for expensive fallbacks.
 
@@ -261,8 +267,8 @@ import { attempt, getOrCompute } from '@deessejs/fp';
 
 const expensive = () => { console.log('computing...'); return 0; };
 
-getOrCompute(attempt(() => 42), expensive); // 42 (never logs)
-getOrCompute(attempt(() => { throw new Error(); }), expensive); // logs 'computing...', returns 0
+getOrCompute(attempt(() => 42), expensive);                            // 42 (never logs)
+getOrCompute(attempt(() => { throw new Error(); }), expensive);         // logs 'computing...', returns 0
 ```
 
 Also available as a method:
@@ -273,43 +279,43 @@ attempt(() => { throw new Error(); }).getOrCompute(() => 0); // 0
 
 ### Side Effects
 
-#### `tap(t, fn)`
+#### `tap(result, fn)`
 
 Executes a function on the value without changing it. Useful for logging.
 
 ```typescript
 import { attempt, tap } from '@deessejs/fp';
 
-tap(attempt(() => 42), x => console.log('Got:', x));                 // Logs: 'Got: 42', returns TrySuccess(42)
-tap(attempt(() => { throw new Error(); }), x => console.log('Got:', x)); // Nothing logged, returns TryFailure(Error)
+tap(attempt(() => 42), x => console.log('Got:', x));                 // Logs: 'Got: 42', returns Ok(42)
+tap(attempt(() => { throw new Error(); }), x => console.log('Got:', x)); // Nothing logged, returns Err(Error)
 ```
 
 Also available as a method:
 
 ```typescript
-attempt(() => 42).tap(x => console.log(x)); // TrySuccess(42)
+attempt(() => 42).tap(x => console.log(x)); // Ok(42)
 ```
 
-#### `tapErr(t, fn)`
+#### `tapErr(result, fn)`
 
 Executes a function on the error without changing it.
 
 ```typescript
 import { attempt, tapErr } from '@deessejs/fp';
 
-tapErr(attempt(() => 42), e => console.error('Error:', e));                    // Nothing logged
+tapErr(attempt(() => 42), e => console.error('Error:', e));                            // Nothing logged
 tapErr(attempt(() => { throw new Error('oops'); }), e => console.error('Error:', e)); // Logs: 'Error: Error: oops'
 ```
 
 Also available as a method:
 
 ```typescript
-attempt(() => { throw new Error('oops'); }).tapErr(e => console.error(e)); // TryFailure(Error: 'oops')
+attempt(() => { throw new Error('oops'); }).tapErr(e => console.error(e)); // Err(Error: 'oops')
 ```
 
 ### Pattern Matching
 
-#### `match(t, okFn, errFn)`
+#### `match(result, onOk, onErr)`
 
 Handles both success and failure cases, returning a single value.
 
@@ -341,7 +347,7 @@ match(
 
 ### Conversions
 
-#### `toNullable(t)`
+#### `toNullable(result)`
 
 Converts to `T | null`.
 
@@ -349,10 +355,10 @@ Converts to `T | null`.
 import { attempt, toNullable } from '@deessejs/fp';
 
 toNullable(attempt(() => 42));                         // 42
-toNullable(attempt(() => { throw new Error(); }));      // null
+toNullable(attempt(() => { throw new Error(); }));    // null
 ```
 
-#### `toUndefined(t)`
+#### `toUndefined(result)`
 
 Converts to `T | undefined`.
 
@@ -371,12 +377,12 @@ Try objects support chaining for fluent transformations:
 import { attempt } from '@deessejs/fp';
 
 const result = attempt(() => 'hello')
-  .map(s => s.toUpperCase())           // TrySuccess('HELLO')
-  .map(s => s + '!')                    // TrySuccess('HELLO!')
+  .map(s => s.toUpperCase())           // Ok('HELLO')
+  .map(s => s + '!')                  // Ok('HELLO!')
   .flatMap(s => attempt(() => {
     if (s.length > 5) return s;
     throw new Error('Too short');
-  }));                                   // TrySuccess('HELLO!')
+  }));                                 // Ok('HELLO!')
 ```
 
 ## Real-World Examples
@@ -384,26 +390,25 @@ const result = attempt(() => 'hello')
 ### JSON Parsing
 
 ```typescript
-import { attempt, getOrElse } from '@deessejs/fp';
+import { attempt, getOrElse, error } from '@deessejs/fp';
+import { z } from 'zod';
 
-interface User {
-  id: number;
-  name: string;
-}
+const ParseError = error({
+  name: 'ParseError',
+  schema: z.object({ message: z.string() }),
+});
 
-const parseUser = (json: string): Try<User, Error> =>
-  attempt(() => {
-    const obj = JSON.parse(json);
-    if (typeof obj.id !== 'number' || typeof obj.name !== 'string') {
-      throw new Error('Invalid user shape');
-    }
-    return obj as User;
-  });
+const parseUser = (json: string) =>
+  attempt(
+    () => JSON.parse(json) as { id: number; name: string },
+    (cause) => ParseError({ message: cause instanceof Error ? cause.message : 'Unknown' })
+  );
 
 const user = getOrElse(
   parseUser('{"id": 1, "name": "Alice"}'),
   { id: 0, name: 'Guest' }
 );
+// { id: 1, name: 'Alice' }
 ```
 
 ### File Operations
@@ -412,7 +417,7 @@ const user = getOrElse(
 import { attempt } from '@deessejs/fp';
 import { readFileSync } from 'fs';
 
-const readJsonFile = (path: string): Try<object, Error> =>
+const readJsonFile = (path: string) =>
   attempt(() => JSON.parse(readFileSync(path, 'utf-8')));
 
 const config = readJsonFile('./config.json');
@@ -427,19 +432,23 @@ if (config.ok) {
 ### Async API Calls
 
 ```typescript
-import { attemptAsync, isOk, getOrElse } from '@deessejs/fp';
+import { attemptAsync, isOk, getOrElse, error } from '@deessejs/fp';
+import { z } from 'zod';
 
-interface Post {
-  id: number;
-  title: string;
-}
+const NetworkError = error({
+  name: 'NetworkError',
+  schema: z.object({ url: z.string() }),
+});
 
 const fetchPost = (id: number) =>
-  attemptAsync(async () => {
-    const response = await fetch(`/api/posts/${id}`);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return response.json() as Promise<Post>;
-  });
+  attemptAsync(
+    async () => {
+      const response = await fetch(`/api/posts/${id}`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.json() as Promise<{ id: number; title: string }>;
+    },
+    (cause) => NetworkError({ url: `/api/posts/${id}` })
+  );
 
 const post = await fetchPost(1);
 
@@ -469,11 +478,12 @@ const parsed = attempt(() => JSON.parse(input));
 const validated = validateUser(input); // Returns Result<User, ValidationError>
 ```
 
-For structured errors with enrichment, see [Error](./error.mdx).
+<Callout type="note">
+  In v4.0.0, `Try` is not a separate type. Use `Result<T, E>` with `attempt()` for synchronous operations and `attemptAsync()` for async operations.
+</Callout>
 
 ## See Also
 
 - [Result](./result.mdx) - For operations with explicit error types
 - [Maybe](./maybe.mdx) - For optional values (null/undefined)
-- [AsyncResult](./async-result.mdx) - For async operations with error handling
 - [Error](./error.mdx) - For structured errors with enrichment

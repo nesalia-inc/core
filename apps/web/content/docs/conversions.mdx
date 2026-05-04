@@ -22,7 +22,7 @@ const NotFoundError = error({
 });
 
 toResult(some(42), () => NotFoundError({ key: 'answer' })); // Ok(42)
-toResult(none(), () => NotFoundError({ key: 'answer' }));    // Err(NotFoundError({ key: 'answer' }))
+toResult(none(), () => NotFoundError({ key: 'answer' }));    // Err(NotFoundError)
 ```
 
 ### `fromMaybe(maybe, onNone)`
@@ -80,8 +80,8 @@ const NotFoundError = error({
 resultFromNullable('hello', () => NotFoundError({ field: 'name' })); // Ok('hello')
 
 // Null/undefined becomes Err
-resultFromNullable(null, () => NotFoundError({ field: 'name' }));  // Err(NotFoundError({...}))
-resultFromNullable(undefined, () => NotFoundError({ field: 'name' })); // Err(NotFoundError({...}))
+resultFromNullable(null, () => NotFoundError({ field: 'name' }));  // Err(NotFoundError)
+resultFromNullable(undefined, () => NotFoundError({ field: 'name' })); // Err(NotFoundError)
 ```
 
 This is useful for database lookups, environment variables, and other sources where null/undefined indicates absence:
@@ -186,6 +186,6 @@ const getUserName = (id: string) =>
 
 ## See Also
 
-- [Result](./result.mdx) - For explicit success/failure
-- [Maybe](./maybe.mdx) - For optional values
-- [Try](./try.mdx) - For wrapping throwing functions
+- [Result](../core/result.mdx) - For explicit success/failure
+- [Maybe](../core/maybe.mdx) - For optional values
+- [Try](../core/try.mdx) - For wrapping throwing functions

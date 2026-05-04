@@ -1,0 +1,248 @@
+---
+title: Timeout
+description: Time-bound operations with automatic AbortSignal support
+---
+
+The `timeout()` utility wraps async operations with a time limit, returning `Err<TimeoutError>` if the deadline is exceeded.
+
+## Why Timeout?
+
+Async operations can hang forever: network partitions, deadlocks, broken external services. Without timeout, a single stalled operation can block your entire application.
+
+Timeout provides:
+
+- **Resource protection** — Prevent resource leaks from hanging connections
+- **Graceful degradation** — Return a typed error instead of hanging indefinitely
+- **Composability** — Works with `Result.gen` and all Result operations
+- **Cancellation integration** — Respects `AbortSignal` for coordinated cancellation
+
+## `Result.timeout(operation, options)` (static)
+
+Wraps an async operation with a deadline:
+
+```typescript
+import { Result, error } from '@deessejs/fp';
+import { z } from 'zod';
+
+const TimeoutError = error({
+  name: 'TimeoutError',
+  schema: z.object({
+    deadline: z.number(),
+    elapsed: z.number(),
+    operation: z.string()
+  })
+});
+
+// Basic usage - reject after 5000ms
+const result = await Result.timeout(
+  fetchUser(id),
+  { deadline: 5000, timeout: TimeoutError }
+);
+```
+
+### TimeoutOptions
+
+```typescript
+interface TimeoutOptions<T, E = Error> {
+  /** Maximum time in milliseconds (> 0) */
+  deadline: number;
+
+  /** Constructor for TimeoutError */
+  timeout?: ErrorConstructor | ((info: TimeoutInfo) => TaggedError);
+
+  /** External abort signal to respect */
+  abortSignal?: AbortSignal;
+
+  /** Fallback on timeout (returns AsyncResult) */
+  onTimeout?: () => AsyncResult<T, E>;
+
+  /** What to do with underlying op after timeout: 'abort' (default) or 'continue' */
+  resume?: 'abort' | 'continue';
+
+  /** Name for error messages */
+  operationName?: string;
+}
+
+interface TimeoutInfo {
+  deadline: number;
+  elapsed: number;
+  operation: string;
+}
+```
+
+## Behavior
+
+### Deadline Boundary Values
+
+| Value | Behavior |
+|-------|----------|
+| `deadline <= 0` | Returns `Err<TimeoutError>` immediately with `elapsed: 0` |
+| `deadline === Infinity` | No timeout applied, behaves like plain operation |
+| `deadline > 0` | Normal timeout behavior |
+
+### Success Path
+- Operation completes before deadline → returns original Result
+
+### Timeout Path
+- Deadline exceeded → returns `Err<TimeoutError>`
+- If `resume: 'abort'` (default): underlying operation is abandoned via internal AbortSignal
+- If `resume: 'continue'`: underlying operation continues running (caller responsible for cleanup)
+
+### Abort Path
+- External signal aborted → returns `Err<AbortError>`
+- If signal already aborted when timeout starts → returns `Err<AbortError>` immediately
+
+## Timeout with Fallback
+
+```typescript
+const result = await Result.timeout(
+  fetchHeavyQuery(),
+  {
+    deadline: 5000,
+    timeout: TimeoutError,
+    onTimeout: () => Result.ok(cachedData)
+  }
+);
+// Returns cached data instead of TimeoutError
+```
+
+## External AbortSignal
+
+```typescript
+const controller = new AbortController();
+
+// External cancellation
+setTimeout(() => controller.abort(), 3000);
+
+const result = await Result.timeout(
+  fetchUser(id),
+  {
+    deadline: 5000,
+    timeout: TimeoutError,
+    abortSignal: controller.signal
+  }
+);
+// Err<AbortError> if aborted before completion
+// Err<TimeoutError> if deadline exceeded before abort
+```
+
+## Resource Cleanup
+
+### `resume: 'abort'` (default)
+
+- An internal AbortSignal is used to signal the operation to stop
+- The caller receives `Err<TimeoutError>` immediately
+- No guaranteed cleanup (operation may not support AbortSignal)
+- Memory is reclaimed when the abandoned operation eventually settles
+
+### `resume: 'continue'`
+
+- Underlying operation continues running
+- Caller is responsible for tracking and cleaning up orphaned operations
+- Use this when the operation doesn't support AbortSignal but must complete
+
+## Error Types
+
+### TimeoutError
+
+```typescript
+const TimeoutError = error({
+  name: 'TimeoutError',
+  schema: z.object({
+    deadline: z.number(),
+    elapsed: z.number(),
+    operation: z.string()
+  })
+});
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `_tag` | `"TimeoutError"` | Discriminator |
+| `deadline` | `number` | The timeout threshold in ms |
+| `elapsed` | `number` | Actual time before timeout in ms |
+| `operation` | `string` | Name of the timed-out operation |
+
+### AbortError
+
+```typescript
+const AbortError = error({
+  name: 'AbortError',
+  schema: z.object({
+    reason: z.unknown().optional()
+  })
+});
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `_tag` | `"AbortError"` | Discriminator |
+| `reason` | `unknown` | The abort reason if provided |
+
+## Using with Retry
+
+Timeout is a primitive used by retry systems:
+
+```typescript
+// Retry with deadline (retry stops when deadline reached)
+const result = await Result.retry(
+  fetchUser(id),
+  {
+    attempts: 3,
+    maxTotalTime: 10000,  // Global timeout - uses timeout internally
+    shouldRetry: (err) => err._tag !== 'TimeoutError'
+  }
+);
+```
+
+## Complete Example
+
+```typescript
+import { Result, error } from '@deessejs/fp';
+import { z } from 'zod';
+
+const NetworkError = error({
+  name: 'NetworkError',
+  schema: z.object({ url: z.string(), cause: z.unknown().optional() })
+});
+
+const TimeoutError = error({
+  name: 'TimeoutError',
+  schema: z.object({
+    deadline: z.number(),
+    elapsed: z.number(),
+    operation: z.string()
+  })
+});
+
+// Fetch with timeout
+async function fetchWithTimeout(url: string, deadline: number) {
+  return Result.timeout(
+    Result.attemptAsync(
+      () => fetch(url).then(r => r.json()),
+      (cause) => NetworkError({ url, cause })
+    ),
+    {
+      deadline,
+      timeout: TimeoutError,
+      operationName: `fetch(${url})`
+    }
+  );
+}
+
+// With fallback
+const result = await Result.timeout(
+  fetchHeavyQuery(),
+  {
+    deadline: 2000,
+    timeout: TimeoutError,
+    onTimeout: () => Result.ok(getCachedData())
+  }
+);
+```
+
+## See Also
+
+- [Sleep](./sleep.mdx) — Sleep utilities
+- [Retry](./retry.mdx) — Retry with backoff
+- [Repeat](./repeat.mdx) — Repeated operation execution

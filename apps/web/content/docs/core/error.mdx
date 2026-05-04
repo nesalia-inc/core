@@ -1,0 +1,470 @@
+---
+title: Error
+description: Structured domain errors with enrichment, chaining, and Zod validation
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Cards, Card } from 'fumadocs-ui/components/card';
+
+The `Error` system provides rich error objects inspired by Python's exception classes. Errors have structured metadata, support enrichment with notes and cause chaining, and integrate seamlessly with Result.
+
+## Why Error?
+
+JavaScript's native `Error` is limited — it only has a message and stack trace. The `Error` system adds:
+
+- **Structured args** — Domain-specific error data
+- **Notes** — Additional context that can be added later
+- **Cause chaining** — Trace error provenance through the call stack
+- **Zod validation** — Validate error arguments at runtime
+- **Sensitive data redaction** — Automatic redaction in message/stack
+
+## Error vs Result
+
+| Aspect | Result | Error |
+|--------|--------|-------|
+| Purpose | Represent success/failure | Represent domain error |
+| Methods | map, flatMap, getOrElse | addNotes, from |
+| Chaining | Railway-oriented programming | Error provenance tracking |
+| With Zod | No validation | Schema validation |
+
+```typescript
+import { error, err, ok, some } from '@deessejs/fp';
+import { z } from 'zod';
+
+// Define an error type with schema
+const SizeError = error({
+  name: 'SizeError',
+  schema: z.object({
+    current: z.number(),
+    wanted: z.number(),
+  }),
+  message: (args) => `Size error: got ${args.current}, wanted ${args.wanted}`,
+});
+
+// Create an error instance
+const domainError = SizeError({ current: 3, wanted: 5 });
+domainError.name;     // 'SizeError'
+domainError.args;     // { current: 3, wanted: 5 }
+domainError.notes;    // []
+domainError.cause;    // None (until enriched)
+domainError.message;  // 'Size error: got 3, wanted 5'
+
+// Wrap with err() to get Result methods
+const result = err(domainError);
+result.ok === false;
+result.error === domainError; // reference, not a copy
+```
+
+## Core Concepts
+
+### Error Properties
+
+An `Error<T>` has these properties:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `name` | `string` | Error type identifier |
+| `_tag` | `string` | Tag for pattern matching (same as name) |
+| `args` | `T` | Domain-specific error data |
+| `notes` | `readonly string[]` | Additional context |
+| `cause` | `Maybe<Error>` | Original error (chained) |
+| `message` | `string` | Human-readable message |
+| `stack` | `string` | Stack trace |
+
+### Creating Errors
+
+#### `error(options)`
+
+Creates an ErrorBuilder. Schema is optional but recommended for validation.
+
+```typescript
+import { z } from 'zod';
+import { error } from '@deessejs/fp';
+
+// With schema - validates arguments at creation
+const NotFoundError = error({
+  name: 'NotFoundError',
+  schema: z.object({
+    id: z.string(),
+    resource: z.string().optional(),
+  }),
+  message: (args) =>
+    args.resource
+      ? `${args.resource} not found: ${args.id}`
+      : `Resource not found: ${args.id}`,
+});
+
+// Without schema
+const SimpleError = error({
+  name: 'SimpleError',
+});
+```
+
+**Options:**
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `name` | `string` | Error class name (required) |
+| `schema` | `ZodSchema<T>` | Zod schema for args validation |
+| `message` | `(args: T) => string` | Custom message function |
+| `code` | `number` | Numeric error code (e.g., 404) |
+
+#### Creating Error Instances
+
+Call the ErrorBuilder to create instances:
+
+```typescript
+// With schema - validates arguments
+const notFound = NotFoundError({ id: '123', resource: 'user' });
+// notFound.message === 'Resource not found: user'
+
+// Without schema
+const simple = SimpleError();
+```
+
+## Enrichment
+
+### Adding Notes
+
+Use `addNotes()` to add contextual information to an error:
+
+```typescript
+const e = SizeError({ current: 3, wanted: 5 })
+  .addNotes('Attempted to process file')
+  .addNotes('User: john');
+
+e.notes; // ['Attempted to process file', 'User: john']
+e.message; // 'Size error: got 3, wanted 5'
+```
+
+### Chaining Cause
+
+Use `from()` to chain errors, preserving the original error as cause:
+
+```typescript
+import { error, err, some } from '@deessejs/fp';
+
+const NetworkError = error({
+  name: 'NetworkError',
+  schema: z.object({ host: z.string() }),
+});
+
+const networkError = NetworkError({ host: 'api.example.com' });
+
+// Chain from an Error
+const e1 = SizeError({ current: 3, wanted: 5 }).from(networkError);
+e1.cause; // Some(NetworkError)
+
+// Chain from a Result containing an Error
+const result = err(networkError);
+const e2 = SizeError({ current: 3, wanted: 5 }).from(result);
+e2.cause; // Some(NetworkError)
+
+// Chain from Maybe<Error>
+const maybeError = some(networkError);
+const e3 = SizeError({ current: 3, wanted: 5 }).from(maybeError);
+e3.cause; // Some(NetworkError)
+
+// Accessing the cause
+e1.cause.map(c => c.name).getOrElse('no cause'); // 'NetworkError'
+```
+
+### Combining Enrichments
+
+```typescript
+const e = SizeError({ current: 3, wanted: 5 })
+  .addNotes('Processing file: data.json')
+  .from(networkError)
+  .addNotes('File processing failed');
+```
+
+## Pattern Matching
+
+### matchError(result, handlers)
+
+Exhaustive pattern matching on errors:
+
+```typescript
+import { ok, err, error, matchError } from '@deessejs/fp';
+import { z } from 'zod';
+
+const NotFoundError = error({
+  name: 'NotFoundError',
+  schema: z.object({ id: z.string(), resource: z.string() }),
+});
+
+const ValidationError = error({
+  name: 'ValidationError',
+  schema: z.object({ field: z.string(), message: z.string() }),
+});
+
+const result = err(NotFoundError({ id: '123', resource: 'user' }));
+
+const message = matchError(result.error, {
+  NotFoundError: (e) => `Missing ${e.resource}: ${e.id}`,
+  ValidationError: (e) => `Invalid ${e.field}: ${e.message}`,
+});
+// message === 'Missing user: 123'
+```
+
+### matchErrorPartial(result, handlers, defaultHandler)
+
+Non-exhaustive matching with a fallback:
+
+```typescript
+const message = matchErrorPartial(
+  result.error,
+  {
+    NotFoundError: (e) => `Missing: ${e.id}`,
+    ValidationError: (e) => `Invalid: ${e.field}`,
+  },
+  (e) => `Unknown error: ${e._tag}`
+);
+```
+
+## Type Guards
+
+### Static is() on Builders
+
+```typescript
+const notFound = NotFoundError({ id: '123' });
+
+if (NotFoundError.is(notFound)) {
+  notFound.id;  // Fully narrowed to string
+  notFound.resource; // string | undefined (based on schema)
+}
+```
+
+### Generic isError()
+
+Check if any value is an Error:
+
+```typescript
+import { isError } from '@deessejs/fp';
+
+if (isError(err)) {
+  console.log(err.name);  // All errors have name
+  console.log(err.args);  // All errors have args
+}
+```
+
+### TaggedError.is()
+
+Check if any value is a tagged error:
+
+```typescript
+import { TaggedError } from '@deessejs/fp';
+
+if (TaggedError.is(result.error)) {
+  result.error._tag; // string - the discriminator
+}
+```
+
+## Sensitive Data Handling
+
+Errors automatically redact sensitive fields in `message` and `stack`:
+
+```typescript
+const AuthError = error({
+  name: 'AuthError',
+  schema: z.object({
+    userId: z.string(),
+    password: z.string(),
+    token: z.string(),
+    apiKey: z.string(),
+  }),
+});
+
+const err = AuthError({
+  userId: '123',
+  password: 'super_secret_123',
+  token: 'ghp_xxxxx',
+  apiKey: 'sk-xxxxx',
+});
+
+err.message;
+// "AuthError: {userId:123, password:[REDACTED], token:[REDACTED], apiKey:[REDACTED]}"
+
+err.args.password; // "super_secret_123" - NOT redacted in args
+```
+
+**Redacted fields:** `password`, `token`, `secret`, `apiKey`, `authorization`, `credential`, `private`, etc.
+
+<Callout type="note">
+  Redaction only applies to `message` and `stack`, not to `args`. This allows you to log errors while protecting sensitive data in output.
+</Callout>
+
+## Validation
+
+When a schema is provided, arguments are validated at creation:
+
+```typescript
+// Valid creation
+const valid = ValidationError({ field: 'email', message: 'invalid format' });
+
+// Invalid - throws ZodError wrapped in a ValidationError
+try {
+  ValidationError({ field: 123 }); // field must be string
+} catch (e) {
+  // e is a ValidationError with cause being the ZodError
+}
+```
+
+## Error Groups
+
+### exceptionGroup(errors)
+
+Group multiple errors together:
+
+```typescript
+import { exceptionGroup, error } from '@deessejs/fp';
+import { z } from 'zod';
+
+const ParseError = error({
+  name: 'ParseError',
+  schema: z.object({ input: z.string() }),
+});
+
+const ValidationError = error({
+  name: 'ValidationError',
+  schema: z.object({ field: z.string() }),
+});
+
+const errors = exceptionGroup([
+  ParseError({ input: 'invalid-json' }),
+  ValidationError({ field: 'email' }),
+]);
+
+errors.name;      // 'ExceptionGroup'
+errors.errors;    // [ParseError, ValidationError]
+```
+
+Accessing group errors:
+
+```typescript
+try {
+  // code that throws exceptionGroup
+} catch (e) {
+  if (ExceptionGroup.is(e)) {
+    e.errors;  // Array of errors in the group
+    e.message; // "ExceptionGroup: 2 error(s)"
+  }
+}
+```
+
+## Guards and Utilities
+
+### `isError(value)`
+
+Type guard that checks if a value is an Error:
+
+```typescript
+import { isError } from '@deessejs/fp';
+
+isError(SizeError({ current: 3, wanted: 5 })); // true
+isError('not an error');                       // false
+```
+
+### `getErrorMessage(error)`
+
+Extract a human-readable message:
+
+```typescript
+import { getErrorMessage } from '@deessejs/fp';
+
+getErrorMessage(SizeError({ current: 3, wanted: 5 }));
+// Returns 'SizeError: {"current":3,"wanted":5}'
+```
+
+### `flattenErrorGroup(group)`
+
+Get all errors from a group (including nested):
+
+```typescript
+import { flattenErrorGroup } from '@deessejs/fp';
+
+flattenErrorGroup(group); // Error[]
+```
+
+### `filterErrorsByName(group, name)`
+
+Find errors by name in a group:
+
+```typescript
+import { filterErrorsByName } from '@deessejs/fp';
+
+filterErrorsByName(group, 'SizeError');    // SizeError[]
+filterErrorsByName(group, 'NetworkError'); // NetworkError[]
+```
+
+## Using with Result
+
+Error objects integrate with Result via `err()`:
+
+```typescript
+import { ok, err, map } from '@deessejs/fp';
+
+const result = ok(10).flatMap((x) => {
+  if (x > 5) {
+    return err(SizeError({ current: x, wanted: 5 }));
+  }
+  return ok(x * 2);
+});
+
+result.mapErr((e) => console.log(e.name));
+```
+
+### Direct Yield in Result.gen
+
+Errors can be yielded directly without wrapping in `err()`:
+
+```typescript
+const result = await Result.gen(async function* () {
+  const user = yield* ok({ id: '123', name: 'Alice', active: true });
+
+  if (!user.active) {
+    yield* ValidationError({ field: 'user.active', message: 'User is inactive' });
+  }
+
+  return user;
+});
+```
+
+## raise()
+
+Use `raise()` to throw an error and return `never`. Use only for unrecoverable programmer errors:
+
+```typescript
+import { raise } from '@deessejs/fp';
+import { ok } from '@deessejs/fp';
+
+// Only for unrecoverable errors - things that indicate a bug
+const process = (size: number): Result<Data, Error> => {
+  if (size > MAX_SIZE) {
+    raise(SizeError({ current: size, wanted: MAX_SIZE }));
+  }
+  return ok({ size });
+};
+```
+
+**When NOT to use raise():**
+
+```typescript
+// Bad - breaks the rail for expected failures
+const validateBad = (input: string): Result<string, Error> => {
+  if (!input) raise(EmptyInputError({}));
+  return ok(input);
+};
+
+// Good - error travels through the rail
+const validate = (input: string): Result<string, Error> => {
+  if (!input) return err(EmptyInputError({}));
+  return ok(input);
+};
+```
+
+## See Also
+
+- [Result](./result.mdx) - For success/failure with error chaining
+- [Maybe](./maybe.mdx) - For optional values (null/undefined)
+- [Try](./try.mdx) - For wrapping sync functions that might throw
