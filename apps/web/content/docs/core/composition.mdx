@@ -3,13 +3,11 @@ title: Composition
 description: pipe, flow, tap, and dual pattern for function composition
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout';
-
 Composition utilities help you create readable, linear data transformation pipelines. They enable both **data-last** (pipe/flow) and **data-first** styles.
 
 ## Why Composition Matters
 
-Instead of nesting functions or creating intermediate variables, composition creates a clear linear flow. The following example shows the contrast between nested function calls and a composed pipeline:
+Instead of nesting functions or creating intermediate variables, composition creates a clear linear flow. The following example shows the contrast between nested function calls and a composed pipeline.
 
 ```typescript title="nested-vs-pipe.ts"
 // Hard to read - nested and right-to-left
@@ -26,7 +24,7 @@ const username = pipe(
 
 ## Pipe and Flow
 
-### Pipe Function
+### Basic Pipe
 
 The `pipe` function pipes a value through functions left-to-right. Each function receives the result of the previous one, creating a clear transformation chain.
 
@@ -39,7 +37,7 @@ The `pipe` function accepts a starting value followed by any number of transform
 - Easier to debug - you can add `tap` at any step to see values
 - Reorder steps by moving function references
 
-In the following example, you see how `pipe` transforms a raw string from localStorage into a capitalized username. Each step is explicit and named:
+In the following example, you see how `pipe` transforms a raw string from localStorage into a capitalized username. Each step is explicit and named.
 
 ```typescript title="pipe-basic.ts"
 import { pipe } from '@deessejs/fp';
@@ -56,7 +54,7 @@ const username = pipe(
 );
 ```
 
-### Flow Function
+### Basic Flow
 
 The `flow` function creates a reusable function from a sequence of transformations. Unlike `pipe`, which executes immediately, `flow` returns a function you can call with different inputs. This lets you define a transformation pipeline once and apply it many times.
 
@@ -68,7 +66,7 @@ The `flow` function accepts any number of functions and returns a new function t
 - Partial application - you can create specialized versions
 - Cleaner API for public functions
 
-The following example shows how you can create a reusable user processing pipeline:
+The following example shows how you can create a reusable user processing pipeline.
 
 ```typescript title="flow-basic.ts"
 import { flow } from '@deessejs/fp';
@@ -86,7 +84,7 @@ const processed1 = processUserData(rawJson1);
 const processed2 = processUserData(rawJson2);
 ```
 
-When you need the first function to accept multiple arguments, `flow` handles this naturally. The first function receives all arguments you pass, and subsequent functions receive only the return value of the previous function:
+When you need the first function to accept multiple arguments, `flow` handles this naturally. The first function receives all arguments you pass, and subsequent functions receive only the return value of the previous function.
 
 ```typescript title="flow-multi-arg.ts"
 import { flow } from '@deessejs/fp';
@@ -100,13 +98,13 @@ const createLogger = flow(
 createLogger('info', 'User logged in'); // '{"level":"info","message":"User logged in",...}'
 ```
 
-### Pipe Async Function
+### Pipe Async
 
 The `pipeAsync` function pipes a value through a mix of sync and async functions. Each function is awaited if it returns a Promise, which means you can seamlessly combine synchronous and asynchronous transformations without explicit `await` calls between steps.
 
 This function is particularly useful when you have a chain of operations where some are synchronous and some are asynchronous. The pipeline automatically handles the Promises for you.
 
-In this example, `pipeAsync` fetches a user, validates their age asynchronously, enriches their profile, and converts the score to a string:
+In this example, `pipeAsync` fetches a user, validates their age asynchronously, enriches their profile, and converts the score to a string.
 
 ```typescript title="pipe-async.ts"
 import { pipeAsync } from '@deessejs/fp';
@@ -119,13 +117,13 @@ const result = await pipeAsync(
 );
 ```
 
-### Flow Async Function
+### Flow Async
 
 The `flowAsync` function creates a reusable async function from a sequence of transformations. Like `flow`, it returns a function rather than executing immediately, but it properly handles Promises throughout the chain.
 
 This function is ideal when you need to perform a complex async operation repeatedly with different inputs. You define the pipeline once and reuse it.
 
-The following example shows how you can create a reusable async pipeline for fetching and processing user data:
+The following example shows how you can create a reusable async pipeline for fetching and processing user data.
 
 ```typescript title="flow-async.ts"
 import { flowAsync } from '@deessejs/fp';
@@ -149,7 +147,7 @@ const user2 = await fetchAndProcessUser('456');
 
 Side effects such as logging, analytics, and debugging are necessary in most applications but should not interfere with your data transformation flow. When you add a side effect inside a pipeline, you must remember to return the original value so the pipeline continues. The `tap` function solves this problem by letting you add effects without transforming values.
 
-Consider what happens without `tap`. Inside a pipeline function, you need to explicitly return the value after performing your side effect. This is easy to forget and creates subtle bugs:
+Consider what happens without `tap`. Inside a pipeline function, you need to explicitly return the value after performing your side effect. This is easy to forget and creates subtle bugs.
 
 ```typescript title="tap-why-needed.ts"
 // Without tap - must return the value
@@ -178,7 +176,7 @@ The `tap` function executes a side effect function and returns the original valu
 
 The `tap` function is particularly useful during development when you need to inspect values at various points in your pipeline. You can add multiple `tap` calls without breaking the flow.
 
-This example shows how to use `tap` to debug a pipeline at different stages:
+This example shows how to use `tap` to debug a pipeline at different stages.
 
 ```typescript title="tap-basic.ts"
 import { pipe, tap } from '@deessejs/fp';
@@ -198,7 +196,7 @@ The `tapAsync` function works the same as `tap` but handles async side effects. 
 
 This function is essential when you need to track events or send data to external services that operate asynchronously. The Promise is awaited but the value still passes through unchanged.
 
-The following example shows how to send analytics data without blocking the pipeline:
+The following example shows how to send analytics data without blocking the pipeline.
 
 ```typescript title="tap-async.ts"
 import { pipeAsync, tapAsync } from '@deessejs/fp';
@@ -216,7 +214,7 @@ The `tapErr` function executes a side effect on errors only. Success values pass
 
 This function works with the Result type, so it only triggers when the pipeline produces an error. Successful values bypass the tap entirely.
 
-Here is how you add error logging to a pipeline:
+Here is how you add error logging to a pipeline.
 
 ```typescript title="tap-err.ts"
 import { pipe, tapErr } from '@deessejs/fp';
@@ -238,7 +236,7 @@ The `tapSafe` function is a safe version of `tap` that catches errors thrown ins
 - Optional error handling via onError callback
 - Useful for non-critical effects like optional logging
 
-This is especially valuable for effects like analytics, where you absolutely do not want a failed tracking call to prevent the main operation from completing:
+This is especially valuable for effects like analytics, where you absolutely do not want a failed tracking call to prevent the main operation from completing.
 
 ```typescript title="tap-safe.ts"
 import { pipe, tapSafe } from '@deessejs/fp';
@@ -256,13 +254,15 @@ const result = pipe(
 
 ## Dual Pattern
 
+### Data-First Style
+
 The `dual` utility enables **data-first** style, where the data comes as the last argument instead of the first. This allows the same function to be used in both data-last and data-first styles, giving you flexibility in how you compose functions.
 
 The `dual` function takes an arity (the number of arguments the function accepts) and the actual function implementation. It returns a new function that intelligently handles both calling styles. When the data is passed as the last argument, it works normally. When the data is passed as the first argument, it returns a function waiting for the data.
 
 This pattern is powerful because it lets you create utilities that work seamlessly with `pipe` or as standalone functions. The same `map` function can be used on a Result instance as a method or passed to `pipe` as a transformation.
 
-The following example shows how to create a dual function that works both ways:
+The following example shows how to create a dual function that works both ways.
 
 ```typescript title="dual-basic.ts"
 import { dual, pipe } from '@deessejs/fp';
@@ -285,7 +285,7 @@ The `dual(arity, fn)` function creates a wrapper that intelligently routes argum
 
 The arity parameter tells dual how many arguments your function expects. This helps dual know when it has received all arguments versus when it should return a partially applied function.
 
-In this example, you see how the same dual function behaves differently based on argument position:
+In this example, you see how the same dual function behaves differently based on argument position.
 
 ```typescript title="dual-how.ts"
 import { dual, pipe } from '@deessejs/fp';
@@ -306,7 +306,7 @@ The real power of `dual` emerges when you create composable utilities that work 
 
 When you define dual functions for common operations like `map` and `flatMap`, you enable a fluent composition style that combines the best of method chaining and functional pipeline composition. You can use them with `pipe` for linear readability, or use them as methods when that reads more naturally.
 
-This example demonstrates how dual functions enable flexible composition:
+This example demonstrates how dual functions enable flexible composition.
 
 ```typescript title="dual-with-pipe.ts"
 import { dual, pipe } from '@deessejs/fp';
@@ -343,13 +343,13 @@ The `reduce` function reduces an array of items using a function that returns a 
 
 This function is particularly useful when you need to validate or transform a list of items where each step might fail. Unlike a simple `reduce`, the Result version lets you handle failures elegantly without throwing exceptions.
 
-The function takes three parameters:
+The function accepts three parameters:
 
-- `items` - the array of items to reduce
-- `fn` - the reducing function that takes an accumulator and current item, returning a Result
-- `initial` - the starting value for the accumulator
+- **items** - The array of items to reduce.
+- **fn** - The reducing function that takes an accumulator and current item, returning a Result.
+- **initial** - The starting value for the accumulator.
 
-In this example, `reduce` sums only the even numbers and fails if it encounters an odd number:
+In this example, `reduce` sums only the even numbers and fails if it encounters an odd number.
 
 ```typescript title="reduce-result.ts"
 import { reduce, ok, err } from '@deessejs/fp';
@@ -368,7 +368,7 @@ const sumEven = reduce(
 
 ### Data Processing Pipeline
 
-When you need to process a batch of users from an external source, you can use `flow` to create a reusable pipeline. This example shows how to parse, validate, enrich, and persist a batch of users:
+When you need to process a batch of users from an external source, you can use `flow` to create a reusable pipeline. This example shows how to parse, validate, enrich, and persist a batch of users.
 
 ```typescript title="data-pipeline.ts"
 import { pipe, flow, tap } from '@deessejs/fp';
@@ -383,7 +383,7 @@ const processUserBatch = flow(
 
 ### API Response Transformation
 
-When you receive raw API data, you often need to validate, narrow, and transform it before use. This example shows how to create a reusable transformation that safely extracts and normalizes nested data:
+When you receive raw API data, you often need to validate, narrow, and transform it before use. This example shows how to create a reusable transformation that safely extracts and normalizes nested data.
 
 ```typescript title="api-transform.ts"
 import { pipe } from '@deessejs/fp';
@@ -402,7 +402,7 @@ const transformApiResponse = flow(
 
 ### Logging Pipeline
 
-When you need consistent logging around any operation, you can create a wrapper function using `tap` and `tapErr`. This higher-order function adds error and debug logging to any Result-producing operation:
+When you need consistent logging around any operation, you can create a wrapper function using `tap` and `tapErr`. This higher-order function adds error and debug logging to any Result-producing operation.
 
 ```typescript title="logging-pipeline.ts"
 import { pipe, tap, tapErr } from '@deessejs/fp';
