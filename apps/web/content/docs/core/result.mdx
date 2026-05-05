@@ -7,7 +7,7 @@ The `Result` type is the foundation of explicit error handling in @deessejs/fp. 
 
 ## Why Result?
 
-TypeScript promises type safety, but traditional error handling with exceptions breaks that promise. When a function can throw, the type system cannot help you handle errors — they're invisible until runtime.
+TypeScript promises type safety, but traditional error handling with exceptions breaks that promise. When a function can throw, the type system cannot help you handle errors - they're invisible until runtime.
 
 ### The Problem with Exceptions
 
@@ -60,12 +60,12 @@ if (result.ok) {
 
 Understanding these core concepts is essential before diving deeper:
 
-- **Result&lt;T, E&gt;** — Two generic types: the success value type (T) and the error type (E)
-- **ok(value)** — Factory function to create a success result
-- **err(error)** — Factory function to create a failure result
-- **Result.map(fn)** — Transform the value inside Ok without changing the error path
-- **Result.flatMap(fn)** — Chain operations that can fail, stopping early if an error occurs
-- **Result.gen** — Generator-based composition for writing linear, readable async error handling
+- **Result&lt;T, E&gt;** - Two generic types: the success value type (T) and the error type (E)
+- **ok(value)** - Factory function to create a success result
+- **err(error)** - Factory function to create a failure result
+- **Result.map(fn)** - Transform the value inside Ok without changing the error path
+- **Result.flatMap(fn)** - Chain operations that can fail, stopping early if an error occurs
+- **Result.gen** - Generator-based composition for writing linear, readable async error handling
 
 ## Core Concepts
 
@@ -76,11 +76,11 @@ The Result type has exactly two possible states: Ok for success and Err for fail
 ```typescript title="ok-err.ts"
 import { ok, err } from '@deessejs/fp';
 
-// Success — the ok property is true, value contains the data
+// Success - the ok property is true, value contains the data
 const success = ok({ id: '123', name: 'Alice' });
 // { ok: true, value: { id: '123', name: 'Alice' } }
 
-// Failure — the ok property is false, error contains the failure reason
+// Failure - the ok property is false, error contains the failure reason
 const failure = err({ code: 'NOT_FOUND', message: 'User not found' });
 // { ok: false, error: { code: 'NOT_FOUND', message: 'User not found' } }
 ```
@@ -155,8 +155,8 @@ When you have a function that might throw, wrapping it with `Result.attempt` con
 
 The function accepts two parameters:
 
-- **fn** — A synchronous function that may throw. This is the operation you want to wrap.
-- **catch** — An optional callback that receives the thrown error and should return an error value in your error type. If you don't provide a catch function, the thrown error becomes the error value directly.
+- **fn** - A synchronous function that may throw. This is the operation you want to wrap.
+- **catch** - An optional callback that receives the thrown error and should return an error value in your error type. If you don't provide a catch function, the thrown error becomes the error value directly.
 
 ```typescript title="result-attempt.ts"
 import { Result, error } from '@deessejs/fp';
@@ -180,8 +180,8 @@ The async version of attempt wraps promises that may reject. It works the same w
 
 The function accepts two parameters:
 
-- **fn** — An async function that may reject. This is the async operation you want to wrap.
-- **catch** — An optional callback that receives the rejection reason and should return an error value in your error type.
+- **fn** - An async function that may reject. This is the async operation you want to wrap.
+- **catch** - An optional callback that receives the rejection reason and should return an error value in your error type.
 
 ```typescript title="result-attempt-async.ts"
 import { Result, error } from '@deessejs/fp';
@@ -235,7 +235,7 @@ Transform the value inside an Ok result without affecting the error path. If the
 
 The function accepts one parameter:
 
-- **fn** — A callback that receives the Ok value and returns a new value (or can return a Result to chain further operations).
+- **fn** - A callback that receives the Ok value and returns a new value (or can return a Result to chain further operations).
 
 ```typescript title="result-map.ts"
 import { Result, pipe, ok } from '@deessejs/fp';
@@ -253,7 +253,7 @@ Chain operations that can fail together. Unlike map, the callback passed to flat
 
 The function accepts one parameter:
 
-- **fn** — A callback that receives the Ok value and must return a Result (either Ok or Err). If you need to transform the value without the possibility of failing, use map instead.
+- **fn** - A callback that receives the Ok value and must return a Result (either Ok or Err). If you need to transform the value without the possibility of failing, use map instead.
 
 ```typescript title="result-flat-map.ts"
 import { Result, pipe, ok } from '@deessejs/fp';
@@ -270,7 +270,7 @@ Transform the error inside an Err result without affecting the value path. If th
 
 The function accepts one parameter:
 
-- **fn** — A callback that receives the error value and should return a new error value.
+- **fn** - A callback that receives the error value and should return a new error value.
 
 ```typescript title="result-map-err.ts"
 import { Result, pipe, err } from '@deessejs/fp';
@@ -286,11 +286,11 @@ const mapped = pipe(
 
 #### Result.tap (pipeable)
 
-Execute a side effect on the Ok value without transforming it. The original Result passes through unchanged — both Ok and Err values remain intact. Use tap for logging, debugging, or triggering side effects that shouldn't affect the computation pipeline.
+Execute a side effect on the Ok value without transforming it. The original Result passes through unchanged - both Ok and Err values remain intact. Use tap for logging, debugging, or triggering side effects that shouldn't affect the computation pipeline.
 
 The function accepts one parameter:
 
-- **fn** — A callback that receives the Ok value and can return anything (it's ignored).
+- **fn** - A callback that receives the Ok value and can return anything (it's ignored).
 
 ```typescript title="result-tap.ts"
 import { Result, pipe, ok } from '@deessejs/fp';
@@ -307,7 +307,7 @@ Execute a side effect on the Err value without transforming it. The original Res
 
 The function accepts one parameter:
 
-- **fn** — A callback that receives the error value and can return anything (it's ignored).
+- **fn** - A callback that receives the error value and can return anything (it's ignored).
 
 ```typescript title="result-tap-err.ts"
 import { Result, pipe, err } from '@deessejs/fp';
@@ -320,11 +320,11 @@ pipe(
 
 #### Result.tapBoth (pipeable)
 
-Execute different side effects depending on whether the Result is Ok or Err. This is symmetric — both the ok callback and the err callback receive their respective values, and the original Result always passes through unchanged. Use this when you need to handle both success and failure side effects in one place, such as tracking metrics for both outcomes.
+Execute different side effects depending on whether the Result is Ok or Err. This is symmetric - both the ok callback and the err callback receive their respective values, and the original Result always passes through unchanged. Use this when you need to handle both success and failure side effects in one place, such as tracking metrics for both outcomes.
 
 The function accepts one parameter:
 
-- **callbacks** — An object with an `ok` callback for success values and an `err` callback for errors. Both callbacks can return anything (their return values are ignored).
+- **callbacks** - An object with an `ok` callback for success values and an `err` callback for errors. Both callbacks can return anything (their return values are ignored).
 
 ```typescript title="result-tap-both.ts"
 import { Result, pipe, ok, err } from '@deessejs/fp';
@@ -346,7 +346,7 @@ Extract the Ok value, falling back to a default if the Result is Err. The defaul
 
 The function accepts one parameter:
 
-- **defaultValue** — The value to return if the Result is Err. This is evaluated immediately, so only use this for cheap values.
+- **defaultValue** - The value to return if the Result is Err. This is evaluated immediately, so only use this for cheap values.
 
 ```typescript title="result-get-or-else.ts"
 import { Result, pipe, ok, err } from '@deessejs/fp';
@@ -361,7 +361,7 @@ Extract the Ok value, computing a fallback lazily only if the Result is Err. The
 
 The function accepts one parameter:
 
-- **fn** — A callback that returns the fallback value. This is only called if the Result is Err.
+- **fn** - A callback that returns the fallback value. This is only called if the Result is Err.
 
 ```typescript title="result-get-or-compute.ts"
 import { Result, pipe, err } from '@deessejs/fp';
@@ -373,7 +373,7 @@ pipe(err('oops'), Result.getOrCompute(() => expensiveDefault()));
 
 Extract the Ok value directly, throwing if the Result is Err. This is useful for internal code where you're confident the Result is Ok, but it should rarely be used at boundaries where you handle errors explicitly. The thrown error is the error value from the Err case.
 
-This method takes no parameters — it simply extracts the value or throws.
+This method takes no parameters - it simply extracts the value or throws.
 
 ```typescript title="result-unwrap.ts"
 import { Result, ok } from '@deessejs/fp';
@@ -388,7 +388,7 @@ Extract the Ok value if it exists, otherwise return a provided default. Unlike g
 
 The function accepts one parameter:
 
-- **defaultValue** — The value to return if the Result is Err.
+- **defaultValue** - The value to return if the Result is Err.
 
 ```typescript title="result-unwrap-or.ts"
 import { Result, err } from '@deessejs/fp';
@@ -402,7 +402,7 @@ Transform an Err into a new Result, effectively recovering from errors. If the R
 
 The function accepts one parameter:
 
-- **fn** — A callback that receives the error and must return a new Result (Ok or Err).
+- **fn** - A callback that receives the error and must return a new Result (Ok or Err).
 
 ```typescript title="result-or-else.ts"
 import { Result, pipe, ok, err } from '@deessejs/fp';
@@ -423,7 +423,7 @@ This is equivalent to a switch statement on the Result's state, but expressed as
 
 The function accepts one parameter:
 
-- **callbacks** — An object with an `ok` callback that receives the value and returns a new value, and an `err` callback that receives the error and returns a new value.
+- **callbacks** - An object with an `ok` callback that receives the value and returns a new value, and an `err` callback that receives the error and returns a new value.
 
 ```typescript title="result-match.ts"
 import { Result, pipe, ok, err } from '@deessejs/fp';
@@ -443,7 +443,7 @@ pipe(
 
 Convert the Result to a nullable value. Ok returns the value directly, while Err returns null. This is useful when you want to integrate with code that doesn't use Result but needs to handle the absence of a value gracefully.
 
-This method takes no parameters — it simply converts the Result's state to a nullable value.
+This method takes no parameters - it simply converts the Result's state to a nullable value.
 
 ```typescript title="result-to-nullable.ts"
 import { Result, ok, err } from '@deessejs/fp';
@@ -456,7 +456,7 @@ err('oops').toNullable(); // null
 
 Convert the Result to an optional undefined value. Ok returns the value directly, while Err returns undefined. Similar to toNullable but uses undefined instead of null, which may be preferable in some JavaScript codebases.
 
-This method takes no parameters — it simply converts the Result's state to an undefined value.
+This method takes no parameters - it simply converts the Result's state to an undefined value.
 
 ```typescript title="result-to-undefined.ts"
 import { Result } from '@deessejs/fp';
@@ -469,7 +469,7 @@ err('oops').toUndefined(); // undefined
 
 Convert the Result to a Maybe. Ok becomes Some with the value, while Err becomes None. This is useful when you want to work with the Maybe API or when the error information isn't needed downstream.
 
-This method takes no parameters — it simply converts the Result to a Maybe type.
+This method takes no parameters - it simply converts the Result to a Maybe type.
 
 ```typescript title="result-to-maybe.ts"
 import { Result } from '@deessejs/fp';
@@ -486,7 +486,7 @@ Combine multiple Results into one. If all are Ok, you get an Ok containing an ar
 
 The function accepts one parameter:
 
-- **results** — An array of Results to combine. All must be Ok for the result to be Ok.
+- **results** - An array of Results to combine. All must be Ok for the result to be Ok.
 
 ```typescript title="result-all.ts"
 import { Result } from '@deessejs/fp';
@@ -505,7 +505,7 @@ Resolve multiple Results concurrently and return the first one to settle (whethe
 
 The function accepts one parameter:
 
-- **results** — An array of Results to race. The first to settle (whether Ok or Err) wins.
+- **results** - An array of Results to race. The first to settle (whether Ok or Err) wins.
 
 ```typescript title="result-race.ts"
 import { Result } from '@deessejs/fp';
@@ -522,8 +522,8 @@ Map a function over an array of items, collecting Results. If all succeed, you g
 
 The function accepts two parameters:
 
-- **items** — An array of items to transform.
-- **fn** — A function that takes an item and returns a Result. If any Result is Err, the traversal stops early.
+- **items** - An array of items to transform.
+- **fn** - A function that takes an item and returns a Result. If any Result is Err, the traversal stops early.
 
 ```typescript title="result-traverse.ts"
 import { Result } from '@deessejs/fp';
@@ -536,11 +536,11 @@ const users = await Result.traverse(
 
 #### Result.allSettled (static)
 
-Wait for all Results to complete regardless of outcome. Each result includes its status — success results have `ok: true` with `value`, while failures have `ok: false` with `error`. Use this when you need feedback on every operation, like sending notifications where each failure should be reported but shouldn't stop others.
+Wait for all Results to complete regardless of outcome. Each result includes its status - success results have `ok: true` with `value`, while failures have `ok: false` with `error`. Use this when you need feedback on every operation, like sending notifications where each failure should be reported but shouldn't stop others.
 
 The function accepts one parameter:
 
-- **results** — An array of Results to settle. All will be waited for, regardless of success or failure.
+- **results** - An array of Results to settle. All will be waited for, regardless of success or failure.
 
 ```typescript title="result-all-settled.ts"
 import { Result } from '@deessejs/fp';
@@ -560,8 +560,8 @@ Convert a Promise to an AsyncResult. If the promise resolves, you get Ok with th
 
 The function accepts two parameters:
 
-- **promise** — A Promise that may reject.
-- **catchFn** — An optional callback that receives the rejection reason and returns an error value.
+- **promise** - A Promise that may reject.
+- **catchFn** - An optional callback that receives the rejection reason and returns an error value.
 
 ```typescript title="result-from-promise.ts"
 import { Result } from '@deessejs/fp';
@@ -578,7 +578,7 @@ Await an AsyncResult inside a generator. Use this inside `Result.gen` to sequenc
 
 The function accepts one parameter:
 
-- **asyncResult** — An AsyncResult (Result of an async operation) to await.
+- **asyncResult** - An AsyncResult (Result of an async operation) to await.
 
 ```typescript title="result-await.ts"
 const result = await Result.gen(async function* () {
@@ -598,7 +598,7 @@ The serialized format uses `_tag` to distinguish Ok from Err, making deserializa
 
 The function accepts one parameter:
 
-- **result** — The Result to serialize.
+- **result** - The Result to serialize.
 
 ```typescript title="result-serialize.ts"
 import { Result, ok } from '@deessejs/fp';
@@ -613,8 +613,8 @@ Reconstruct a Result from a serialized object. The errorRegistry maps error type
 
 The function accepts two parameters:
 
-- **errorRegistry** — An object mapping error type names to their constructor functions. This allows proper type reconstruction.
-- **json** — The serialized JSON object with `_tag` and value/error properties.
+- **errorRegistry** - An object mapping error type names to their constructor functions. This allows proper type reconstruction.
+- **json** - The serialized JSON object with `_tag` and value/error properties.
 
 ```typescript title="result-deserialize.ts"
 import { Result, ok } from '@deessejs/fp';

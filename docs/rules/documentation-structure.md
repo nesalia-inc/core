@@ -30,6 +30,7 @@ Starting from zero ensures:
 9. **Explain how it works in depth** - Go beyond surface-level descriptions; explain the mechanics, the reasoning, the edge cases, the gotchas
 10. **Develop parameters thoroughly** - When documenting a function, thoroughly explain each parameter: what it does, how it affects behavior, what values it accepts, and when to use it
 11. **Every code block needs a title** - Always add a `title` attribute to code blocks to indicate the file or context the code belongs to, using the format ```` ```typescript title="filename.ts" ````
+12. **No em-dashes** - Do not use the em-dash character (—). Use regular hyphens (-) or en-dashes (-) instead. Em-dashes can cause rendering issues in some contexts and are inconsistent across fonts.
 
 ## Feature Documentation Template
 
