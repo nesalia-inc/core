@@ -26,16 +26,19 @@ export { unit, isUnit } from "./unit.js";
 // ERROR SYSTEM
 // ============================================================================
 
-export type { Error, ErrorGroup, ErrorOptions } from "./error/index.js";
+export type { Error, ErrorGroup, ErrorOptions, Panic } from "./error/index.js";
 export {
   error,
   exceptionGroup,
   raise,
   isError,
   isErrorGroup,
+  isPanic,
   getErrorMessage,
   flattenErrorGroup,
   filterErrorsByName,
+  matchErrorPartial,
+  panic,
 } from "./error/index.js";
 
 // ============================================================================
@@ -238,11 +241,14 @@ export { yieldControl as yield, immediate } from "./yield.js";
 // RETRY
 // ============================================================================
 
-export { retryAsync, exponentialBackoff, linearBackoff, constantBackoff } from "./retry.js";
-export type { RetryOptions, RetryAbortedError } from "./retry.js";
+export { retryPolicy, retry, retryAsyncPolicy, retryAsync, exponentialBackoff, linearBackoff, constantBackoff } from "./retry.js";
+export type { RetryOptions, RetryPolicy, RetryPolicyOptions, RetryHooks, JitterConfig } from "./retry.js";
+export { RetryAbortedError, RetryTimeoutError } from "./retry.js";
 
 // ============================================================================
 // PIPE & FLOW
 // ============================================================================
 
 export { pipe, flow, pipeAsync, flowAsync, tapAsync, tapSafe, reduce } from "./pipe.js";
+export { dual, debounce, throttle, memoize } from "./pipe.js";
+export type { DebounceOptions, ThrottleOptions, MemoizeOptions } from "./pipe.js";

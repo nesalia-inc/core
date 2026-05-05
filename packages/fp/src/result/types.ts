@@ -14,6 +14,14 @@ export interface ResultMatchHandlers<T, E, U> {
 }
 
 /**
+ * TapBoth handlers for Result - symmetric observation
+ */
+export interface ResultTapBothHandlers<T, E> {
+  ok: (value: T) => void;
+  err: (error: E) => void;
+}
+
+/**
  * Ok type - represents a successful result with methods
  * @typeParam T - The type of the value
  * @typeParam E - The type of the error (constrained to Error)
@@ -32,6 +40,7 @@ export type Ok<T, E extends Error = Error> = {
   getOrCompute<U>(fn: () => U): T | U;
   tap(fn: (value: T) => void): Ok<T, E>;
   tapErr(fn: (error: E) => void): Ok<T, E>;
+  tapBoth(handlers: ResultTapBothHandlers<T, E>): Ok<T, E>;
   // match with object-based syntax for full type inference
    
   match<U>(handlers: ((value: T) => U) | ({ onSuccess: (value: T) => U; onError: (error: E) => U })): U;
@@ -56,6 +65,7 @@ export type Err<E extends Error = Error> = {
   getOrCompute<T, U>(fn: () => U): T | U;
   tap(_fn: (value: never) => void): Err<E>;
   tapErr(fn: (error: E) => void): Err<E>;
+  tapBoth(handlers: ResultTapBothHandlers<never, E>): Err<E>;
   // match with object-based syntax for full type inference
    
   match<U>(handlers: ((value: never) => U) | ({ onSuccess: (value: never) => U; onError: (error: E) => U })): U;

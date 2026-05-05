@@ -26,6 +26,7 @@ const createOk = <T, E extends Error = Error>(value: T): Ok<T, E> => {
     getOrCompute() { return value; },
     tap(fn) { fn(value); return self; },
     tapErr() { return self; },
+    tapBoth(handlers) { handlers.ok(value); return self; },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     match(fn: any) {
       if (typeof fn === 'object' && fn !== null && 'onSuccess' in fn) {
@@ -60,6 +61,7 @@ const createErr = <E extends Error>(error: E): Err<E> => {
      
     tap(_fn) { return self; },
     tapErr(fn) { fn(error); return self; },
+    tapBoth(handlers) { handlers.err(error); return self; },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     match(fn: any) {
       if (typeof fn === 'object' && fn !== null && 'onError' in fn) {
@@ -211,6 +213,26 @@ export const tapErr = <T, E extends Error>(
 ): Result<T, E> => {
   if (isErr(result)) {
     fn(result.error);
+  }
+  return result;
+};
+
+/**
+ * Performs side effects on both Ok and Err without changing the value
+ * @typeParam T - The type of the value
+ * @typeParam E - The type of the error
+ * @param result - The Result to inspect
+ * @param handlers - Object with ok and err handler functions
+ * @returns The same Result
+ */
+export const tapBoth = <T, E extends Error>(
+  result: Result<T, E>,
+  handlers: { ok: (value: T) => void; err: (error: E) => void }
+): Result<T, E> => {
+  if (isOk(result)) {
+    handlers.ok(result.value);
+  } else {
+    handlers.err(result.error);
   }
   return result;
 };

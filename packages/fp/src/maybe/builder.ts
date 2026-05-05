@@ -52,6 +52,10 @@ export const some = <T,>(value: NonNullable<T>): Some<NonNullable<T>> => {
       fn(this.value);
       return this;
     },
+    tapBoth(handlers: { some: (value: NonNullable<T>) => void; none: () => void }): Some<NonNullable<T>> {
+      handlers.some(this.value);
+      return this;
+    },
     toResult(_onNone: () => Error<unknown>): Result<NonNullable<T>, Error<unknown>> {
       return ok(this.value);
     },
@@ -90,6 +94,10 @@ const NONE: None = Object.freeze({
     return _fn();
   },
   tap(_fn: (value: never) => void): None {
+    return NONE;
+  },
+  tapBoth(handlers: { some: (value: never) => void; none: () => void }): None {
+    handlers.none();
     return NONE;
   },
   toResult(onNone: () => Error<unknown>): Result<never, Error<unknown>> {
@@ -169,6 +177,25 @@ export const flatten = <T>(maybe: Maybe<Maybe<T>>): Maybe<T> =>
 export const tap = <T>(maybe: Maybe<T>, fn: (value: T) => void): Maybe<T> => {
   if (isSome(maybe)) {
     fn(maybe.value);
+  }
+  return maybe;
+};
+
+/**
+ * Performs side effects on both Some and None without changing the value
+ * @typeParam T - The type of the value
+ * @param maybe - The Maybe to inspect
+ * @param handlers - Object with some and none handler functions
+ * @returns The same Maybe
+ */
+export const tapBoth = <T>(
+  maybe: Maybe<T>,
+  handlers: { some: (value: T) => void; none: () => void }
+): Maybe<T> => {
+  if (isSome(maybe)) {
+    handlers.some(maybe.value);
+  } else {
+    handlers.none();
   }
   return maybe;
 };

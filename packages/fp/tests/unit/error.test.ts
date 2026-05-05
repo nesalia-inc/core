@@ -13,6 +13,9 @@ import {
   err,
   isOk,
   isErr,
+  panic,
+  isPanic,
+  matchErrorPartial,
 } from "../../src/index.js";
 
 describe("error() with Zod schema validation", () => {
@@ -51,7 +54,7 @@ describe("error() with Zod schema validation", () => {
       expect(e.args).toBeDefined();
     });
 
-    it("should work with addNotes on valid Zod error", () => {
+    it("should work with addNotes on Zod error", () => {
       const ValidationError = error({
         name: "ValidationError",
         schema: z.object({
@@ -63,6 +66,24 @@ describe("error() with Zod schema validation", () => {
       const e = ValidationError({ field: "email" }).addNotes("Form submission failed");
 
       expect(e.notes).toEqual(["Form submission failed"]);
+    });
+
+    it("should not allow addNotes on validation error", () => {
+      // When Zod validation fails, addNotes should return error with note about limitation
+      const ValidationError = error({
+        name: "ValidationError",
+        schema: z.object({
+          field: z.string().min(1),
+        }),
+      });
+
+      // @ts-expect-error - intentionally passing wrong type to trigger validation error
+      const validationErr = ValidationError({ field: 123 }); // Invalid - field must be string
+
+      const withNotes = validationErr.addNotes("would be nice to add notes");
+
+      // The note indicates addNotes doesn't work on validation errors
+      expect(withNotes.notes).toContain("Cannot add notes to validation error");
     });
 
     it("should work with from on Zod error", () => {
@@ -86,6 +107,30 @@ describe("error() with Zod schema validation", () => {
 
       expect(e.cause.isSome()).toBe(true);
       expect(e.cause.map(c => c.name).getOrElse(undefined)).toBe("NetworkError");
+    });
+
+    it("should not allow from on validation error", () => {
+      const ValidationError = error({
+        name: "ValidationError",
+        schema: z.object({
+          field: z.string().min(1),
+        }),
+      });
+
+      const NetworkError = error({
+        name: "NetworkError",
+        schema: z.object({
+          host: z.string(),
+        }),
+      });
+
+      // @ts-expect-error - intentionally passing wrong type to trigger validation error
+      const validationErr = ValidationError({ field: 123 });
+
+      const cause = NetworkError({ host: "api.example.com" });
+      const withCause = validationErr.from(cause);
+
+      expect(withCause.notes).toContain("Cannot chain cause on validation error");
     });
 
     it("should create a frozen error object", () => {
@@ -938,5 +983,273 @@ describe("sensitive data redaction", () => {
     expect(e.message).not.toContain("secret1");
     expect(e.message).not.toContain("secret2");
     expect(e.message).not.toContain("secret3");
+  });
+});
+
+describe("Panic", () => {
+  describe("panic()", () => {
+    it("should throw Panic with string reason", () => {
+      expect(() => panic("out of bounds")).toThrow();
+
+      try {
+        panic("out of bounds");
+      } catch (e: unknown) {
+        const p = e as { _tag: string; reason: string; error: globalThis.Error };
+        expect(p._tag).toBe("Panic");
+        expect(p.reason).toBe("out of bounds");
+        expect(p.error).toBeInstanceOf(globalThis.Error);
+      }
+    });
+
+    it("should throw Panic with Error object", () => {
+      const originalError = new globalThis.Error("callback failed");
+
+      try {
+        panic(originalError);
+      } catch (e: unknown) {
+        const p = e as { _tag: string; reason: string; error: globalThis.Error };
+        expect(p._tag).toBe("Panic");
+        expect(p.reason).toBe("callback failed");
+        expect(p.error).toBe(originalError);
+      }
+    });
+
+    it("should throw Panic that propagates through try/catch", () => {
+      const catchPanic = () => {
+        try {
+          panic("programmer defect");
+        } catch {
+          // Re-throw the panic
+          throw new globalThis.Error("caught and rethrown");
+        }
+      };
+
+      expect(catchPanic).toThrow();
+    });
+
+    it("should create frozen Panic object", () => {
+      try {
+        panic("test");
+      } catch (e: unknown) {
+        const p = e as { _tag: string; reason: string; error: globalThis.Error };
+        expect(Object.isFrozen(p)).toBe(true);
+        // Note: Native Error objects cannot be frozen, so we only check the panic wrapper
+      }
+    });
+  });
+
+  describe("Panic.is (isPanic guard)", () => {
+    it("should return true for Panic values", () => {
+      try {
+        panic("test panic");
+      } catch (e: unknown) {
+        expect(isPanic(e)).toBe(true);
+      }
+    });
+
+    it("should return false for regular Error", () => {
+      const e = error({ name: "TestError" })({ value: 1 });
+      expect(isPanic(e)).toBe(false);
+    });
+
+    it("should return false for null", () => {
+      expect(isPanic(null)).toBe(false);
+    });
+
+    it("should return false for undefined", () => {
+      expect(isPanic(undefined)).toBe(false);
+    });
+
+    it("should return false for primitive", () => {
+      expect(isPanic("string")).toBe(false);
+      expect(isPanic(42)).toBe(false);
+      expect(isPanic(true)).toBe(false);
+    });
+
+    it("should return false for plain object", () => {
+      expect(isPanic({ _tag: "Panic" })).toBe(false);
+      expect(isPanic({ _tag: "Panic", reason: "test" })).toBe(false);
+      expect(isPanic({ _tag: "Panic", error: new globalThis.Error("test"), reason: "test" })).toBe(false);
+    });
+
+    it("should return false for Error with _tag property but not Panic", () => {
+      const e = error({ name: "TaggedError" })({ id: "1" });
+      // Regular errors don't have _tag
+      expect(isPanic(e)).toBe(false);
+    });
+  });
+});
+
+describe("matchErrorPartial()", () => {
+  it("should match specific error types", () => {
+    const NotFoundError = error({
+      name: "NotFoundError",
+      schema: z.object({ id: z.string(), resource: z.string() }),
+    });
+
+    const ValidationError = error({
+      name: "ValidationError",
+      schema: z.object({ field: z.string(), message: z.string() }),
+    });
+
+    const notFoundErr = NotFoundError({ id: "123", resource: "User" });
+    const validationErr = ValidationError({ field: "email", message: "invalid" });
+
+    const result1 = matchErrorPartial(notFoundErr, {
+      NotFoundError: (e) => `Missing: ${e.args.id}`,
+      ValidationError: (e) => `Invalid: ${e.args.field}`,
+    }, (e) => `Unknown: ${e.name}`);
+
+    expect(result1).toBe("Missing: 123");
+
+    const result2 = matchErrorPartial(validationErr, {
+      NotFoundError: (e) => `Missing: ${e.args.id}`,
+      ValidationError: (e) => `Invalid: ${e.args.field}`,
+    }, (e) => `Unknown: ${e.name}`);
+
+    expect(result2).toBe("Invalid: email");
+  });
+
+  it("should call fallback for unhandled error types", () => {
+    const NotFoundError = error({
+      name: "NotFoundError",
+      schema: z.object({ id: z.string() }),
+    });
+
+    const TimeoutError = error({
+      name: "TimeoutError",
+      schema: z.object({ ms: z.number() }),
+    });
+
+    const timeoutErr = TimeoutError({ ms: 5000 });
+
+    const result = matchErrorPartial(timeoutErr, {
+      NotFoundError: NotFoundError,
+      ValidationError: error({ name: "ValidationError" }),
+    }, (e) => `Unknown error: ${e.name}`);
+
+    expect(result).toBe("Unknown error: TimeoutError");
+  });
+
+  it("should handle Panic in matchErrorPartial", () => {
+    const NotFoundError = error({
+      name: "NotFoundError",
+      schema: z.object({ id: z.string() }),
+    });
+
+    let caughtPanic: { _tag: string; reason: string } | null = null;
+
+    try {
+      panic("unrecoverable defect");
+    } catch (error_) {
+      const p = error_ as { _tag: string; reason: string; error: globalThis.Error };
+      caughtPanic = p;
+
+      const result = matchErrorPartial(p, {
+        NotFoundError: NotFoundError,
+      }, (e) => `Panic: ${(e as { reason: string }).reason}`);
+
+      expect(result).toBe("Panic: unrecoverable defect");
+    }
+
+    expect(caughtPanic).not.toBeNull();
+  });
+
+  it("should pass Panic type correctly to handlers", () => {
+    let receivedValue: unknown = null;
+
+    try {
+      panic(new globalThis.Error("test error"));
+    } catch (e: unknown) {
+      matchErrorPartial(e as { _tag: string; error: globalThis.Error; reason: string }, {
+        NotFoundError: (e) => e,
+      }, (e) => {
+        receivedValue = e;
+        return "fallback";
+      });
+    }
+
+    expect(receivedValue).not.toBeNull();
+    expect((receivedValue as { _tag: string })._tag).toBe("Panic");
+  });
+
+  it("should work with empty handlers (all fall through)", () => {
+    const e = error({ name: "GenericError" })({ code: 500 });
+
+    const result = matchErrorPartial(e, {}, (e) => `Default: ${e.name}`);
+
+    expect(result).toBe("Default: GenericError");
+  });
+
+  it("should use correct handler when multiple match", () => {
+    const NotFoundError = error({ name: "NotFoundError" });
+    const ValidationError = error({ name: "ValidationError" });
+
+    // When two handlers could match, first one wins
+    const result = matchErrorPartial(
+      NotFoundError({ id: "123" }),
+      {
+        NotFoundError: () => "not found handler",
+        ValidationError: () => "validation handler",
+      },
+      () => "fallback"
+    );
+
+    expect(result).toBe("not found handler");
+
+    // Also test that ValidationError handler works when ValidationError is passed
+    const validationErr = ValidationError({ field: "email" });
+    const result2 = matchErrorPartial(
+      validationErr,
+      {
+        NotFoundError: () => "not found handler",
+        ValidationError: () => "validation handler",
+      },
+      () => "fallback"
+    );
+
+    expect(result2).toBe("validation handler");
+  });
+});
+
+describe("Panic in async context", () => {
+  it("should allow panic to be used and caught in async function", async () => {
+    const NotFoundError = error({
+      name: "NotFoundError",
+      schema: z.object({ id: z.string() }),
+    });
+
+    // An async function that uses panic
+    const getUserOrPanic = async (id: string) => {
+      const result = id === "valid" ? { id } : null;
+      if (!result) {
+        panic(NotFoundError({ id }));
+      }
+      return result;
+    };
+
+    // When user not found, panic should be thrown
+    try {
+      await getUserOrPanic("invalid");
+      fail("Expected panic to be thrown");
+    } catch (e: unknown) {
+      expect(isPanic(e)).toBe(true);
+    }
+  });
+
+  it("should allow panic with string reason in async context", async () => {
+    const getValueOrPanic = async (value: number) => {
+      if (value < 0) {
+        panic("Value must be non-negative");
+      }
+      return value;
+    };
+
+    try {
+      await getValueOrPanic(-1);
+      fail("Expected panic to be thrown");
+    } catch (e: unknown) {
+      expect(isPanic(e)).toBe(true);
+    }
   });
 });

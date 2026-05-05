@@ -9,6 +9,7 @@ export type {
   Result,
   Success,
   ExtractResultError,
+  ResultTapBothHandlers,
 } from "./types.js";
 
 // Builder functions
@@ -24,7 +25,7 @@ export { map, flatMap, mapErr } from "./builder.js";
 export { getOrElse, getOrCompute, unwrap } from "./builder.js";
 
 // Side effects
-export { tap, tapErr } from "./builder.js";
+export { tap, tapErr, tapBoth } from "./builder.js";
 
 // Pattern matching
 export { match } from "./builder.js";

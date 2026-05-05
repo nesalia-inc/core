@@ -5,7 +5,7 @@
  * These guards verify both structure AND primitive types for robustness.
  */
 
-import { type Error, type ErrorGroup } from "./types.js";
+import { type Error, type ErrorGroup, type Panic } from "./types.js";
 
 /**
  * Helper for safe object narrowing
@@ -127,3 +127,52 @@ export function assertIsErrorGroup(value: unknown): asserts value is ErrorGroup 
     throw new TypeError(`Expected ErrorGroup, got ${typeof value}`);
   }
 }
+
+/**
+ * Type guard to check if a value is a Panic
+ *
+ * Validates:
+ * - Value is a frozen object (not null, not primitive)
+ * - _tag is "Panic"
+ * - error is an Error object (either native or library Error)
+ * - reason is a string
+ *
+ * Panic objects created by panic() are frozen, so we check for frozenness
+ * to distinguish real Panic values from look-alike plain objects.
+ *
+ * For the error property:
+ * - Native errors have Error.prototype in their chain
+ * - Library errors (from error() builder) are frozen plain objects with 'args' property
+ */
+export const isPanic = (value: unknown): value is Panic => {
+  if (!isObject(value)) return false;
+
+  // Check _tag discriminator
+  if ((value as Panic)._tag !== "Panic") return false;
+
+  // Check reason is a string
+  if (typeof (value as Panic).reason !== "string") return false;
+
+  // Panic objects created by panic() are frozen - check frozenness
+  // to reject look-alike objects that weren't created by panic()
+  if (!Object.isFrozen(value)) return false;
+
+  // Verify error is a valid error object
+  const error = (value as Panic).error;
+  if (!isObject(error)) return false;
+  if (typeof error.message !== "string") return false;
+  if (typeof error.name !== "string") return false;
+
+  // Check if it's a native Error (has Error.prototype in chain)
+  const proto = Object.getPrototypeOf(error);
+  if (proto !== null && proto.constructor === globalThis.Error) {
+    return true; // It's a native Error - accept it
+  }
+
+  // Not a native Error - could be a library Error (from error() builder)
+  // Library Errors: are frozen AND have 'args' property
+  if (!Object.isFrozen(error)) return false;
+  if (!("args" in error)) return false;
+
+  return true;
+};
