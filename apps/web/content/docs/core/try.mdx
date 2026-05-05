@@ -5,15 +5,21 @@ description: Wraps synchronous and asynchronous functions that might throw
 
 import { Callout } from 'fumadocs-ui/components/callout';
 
-The `Try` pattern wraps functions that might throw in a type-safe container. It's the bridge between imperative exception handling and functional error management.
+The `Try` pattern wraps functions that might throw in a type-safe container. It acts as the bridge between imperative exception handling and functional error management. When you wrap a function with `Try`, you convert unpredictable exceptions into typed results that TypeScript can track and enforce handling for.
 
-## Why Try?
+## Why Use Try?
 
-JavaScript exceptions can crash your app. When a function can throw, TypeScript types don't help you handle the error.
+JavaScript exceptions can crash your application at runtime. When a function has the ability to throw, TypeScript types do not help you handle the error in a type-safe way. This creates a gap between what the compiler knows and what can actually happen at runtime.
 
 ### The Problem with Exceptions
 
-```typescript
+Exceptions bypass type checking. A function that parses JSON can throw a SyntaxError, but your TypeScript types do not indicate this possibility. The type system cannot enforce error handling, so crashes can happen silently.
+
+You see this problem when parsing user input or reading files. The type system assumes success, but runtime can throw exceptions that the compiler cannot track.
+
+Here is an example showing how exceptions hide from the type system:
+
+```typescript title="exception-problem.ts"
 // This can throw, but we do not see it in the type
 const data = JSON.parse(userInput); // Can throw SyntaxError
 const user = readFileSync(path);     // Can throw on missing file
@@ -24,9 +30,11 @@ console.log(data.name); // Might crash if parse failed
 
 ### The Try Solution
 
-Try catches exceptions and converts them to typed errors:
+`Try` catches exceptions and converts them into typed errors. Instead of a function that might throw, you get a `Result` type that clearly indicates success or failure. TypeScript can then track and enforce handling for both states.
 
-```typescript
+Here is how `Try` converts exceptions into typed results:
+
+```typescript title="try-solution.ts"
 import { attempt, isOk } from '@deessejs/fp';
 
 const result = attempt(() => JSON.parse(userInput));
@@ -40,31 +48,35 @@ if (isOk(result)) {
 
 **Key concepts:**
 
-- **`Result<T, E>`** — Two states: success with value or failure with error
-- **`attempt(fn)`** — Wraps a synchronous function in try/catch
-- **`attemptAsync(fn)`** — Wraps an async function in try/catch
-- **`isOk()`** — Type guard that narrows to the success branch
-- **`catch`** — Optional transform function to map thrown errors to custom types
+- **`Result<T, E>`** -- Two states: success with value or failure with error
+- **`attempt(fn)`** -- Wraps a synchronous function in try/catch
+- **`attemptAsync(fn)`** -- Wraps an async function in try/catch
+- **`isOk()`** -- Type guard that narrows to the success branch
+- **`catch`** -- Optional transform function to map thrown errors to custom types
 
 ## Core Concepts
 
 ### Success and Failure
 
-`Result<T, E>` from Try has two possible states:
+`Result<T, E>` from `Try` has two possible states. Understanding these states is fundamental to working with `Try` effectively.
 
 | State | Description | Properties |
 |-------|-------------|-------------|
 | `Ok<T>` | Function succeeded | `ok: true`, `value: T` |
 | `Err<E>` | Function threw | `ok: false`, `error: E` |
 
-```typescript
+The `Ok` state contains the successful return value. The `Err` state contains the error that was thrown during execution. You can use type guards like `isOk()` and `isErr()` to narrow between these states safely.
+
+Here is an example showing both states being returned:
+
+```typescript title="success-failure-states.ts"
 import { attempt } from '@deessejs/fp';
 
-// Success
+// Success case - the function returns a value
 const success = attempt(() => 42);
 // { ok: true, value: 42 }
 
-// Failure
+// Failure case - the function throws an error
 const failure = attempt(() => {
   throw new Error('Something went wrong');
 });
@@ -73,9 +85,13 @@ const failure = attempt(() => {
 
 ### Wrapping Behavior
 
-Non-Error throws are converted to Error objects:
+`Try` handles non-Error throws by converting them to Error objects. This ensures consistent error handling regardless of what type of value is thrown.
 
-```typescript
+When you throw a string, number, or object, `Try` wraps it in an Error for uniform handling. Strings become Error with the string as the message. Numbers become Error with the number converted to a string. Objects get stringified.
+
+Here are examples of this wrapping behavior:
+
+```typescript title="wrapping-behavior.ts"
 // Strings are wrapped in Error
 attempt(() => { throw 'oops'; });     // Err(Error: 'oops')
 
@@ -90,22 +106,26 @@ attempt(() => { throw { code: 500 }; }); // Err(Error: '[object Object]')
 
 ### Creating Tries
 
-#### `attempt(fn)`
+#### attempt function
 
-Wraps a synchronous function in try/catch. Returns Ok if the function succeeds, Err if it throws.
+This function wraps a synchronous function in try/catch. It returns `Ok` if the function succeeds, or `Err` if the function throws. This is the primary way to convert code that might throw into type-safe code.
 
-```typescript
+The `fn` parameter is a function that takes no arguments and returns a value. It will be executed inside a try/catch block. Any exception thrown by `fn` will be caught and converted to an `Err` result.
+
+```typescript title="attempt-basic.ts"
 import { attempt } from '@deessejs/fp';
 
 attempt(() => 42);                           // Ok(42)
 attempt(() => { throw new Error('oops'); });  // Err(Error: 'oops')
 ```
 
-#### `attempt(fn, catchFn)`
+#### attempt with catchFn
 
-Wraps a synchronous function with a custom error handler. The handler transforms the caught error into a custom error type.
+This overload lets you provide a custom error handler. The first parameter is the function to wrap, and the second parameter is a transform function that receives the caught error and returns a custom error type.
 
-```typescript
+The `catchFn` parameter is a function that takes the caught error (of type `unknown`) and returns an error of your custom type. This lets you map raw exceptions to structured errors that your application can handle meaningfully.
+
+```typescript title="attempt-with-catch.ts"
 import { attempt, error } from '@deessejs/fp';
 import { z } from 'zod';
 
@@ -128,11 +148,13 @@ if (result.ok) {
 }
 ```
 
-#### `attemptAsync(fn)`
+#### attemptAsync function
 
-Wraps an async function in try/catch. Returns `Promise<Result<T, E>>`.
+This function wraps an async function in try/catch. It returns `Promise<Result<T, E>>`. When the async function succeeds, the promise resolves to `Ok` with the value. When the async function throws, the promise resolves to `Err` with the error.
 
-```typescript
+The `fn` parameter is an async function (or a function that returns a Promise) that you want to wrap. This lets you safely call async operations that might throw.
+
+```typescript title="attempt-async-basic.ts"
 import { attemptAsync } from '@deessejs/fp';
 
 const result = await attemptAsync(async () => {
@@ -141,11 +163,13 @@ const result = await attemptAsync(async () => {
 });
 ```
 
-#### `attemptAsync(fn, catchFn)`
+#### attemptAsync with catchFn
 
-Wraps an async function with a custom error handler.
+This overload lets you provide a custom error handler for async functions. The first parameter is the async function to wrap, and the second parameter transforms caught errors into your custom error type.
 
-```typescript
+The `catchFn` parameter receives the caught error and should return a custom error. This is useful for mapping network errors, HTTP status errors, or validation failures into your application's error types.
+
+```typescript title="attempt-async-with-catch.ts"
 import { attemptAsync, error } from '@deessejs/fp';
 import { z } from 'zod';
 
@@ -168,11 +192,13 @@ const fetchData = (url: string) =>
 
 ### Type Guards
 
-#### `isOk(result)`
+#### isOk function
 
-Type guard that narrows to the Ok branch.
+This function is a type guard that narrows a `Result` to the `Ok` branch. When you call `isOk(result)` and it returns `true`, TypeScript knows the result is `Ok` and you can safely access `result.value`.
 
-```typescript
+The `result` parameter is the `Result` you want to test. The function returns `true` if the result is `Ok`, and `false` if the result is `Err`. This is useful for conditional logic that needs to handle success and failure cases differently.
+
+```typescript title="is-ok-usage.ts"
 import { attempt, isOk } from '@deessejs/fp';
 
 const result = attempt(() => 42);
@@ -182,11 +208,13 @@ if (isOk(result)) {
 }
 ```
 
-#### `isErr(result)`
+#### isErr function
 
-Type guard that narrows to the Err branch.
+This function is a type guard that narrows a `Result` to the `Err` branch. When you call `isErr(result)` and it returns `true`, TypeScript knows the result is `Err` and you can safely access `result.error`.
 
-```typescript
+The `result` parameter is the `Result` you want to test. The function returns `true` if the result is `Err`, and `false` if the result is `Ok`. This is useful for error handling paths where you need to access error details.
+
+```typescript title="is-err-usage.ts"
 import { attempt, isErr } from '@deessejs/fp';
 
 const result = attempt(() => { throw new Error('oops'); });
@@ -198,28 +226,32 @@ if (isErr(result)) {
 
 ### Transformation
 
-#### `map(result, fn)`
+#### map function
 
-Transforms the success value. Passes failures through unchanged.
+This function transforms the success value while passing failures through unchanged. It takes a `Result` and a mapping function. If the result is `Ok`, the mapping function is applied to the value. If the result is `Err`, the error passes through unchanged.
 
-```typescript
+The `result` parameter is the `Result` to transform. The `fn` parameter is a mapping function that receives the success value and returns a new value of potentially a different type. Failures are not affected by the mapping function.
+
+```typescript title="map-usage.ts"
 import { attempt, map } from '@deessejs/fp';
 
 map(attempt(() => 2), x => x * 2);                           // Ok(4)
 map(attempt(() => { throw new Error(); }), x => x * 2);     // Err(Error)
 ```
 
-Also available as a method:
+The `map` function is also available as a method on the `Result` type for fluent chaining:
 
-```typescript
+```typescript title="map-method.ts"
 attempt(() => 2).map(x => x * 2); // Ok(4)
 ```
 
-#### `flatMap(result, fn)`
+#### flatMap function
 
-Chains operations that can throw. If success, applies the function. If failure, returns failure.
+This function chains operations that can throw together. If the first result is `Ok`, the mapping function is applied to the value. If the first result is `Err`, the error passes through without calling the mapping function.
 
-```typescript
+The `result` parameter is the starting `Result`. The `fn` parameter is a function that receives the success value and returns a new `Result`. This lets you compose multiple throwing operations while maintaining type safety.
+
+```typescript title="flatmap-usage.ts"
 import { attempt, flatMap } from '@deessejs/fp';
 
 const parseNumber = (s: string) =>
@@ -233,36 +265,40 @@ flatMap(attempt(() => '21'), parseNumber);   // Ok(21)
 flatMap(attempt(() => 'abc'), parseNumber);  // Err(Error: 'Invalid number')
 ```
 
-Also available as a method:
+The `flatMap` function is also available as a method on the `Result` type for fluent chaining:
 
-```typescript
+```typescript title="flatmap-method.ts"
 attempt(() => '21').flatMap(parseNumber); // Ok(21)
 ```
 
 ### Extraction
 
-#### `getOrElse(result, defaultValue)`
+#### getOrElse function
 
-Returns the success value, or a default if failure.
+This function returns the success value if the result is `Ok`. If the result is `Err`, it returns the provided default value instead. This gives you a simple way to handle failures with fallback values.
 
-```typescript
+The `result` parameter is the `Result` to extract from. The `defaultValue` parameter is the value to return if the result is `Err`. The default value is returned as-is, so choose a value that makes sense for your use case.
+
+```typescript title="get-or-else-usage.ts"
 import { attempt, getOrElse } from '@deessejs/fp';
 
 getOrElse(attempt(() => 42), 0);                            // 42
 getOrElse(attempt(() => { throw new Error(); }), 0);         // 0
 ```
 
-Also available as a method:
+The `getOrElse` function is also available as a method on the `Result` type:
 
-```typescript
+```typescript title="get-or-else-method.ts"
 attempt(() => 42).getOrElse(0); // 42
 ```
 
-#### `getOrCompute(result, fn)`
+#### getOrCompute function
 
-Returns the success value, or computes one lazily if failure. Useful for expensive fallbacks.
+This function returns the success value if the result is `Ok`. If the result is `Err`, it lazily computes a fallback value by calling the provided function. This is useful when the fallback value is expensive to create and you only want to compute it when needed.
 
-```typescript
+The `result` parameter is the `Result` to extract from. The `fn` parameter is a function that returns the fallback value. This function is only called if the result is `Err`, which avoids unnecessary computation when the operation succeeds.
+
+```typescript title="get-or-compute-usage.ts"
 import { attempt, getOrCompute } from '@deessejs/fp';
 
 const expensive = () => { console.log('computing...'); return 0; };
@@ -271,55 +307,61 @@ getOrCompute(attempt(() => 42), expensive);                            // 42 (ne
 getOrCompute(attempt(() => { throw new Error(); }), expensive);         // logs 'computing...', returns 0
 ```
 
-Also available as a method:
+The `getOrCompute` function is also available as a method on the `Result` type:
 
-```typescript
+```typescript title="get-or-compute-method.ts"
 attempt(() => { throw new Error(); }).getOrCompute(() => 0); // 0
 ```
 
 ### Side Effects
 
-#### `tap(result, fn)`
+#### tap function
 
-Executes a function on the value without changing it. Useful for logging.
+This function executes a side effect on the value without changing the result. It passes through both the value and errors unchanged. This is useful for logging, debugging, or triggering side effects that should not affect the result.
 
-```typescript
+The `result` parameter is the `Result` to tap. The `fn` parameter is a function that receives the value and performs a side effect. The function is only called if the result is `Ok`. Errors pass through without triggering the side effect.
+
+```typescript title="tap-usage.ts"
 import { attempt, tap } from '@deessejs/fp';
 
 tap(attempt(() => 42), x => console.log('Got:', x));                 // Logs: 'Got: 42', returns Ok(42)
 tap(attempt(() => { throw new Error(); }), x => console.log('Got:', x)); // Nothing logged, returns Err(Error)
 ```
 
-Also available as a method:
+The `tap` function is also available as a method on the `Result` type:
 
-```typescript
+```typescript title="tap-method.ts"
 attempt(() => 42).tap(x => console.log(x)); // Ok(42)
 ```
 
-#### `tapErr(result, fn)`
+#### tapErr function
 
-Executes a function on the error without changing it.
+This function executes a side effect on the error without changing the result. It passes through both the value and errors unchanged. This is useful for logging errors or triggering side effects when an operation fails.
 
-```typescript
+The `result` parameter is the `Result` to tap. The `fn` parameter is a function that receives the error and performs a side effect. The function is only called if the result is `Err`. Success values pass through without triggering the side effect.
+
+```typescript title="tap-err-usage.ts"
 import { attempt, tapErr } from '@deessejs/fp';
 
 tapErr(attempt(() => 42), e => console.error('Error:', e));                            // Nothing logged
 tapErr(attempt(() => { throw new Error('oops'); }), e => console.error('Error:', e)); // Logs: 'Error: Error: oops'
 ```
 
-Also available as a method:
+The `tapErr` function is also available as a method on the `Result` type:
 
-```typescript
+```typescript title="tap-err-method.ts"
 attempt(() => { throw new Error('oops'); }).tapErr(e => console.error(e)); // Err(Error: 'oops')
 ```
 
 ### Pattern Matching
 
-#### `match(result, onOk, onErr)`
+#### match function
 
-Handles both success and failure cases, returning a single value.
+This function handles both success and failure cases by applying the appropriate function based on the result state. It always returns a single value, making it a complete solution for handling results.
 
-```typescript
+The `result` parameter is the `Result` to match on. The `onOk` parameter is a function that receives the value and returns a value of the type you need. The `onErr` parameter is a function that receives the error and returns a value of the same type. One of these functions will be called, never both.
+
+```typescript title="match-usage.ts"
 import { attempt, match } from '@deessejs/fp';
 
 match(
@@ -335,9 +377,9 @@ match(
 ); // "Failed: oops"
 ```
 
-Returns different types:
+You can return different types from each branch, which is useful for converting results to the type you need:
 
-```typescript
+```typescript title="match-different-types.ts"
 match(
   attempt(() => 'hello'),
   value => value.length,  // string -> number
@@ -347,22 +389,26 @@ match(
 
 ### Conversions
 
-#### `toNullable(result)`
+#### toNullable function
 
-Converts to `T | null`.
+This function converts a `Result` to a nullable value. If the result is `Ok`, it returns the value. If the result is `Err`, it returns `null`. This lets you integrate `Try` with code that expects nullable types.
 
-```typescript
+The `result` parameter is the `Result` to convert. The function returns `T | null` where `T` is the success value type.
+
+```typescript title="to-nullable-usage.ts"
 import { attempt, toNullable } from '@deessejs/fp';
 
 toNullable(attempt(() => 42));                         // 42
 toNullable(attempt(() => { throw new Error(); }));    // null
 ```
 
-#### `toUndefined(result)`
+#### toUndefined function
 
-Converts to `T | undefined`.
+This function converts a `Result` to an optional undefined value. If the result is `Ok`, it returns the value. If the result is `Err`, it returns `undefined`. This lets you integrate `Try` with code that expects optional types.
 
-```typescript
+The `result` parameter is the `Result` to convert. The function returns `T | undefined` where `T` is the success value type.
+
+```typescript title="to-undefined-usage.ts"
 import { attempt, toUndefined } from '@deessejs/fp';
 
 toUndefined(attempt(() => 42));                         // 42
@@ -371,9 +417,13 @@ toUndefined(attempt(() => { throw new Error(); }));     // undefined
 
 ## Method Chaining
 
-Try objects support chaining for fluent transformations:
+`Try` objects support chaining for fluent transformations. All transformation functions like `map`, `flatMap`, `tap`, and `tapErr` are available as methods on the `Result` type. This lets you chain multiple operations together in a readable way.
 
-```typescript
+Each method in the chain returns a new `Result`, so you can continue chaining as long as you need. If any step in the chain produces an `Err`, all subsequent transformations are skipped and the error passes through.
+
+Here is an example of chaining multiple transformations:
+
+```typescript title="method-chaining.ts"
 import { attempt } from '@deessejs/fp';
 
 const result = attempt(() => 'hello')
@@ -389,7 +439,11 @@ const result = attempt(() => 'hello')
 
 ### JSON Parsing
 
-```typescript
+Parsing user input or file contents can throw exceptions. `Try` lets you handle these failures gracefully and provide sensible defaults or clear error messages.
+
+This example shows how to wrap JSON parsing with `Try` and handle the result with a default fallback:
+
+```typescript title="json-parsing.ts"
 import { attempt, getOrElse, error } from '@deessejs/fp';
 import { z } from 'zod';
 
@@ -413,7 +467,11 @@ const user = getOrElse(
 
 ### File Operations
 
-```typescript
+Reading files can fail for many reasons: missing file, permission denied, invalid encoding. `Try` wraps file operations so you can handle these failures at the call site rather than letting exceptions crash your program.
+
+This example shows how to safely read and parse a JSON configuration file:
+
+```typescript title="file-operations.ts"
 import { attempt } from '@deessejs/fp';
 import { readFileSync } from 'fs';
 
@@ -431,7 +489,11 @@ if (config.ok) {
 
 ### Async API Calls
 
-```typescript
+Network requests can fail for many reasons: server errors, timeouts, invalid responses. `Try` combined with `attemptAsync` gives you type-safe async operations that you can handle at the call site.
+
+This example shows how to safely fetch data from an API with custom error handling:
+
+```typescript title="async-api-calls.ts"
 import { attemptAsync, isOk, getOrElse, error } from '@deessejs/fp';
 import { z } from 'zod';
 
@@ -464,17 +526,21 @@ const safePost = await getOrElse(fetchPost(1), { id: 0, title: 'Untitled' });
 
 ## Try vs Result
 
+Understanding when to use `Try` versus `Result` helps you choose the right tool for your error handling needs. Both represent success or failure, but they differ in how errors are captured and when to use each.
+
 | Aspect | Try | Result |
 |--------|-----|--------|
 | Error source | Catches thrown exceptions | You return err() explicitly |
 | Error type | Default Error, or custom via handler | Fully typed by you |
 | Use case | Wrapping legacy/third-party code | Operations with defined error types |
 
-```typescript
+Use `Try` when you are wrapping code that might throw, especially third-party libraries or legacy code. Use `Result` when you want complete control over your error types and want to explicitly return errors from your functions.
+
+```typescript title="try-vs-result.ts"
 // Try: for things that might throw
 const parsed = attempt(() => JSON.parse(input));
 
-// Result: for operations with controlled errors
+// Result: for operations with explicit error types
 const validated = validateUser(input); // Returns Result<User, ValidationError>
 ```
 

@@ -6,28 +6,30 @@ description: Structured domain errors with enrichment, chaining, and Zod validat
 import { Callout } from 'fumadocs-ui/components/callout';
 import { Cards, Card } from 'fumadocs-ui/components/card';
 
-The `Error` system provides rich error objects inspired by Python's exception classes. Errors have structured metadata, support enrichment with notes and cause chaining, and integrate seamlessly with Result.
+The Error system provides rich error objects inspired by Python's exception classes. Errors have structured metadata, support enrichment with notes and cause chaining, and integrate seamlessly with Result.
 
 ## Why Error?
 
-JavaScript's native `Error` is limited — it only has a message and stack trace. The `Error` system adds:
+JavaScript's native Error is limited because it only has a message and stack trace. The Error system adds:
 
-- **Structured args** — Domain-specific error data
-- **Notes** — Additional context that can be added later
-- **Cause chaining** — Trace error provenance through the call stack
-- **Zod validation** — Validate error arguments at runtime
-- **Sensitive data redaction** — Automatic redaction in message/stack
+- **Structured args** -- Domain-specific error data
+- **Notes** -- Additional context that you can add later
+- **Cause chaining** -- Trace error provenance through the call stack
+- **Zod validation** -- Validate error arguments at runtime
+- **Sensitive data redaction** -- Automatic redaction in message and stack
 
 ## Error vs Result
 
 | Aspect | Result | Error |
 |--------|--------|-------|
-| Purpose | Represent success/failure | Represent domain error |
+| Purpose | Represent success or failure | Represent domain error |
 | Methods | map, flatMap, getOrElse | addNotes, from |
 | Chaining | Railway-oriented programming | Error provenance tracking |
 | With Zod | No validation | Schema validation |
 
-```typescript
+This code defines a custom error type with a Zod schema. The schema validates the error arguments at creation time and the message function receives those arguments to generate a human-readable string.
+
+```typescript title="defining-error-types.ts"
 import { error, err, ok, some } from '@deessejs/fp';
 import { z } from 'zod';
 
@@ -59,25 +61,25 @@ result.error === domainError; // reference, not a copy
 
 ### Error Properties
 
-An `Error<T>` has these properties:
+An Error has these properties:
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `name` | `string` | Error type identifier |
-| `_tag` | `string` | Tag for pattern matching (same as name) |
-| `args` | `T` | Domain-specific error data |
-| `notes` | `readonly string[]` | Additional context |
-| `cause` | `Maybe<Error>` | Original error (chained) |
-| `message` | `string` | Human-readable message |
-| `stack` | `string` | Stack trace |
+| name | string | Error type identifier |
+| _tag | string | Tag for pattern matching (same as name) |
+| args | T | Domain-specific error data |
+| notes | readonly string[] | Additional context |
+| cause | Maybe Error | Original error (chained) |
+| message | string | Human-readable message |
+| stack | string | Stack trace |
 
 ### Creating Errors
 
-#### `error(options)`
+#### The error Builder Function
 
-Creates an ErrorBuilder. Schema is optional but recommended for validation.
+This function creates an ErrorBuilder, which is a factory for generating typed errors. The schema is optional but recommended because it enables runtime validation of error arguments.
 
-```typescript
+```typescript title="creating-an-error-builder.ts"
 import { z } from 'zod';
 import { error } from '@deessejs/fp';
 
@@ -100,20 +102,20 @@ const SimpleError = error({
 });
 ```
 
-**Options:**
+The error builder accepts these options:
 
 | Option | Type | Description |
 |--------|------|-------------|
-| `name` | `string` | Error class name (required) |
-| `schema` | `ZodSchema<T>` | Zod schema for args validation |
-| `message` | `(args: T) => string` | Custom message function |
-| `code` | `number` | Numeric error code (e.g., 404) |
+| name | string | Error class name. This is required and identifies the error type. |
+| schema | ZodSchema T | Zod schema for args validation. When provided, arguments are validated at creation and a ZodError is thrown if validation fails. |
+| message | function that takes args and returns string | Custom message function that receives the validated args and returns a human-readable message. |
+| code | number | Numeric error code that you can use for error categorization, such as HTTP status codes (for example, 404). |
 
 #### Creating Error Instances
 
-Call the ErrorBuilder to create instances:
+You call the ErrorBuilder to create instances of the error. When a schema is defined, arguments are validated before the error is created.
 
-```typescript
+```typescript title="creating-error-instances.ts"
 // With schema - validates arguments
 const notFound = NotFoundError({ id: '123', resource: 'user' });
 // notFound.message === 'Resource not found: user'
@@ -126,9 +128,9 @@ const simple = SimpleError();
 
 ### Adding Notes
 
-Use `addNotes()` to add contextual information to an error:
+You use addNotes to attach contextual information to an error. This is useful for adding debugging context or tracking information as the error propagates through your code.
 
-```typescript
+```typescript title="adding-notes-to-errors.ts"
 const e = SizeError({ current: 3, wanted: 5 })
   .addNotes('Attempted to process file')
   .addNotes('User: john');
@@ -139,9 +141,9 @@ e.message; // 'Size error: got 3, wanted 5'
 
 ### Chaining Cause
 
-Use `from()` to chain errors, preserving the original error as cause:
+You use the from method to chain errors, which preserves the original error as the cause. This creates a linked list of errors that lets you trace the full error chain back to its origin. The from method accepts an Error, a Result containing an Error, or a Maybe containing an Error.
 
-```typescript
+```typescript title="chaining-errors.ts"
 import { error, err, some } from '@deessejs/fp';
 
 const NetworkError = error({
@@ -160,7 +162,7 @@ const result = err(networkError);
 const e2 = SizeError({ current: 3, wanted: 5 }).from(result);
 e2.cause; // Some(NetworkError)
 
-// Chain from Maybe<Error>
+// Chain from Maybe Error
 const maybeError = some(networkError);
 const e3 = SizeError({ current: 3, wanted: 5 }).from(maybeError);
 e3.cause; // Some(NetworkError)
@@ -171,7 +173,9 @@ e1.cause.map(c => c.name).getOrElse('no cause'); // 'NetworkError'
 
 ### Combining Enrichments
 
-```typescript
+You can chain multiple enrichment methods together to build a detailed error chain with notes at each step.
+
+```typescript title="combining-enrichments.ts"
 const e = SizeError({ current: 3, wanted: 5 })
   .addNotes('Processing file: data.json')
   .from(networkError)
@@ -180,11 +184,11 @@ const e = SizeError({ current: 3, wanted: 5 })
 
 ## Pattern Matching
 
-### matchError(result, handlers)
+### Pattern Matching on Errors
 
-Exhaustive pattern matching on errors:
+The matchError function provides exhaustive pattern matching on errors. You pass the error and a map of handlers keyed by error name, and it returns the result of the matching handler. The function requires that all possible error types have corresponding handlers.
 
-```typescript
+```typescript title="pattern-matching-errors.ts"
 import { ok, err, error, matchError } from '@deessejs/fp';
 import { z } from 'zod';
 
@@ -207,11 +211,11 @@ const message = matchError(result.error, {
 // message === 'Missing user: 123'
 ```
 
-### matchErrorPartial(result, handlers, defaultHandler)
+### Partial Pattern Matching
 
-Non-exhaustive matching with a fallback:
+The matchErrorPartial function allows non-exhaustive pattern matching by accepting a default handler that runs when no specific handler matches.
 
-```typescript
+```typescript title="partial-pattern-matching.ts"
 const message = matchErrorPartial(
   result.error,
   {
@@ -224,9 +228,11 @@ const message = matchErrorPartial(
 
 ## Type Guards
 
-### Static is() on Builders
+### Static Type Guard on Builders
 
-```typescript
+Each error builder includes a static is method that acts as a type guard. This lets you narrow types safely when you need to check the specific error type at runtime.
+
+```typescript title="using-type-guard.ts"
 const notFound = NotFoundError({ id: '123' });
 
 if (NotFoundError.is(notFound)) {
@@ -235,11 +241,11 @@ if (NotFoundError.is(notFound)) {
 }
 ```
 
-### Generic isError()
+### Generic Error Type Guard
 
-Check if any value is an Error:
+The isError function checks if any value is an Error from this library. This is useful when you want to handle errors generically without knowing their specific type.
 
-```typescript
+```typescript title="generic-error-check.ts"
 import { isError } from '@deessejs/fp';
 
 if (isError(err)) {
@@ -248,11 +254,11 @@ if (isError(err)) {
 }
 ```
 
-### TaggedError.is()
+### Tagged Error Check
 
-Check if any value is a tagged error:
+The TaggedError.is method checks if a value is any kind of tagged error. Tagged errors have a _tag property that serves as a discriminator.
 
-```typescript
+```typescript title="tagged-error-check.ts"
 import { TaggedError } from '@deessejs/fp';
 
 if (TaggedError.is(result.error)) {
@@ -262,9 +268,9 @@ if (TaggedError.is(result.error)) {
 
 ## Sensitive Data Handling
 
-Errors automatically redact sensitive fields in `message` and `stack`:
+Errors automatically redact sensitive fields in message and stack. This protects sensitive data such as passwords and API keys from being exposed in error logs or user-facing messages. The redaction happens when the message is generated, while the args object retains the original values so you can access them programmatically.
 
-```typescript
+```typescript title="sensitive-data-redaction.ts"
 const AuthError = error({
   name: 'AuthError',
   schema: z.object({
@@ -288,17 +294,17 @@ err.message;
 err.args.password; // "super_secret_123" - NOT redacted in args
 ```
 
-**Redacted fields:** `password`, `token`, `secret`, `apiKey`, `authorization`, `credential`, `private`, etc.
+The following field names are automatically redacted: password, token, secret, apiKey, authorization, credential, private, and other fields that match common sensitive data patterns.
 
 <Callout type="note">
-  Redaction only applies to `message` and `stack`, not to `args`. This allows you to log errors while protecting sensitive data in output.
+  Redaction only applies to message and stack, not to args. This allows you to log errors while protecting sensitive data in output.
 </Callout>
 
 ## Validation
 
-When a schema is provided, arguments are validated at creation:
+When a schema is provided, arguments are validated at creation time. If validation fails, a ZodError is thrown wrapped in a ValidationError with the original ZodError as its cause. This ensures that invalid error arguments are caught early rather than causing issues later.
 
-```typescript
+```typescript title="schema-validation.ts"
 // Valid creation
 const valid = ValidationError({ field: 'email', message: 'invalid format' });
 
@@ -312,11 +318,11 @@ try {
 
 ## Error Groups
 
-### exceptionGroup(errors)
+### Grouping Multiple Errors
 
-Group multiple errors together:
+The exceptionGroup function groups multiple errors together into a single container. This is useful when you want to collect several related errors and handle them as a unit.
 
-```typescript
+```typescript title="grouping-errors.ts"
 import { exceptionGroup, error } from '@deessejs/fp';
 import { z } from 'zod';
 
@@ -339,9 +345,11 @@ errors.name;      // 'ExceptionGroup'
 errors.errors;    // [ParseError, ValidationError]
 ```
 
-Accessing group errors:
+### Accessing Group Errors
 
-```typescript
+When you catch an ExceptionGroup, you can access the individual errors through the errors property and check the count through the message.
+
+```typescript title="accessing-group-errors.ts"
 try {
   // code that throws exceptionGroup
 } catch (e) {
@@ -354,43 +362,43 @@ try {
 
 ## Guards and Utilities
 
-### `isError(value)`
+### Checking if a Value is an Error
 
-Type guard that checks if a value is an Error:
+The isError function is a type guard that checks if a value is an Error from this library. It returns true for any error created with the error builder.
 
-```typescript
+```typescript title="iserror-guard.ts"
 import { isError } from '@deessejs/fp';
 
 isError(SizeError({ current: 3, wanted: 5 })); // true
 isError('not an error');                       // false
 ```
 
-### `getErrorMessage(error)`
+### Extracting Error Messages
 
-Extract a human-readable message:
+The getErrorMessage function extracts a human-readable message from any error. This is useful when you need a simple string representation without dealing with the full error structure.
 
-```typescript
+```typescript title="geterrormessage.ts"
 import { getErrorMessage } from '@deessejs/fp';
 
 getErrorMessage(SizeError({ current: 3, wanted: 5 }));
 // Returns 'SizeError: {"current":3,"wanted":5}'
 ```
 
-### `flattenErrorGroup(group)`
+### Flattening Error Groups
 
-Get all errors from a group (including nested):
+The flattenErrorGroup function recursively flattens nested error groups into a single flat array of errors. This is useful when you want to process all errors in a group regardless of nesting.
 
-```typescript
+```typescript title="flattenerrrorgroup.ts"
 import { flattenErrorGroup } from '@deessejs/fp';
 
 flattenErrorGroup(group); // Error[]
 ```
 
-### `filterErrorsByName(group, name)`
+### Filtering Errors by Name
 
-Find errors by name in a group:
+The filterErrorsByName function finds all errors with a specific name in an error group. This is useful when you want to handle specific error types separately from the group.
 
-```typescript
+```typescript title="filtererrorsbyname.ts"
 import { filterErrorsByName } from '@deessejs/fp';
 
 filterErrorsByName(group, 'SizeError');    // SizeError[]
@@ -399,9 +407,9 @@ filterErrorsByName(group, 'NetworkError'); // NetworkError[]
 
 ## Using with Result
 
-Error objects integrate with Result via `err()`:
+Error objects integrate with Result via the err function. When you wrap an error in err, you get access to Result methods like mapErr and flatMap while preserving the error reference.
 
-```typescript
+```typescript title="error-with-result.ts"
 import { ok, err, map } from '@deessejs/fp';
 
 const result = ok(10).flatMap((x) => {
@@ -416,9 +424,9 @@ result.mapErr((e) => console.log(e.name));
 
 ### Direct Yield in Result.gen
 
-Errors can be yielded directly without wrapping in `err()`:
+In Result.gen generators, you can yield errors directly without wrapping them in err. The generator handles the conversion automatically, which makes the code cleaner when using generator syntax for async operations.
 
-```typescript
+```typescript title="direct-yield-in-result-gen.ts"
 const result = await Result.gen(async function* () {
   const user = yield* ok({ id: '123', name: 'Alice', active: true });
 
@@ -430,11 +438,11 @@ const result = await Result.gen(async function* () {
 });
 ```
 
-## raise()
+## The raise Function
 
-Use `raise()` to throw an error and return `never`. Use only for unrecoverable programmer errors:
+You use raise to throw an error and return never. This function should only be used for unrecoverable programmer errors, such as violations of internal invariants that indicate bugs rather than expected failure cases. The raise function immediately throws and thus short-circuits any further execution.
 
-```typescript
+```typescript title="using-raise.ts"
 import { raise } from '@deessejs/fp';
 import { ok } from '@deessejs/fp';
 
@@ -447,9 +455,11 @@ const process = (size: number): Result<Data, Error> => {
 };
 ```
 
-**When NOT to use raise():**
+### When to Avoid raise
 
-```typescript
+You should not use raise for expected failures because it breaks the railway-oriented programming flow. Expected failures should travel through the Result rail using err instead, which preserves the error for proper handling by callers.
+
+```typescript title="avoiding-raise.ts"
 // Bad - breaks the rail for expected failures
 const validateBad = (input: string): Result<string, Error> => {
   if (!input) raise(EmptyInputError({}));
@@ -467,10 +477,10 @@ const validate = (input: string): Result<string, Error> => {
 
 <Cards>
   <Card title="Result" href="./result">
-    For success/failure with error chaining
+    For success or failure with error chaining
   </Card>
   <Card title="Maybe" href="./maybe">
-    For optional values (null/undefined)
+    For optional values (null or undefined)
   </Card>
   <Card title="Try" href="./try">
     For wrapping sync functions that might throw
