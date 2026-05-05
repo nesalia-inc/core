@@ -195,7 +195,7 @@ some(2).map(x => x * 2); // Some(4)
 
 The flatMap function chains operations that return a Maybe. If the input Maybe is a Some, it applies the function to the value and returns the result. If the input is a None, it returns None without calling the function. This is useful when you have a series of operations where each step might fail (return None).
 
-The function signature is flatMap<T, U>(maybe: Maybe&lt;T&gt;, fn: (value: T) => Maybe<U>): Maybe<U>.
+The function signature is `flatMap&lt;T, U&gt;(maybe: Maybe&lt;T&gt;, fn: (value: T) =&gt; Maybe&lt;U&gt;): Maybe&lt;U&gt;`.
 
 ```typescript title="using-flat-map.ts"
 import { some, none, flatMap } from '@deessejs/fp';
@@ -221,7 +221,7 @@ some(1).flatMap(findUser); // Some({ id: 1, name: 'John' })
 
 The filter function returns Some if the predicate passes. If the predicate fails, or if the input is already None, it returns None. This lets you conditionally keep or discard values based on a condition.
 
-The function signature is filterMaybe&lt;T&gt;(maybe: Maybe&lt;T&gt;, predicate: (value: T) => boolean): Maybe&lt;T&gt;.
+The function signature is `filterMaybe&lt;T&gt;(maybe: Maybe&lt;T&gt;, predicate: (value: T) =&gt; boolean): Maybe&lt;T&gt;`.
 
 ```typescript title="using-filter.ts"
 import { some, none, filter } from '@deessejs/fp';
@@ -283,7 +283,7 @@ none().getOrElse(0);      // 0
 
 The getOrCompute function returns the value if the Maybe is a Some, or computes a default value lazily if it is a None. The second parameter is a function that returns the default value, not the value itself. This is useful when the default value is expensive to compute and you want to avoid the computation unless it is actually needed.
 
-The function signature is getOrComputeMaybe&lt;T&gt;(maybe: Maybe&lt;T&gt;, fn: () => T): T.
+The function signature is `getOrComputeMaybe&lt;T&gt;(maybe: Maybe&lt;T&gt;, fn: () =&gt; T): T`.
 
 ```typescript title="using-get-or-compute.ts"
 import { some, none, getOrCompute } from '@deessejs/fp';
@@ -306,7 +306,7 @@ none().getOrCompute(() => 0); // 0
 
 The tap function executes a function on the value without changing the Maybe. This is useful for logging, debugging, or performing other side effects while chaining transformations. The function you pass is only called when the Maybe is a Some. When the Maybe is a None, nothing happens.
 
-The function signature is tapMaybe&lt;T&gt;(maybe: Maybe&lt;T&gt;, fn: (value: T) => void): Maybe&lt;T&gt;. The function returns the original Maybe unchanged, so you can insert it anywhere in a chain.
+The function signature is `tapMaybe&lt;T&gt;(maybe: Maybe&lt;T&gt;, fn: (value: T) =&gt; void): Maybe&lt;T&gt;`. The function returns the original Maybe unchanged, so you can insert it anywhere in a chain.
 
 ```typescript title="using-tap.ts"
 import { some, none, tap } from '@deessejs/fp';
