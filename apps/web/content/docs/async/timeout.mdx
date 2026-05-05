@@ -11,16 +11,18 @@ Async operations can hang forever: network partitions, deadlocks, broken externa
 
 Timeout provides:
 
-- **Resource protection** — Prevent resource leaks from hanging connections
-- **Graceful degradation** — Return a typed error instead of hanging indefinitely
-- **Composability** — Works with `Result.gen` and all Result operations
-- **Cancellation integration** — Respects `AbortSignal` for coordinated cancellation
+- **Resource protection** -- Prevent resource leaks from hanging connections
+- **Graceful degradation** -- Return a typed error instead of hanging indefinitely
+- **Composability** -- Works with `Result.gen` and all Result operations
+- **Cancellation integration** -- Respects `AbortSignal` for coordinated cancellation
 
-## `Result.timeout(operation, options)` (static)
+## Timeout with Static Method
 
-Wraps an async operation with a deadline:
+You wrap an async operation with a deadline using the static `Result.timeout()` method. This method accepts your async operation and a configuration object that specifies the time limit and error handling behavior. The operation runs until either it completes successfully or the deadline is reached, at which point the timeout error is returned.
 
-```typescript
+Here is a complete example showing how to define a timeout error and wrap a user fetch operation with a 5-second deadline:
+
+```typescript title="timeout-basic.ts"
 import { Result, error } from '@deessejs/fp';
 import { z } from 'zod';
 
@@ -42,7 +44,11 @@ const result = await Result.timeout(
 
 ### TimeoutOptions
 
-```typescript
+The timeout configuration is defined by the `TimeoutOptions` interface. Each parameter controls a different aspect of the timeout behavior, from the time boundary to error handling and cancellation semantics.
+
+This interface defines all available configuration options for the timeout function:
+
+```typescript title="timeout-options.ts"
 interface TimeoutOptions<T, E = Error> {
   /** Maximum time in milliseconds (> 0) */
   deadline: number;
@@ -70,9 +76,27 @@ interface TimeoutInfo {
 }
 ```
 
+**Parameter details:**
+
+- `deadline` (required): The maximum time in milliseconds that the operation is allowed to run. Must be a positive number. When the deadline is exceeded, the timeout error is returned.
+
+- `timeout` (optional): The error constructor or factory function that creates the timeout error. If not provided, a default timeout error is used. You can pass either a standard Error constructor or a tagged error created with the `error()` function.
+
+- `abortSignal` (optional): An external `AbortSignal` that the timeout should respect. If the signal is aborted before the operation completes, an `AbortError` is returned instead of a `TimeoutError`.
+
+- `onTimeout` (optional): A fallback function that returns an alternative result when the timeout occurs. This allows you to provide cached data, default values, or alternative operations without receiving an error.
+
+- `resume` (optional): Controls what happens to the underlying operation after a timeout. When set to `'abort'` (the default), an internal AbortSignal is used to signal the operation to stop. When set to `'continue'`, the operation continues running in the background and you are responsible for tracking and cleaning it up.
+
+- `operationName` (optional): A human-readable name for the operation that appears in error messages, making it easier to identify which operation timed out when debugging.
+
 ## Behavior
 
+Understanding how timeout behaves in different scenarios helps you design robust systems.
+
 ### Deadline Boundary Values
+
+The deadline parameter accepts special values that change the behavior:
 
 | Value | Behavior |
 |-------|----------|
@@ -81,20 +105,30 @@ interface TimeoutInfo {
 | `deadline > 0` | Normal timeout behavior |
 
 ### Success Path
-- Operation completes before deadline → returns original Result
+
+When the operation completes before the deadline is reached, the original Result from the operation is returned unchanged. This means if the operation succeeds, you get `Ok<T>`, and if it fails, you get `Err<E>` with whatever error the operation produced.
 
 ### Timeout Path
-- Deadline exceeded → returns `Err<TimeoutError>`
-- If `resume: 'abort'` (default): underlying operation is abandoned via internal AbortSignal
-- If `resume: 'continue'`: underlying operation continues running (caller responsible for cleanup)
+
+When the deadline is exceeded, the timeout returns `Err<TimeoutError>` immediately. The behavior of the underlying operation depends on the `resume` option:
+
+- If `resume: 'abort'` (the default), an internal AbortSignal is used to abandon the operation. The operation may or may not actually stop, depending on whether it supports AbortSignal.
+
+- If `resume: 'continue'`, the underlying operation keeps running. You must track and clean up these orphaned operations yourself.
 
 ### Abort Path
-- External signal aborted → returns `Err<AbortError>`
-- If signal already aborted when timeout starts → returns `Err<AbortError>` immediately
+
+When the external abort signal is triggered before the operation completes, the timeout returns `Err<AbortError>`. If the signal is already aborted when the timeout starts, the error is returned immediately.
 
 ## Timeout with Fallback
 
-```typescript
+Sometimes you want to provide an alternative result when a timeout occurs instead of returning an error. You can achieve this by passing an `onTimeout` callback that returns an alternative Result.
+
+This pattern is useful when you have cached data available or want to return a default value rather than propagating the timeout error. The fallback function is only called when the deadline is exceeded, not when the operation succeeds or fails normally.
+
+In this example, if the heavy query times out after 5 seconds, the cached data is returned instead of a TimeoutError:
+
+```typescript title="timeout-fallback.ts"
 const result = await Result.timeout(
   fetchHeavyQuery(),
   {
@@ -108,7 +142,13 @@ const result = await Result.timeout(
 
 ## External AbortSignal
 
-```typescript
+You can combine timeout with an external `AbortController` to enable coordinated cancellation from anywhere in your application. This is particularly useful when you need to cancel operations due to user navigation, component unmounting, or other application-level events.
+
+When you pass an `AbortSignal` to the timeout, the timeout monitors both the signal and the deadline. If the signal is aborted first, you receive an `AbortError`. If the deadline is reached first (and the signal is not aborted), you receive a `TimeoutError`.
+
+This example sets up an abort controller that cancels the operation after 3 seconds, while the timeout deadline is set to 5 seconds. If the abort happens first, you get an AbortError:
+
+```typescript title="timeout-abort-signal.ts"
 const controller = new AbortController();
 
 // External cancellation
@@ -128,24 +168,27 @@ const result = await Result.timeout(
 
 ## Resource Cleanup
 
-### `resume: 'abort'` (default)
+Different applications have different requirements for what happens to operations that time out. The `resume` option gives you control over this behavior.
 
-- An internal AbortSignal is used to signal the operation to stop
-- The caller receives `Err<TimeoutError>` immediately
-- No guaranteed cleanup (operation may not support AbortSignal)
-- Memory is reclaimed when the abandoned operation eventually settles
+### Resume Abort (default)
 
-### `resume: 'continue'`
+When you set `resume: 'abort'`, the timeout uses an internal AbortSignal to signal the operation to stop. This is the default behavior because it allows resources to be reclaimed quickly. However, there is no guarantee that the operation will actually stop, since not all operations respect AbortSignal. The memory and resources of the abandoned operation are eventually reclaimed when it settles.
 
-- Underlying operation continues running
-- Caller is responsible for tracking and cleaning up orphaned operations
-- Use this when the operation doesn't support AbortSignal but must complete
+### Resume Continue
+
+When you set `resume: 'continue'`, the underlying operation continues running after the timeout returns. You are responsible for tracking these orphaned operations and cleaning them up. Use this option when your operation does not support AbortSignal but must complete for correctness, such as when writing to a database or completing a file transfer.
 
 ## Error Types
 
+The timeout function returns different error types depending on what went wrong.
+
 ### TimeoutError
 
-```typescript
+The TimeoutError is returned when the deadline is exceeded. It contains information about the timeout threshold, how much time actually elapsed, and the name of the operation that timed out. You define this error using the `error()` function from the library.
+
+This is the schema definition for the TimeoutError:
+
+```typescript title="timeout-error-definition.ts"
 const TimeoutError = error({
   name: 'TimeoutError',
   schema: z.object({
@@ -165,7 +208,11 @@ const TimeoutError = error({
 
 ### AbortError
 
-```typescript
+The AbortError is returned when the external abort signal is triggered before the operation completes. The reason property optionally contains whatever value was passed to the abort call.
+
+This is the schema definition for the AbortError:
+
+```typescript title="abort-error-definition.ts"
 const AbortError = error({
   name: 'AbortError',
   schema: z.object({
@@ -181,9 +228,11 @@ const AbortError = error({
 
 ## Using with Retry
 
-Timeout is a primitive used by retry systems:
+Timeout integrates well with the retry system. When you configure retry with a `maxTotalTime` option, it uses the timeout internally to enforce a global deadline across all retry attempts. This ensures that no matter how many retries occur, the entire retry operation completes within your specified time.
 
-```typescript
+You can also use timeout with retry to distinguish between transient errors and timeout errors, so you can decide whether to retry based on the type of failure:
+
+```typescript title="timeout-retry.ts"
 // Retry with deadline (retry stops when deadline reached)
 const result = await Result.retry(
   fetchUser(id),
@@ -197,7 +246,11 @@ const result = await Result.retry(
 
 ## Complete Example
 
-```typescript
+This example demonstrates a real-world pattern: fetching data from a network endpoint with timeout protection, handling network errors, and falling back to cached data on timeout.
+
+You define custom errors for network and timeout scenarios, then create a function that wraps the fetch operation with timeout. The function attempts to fetch and parse JSON, returns a network error if that fails, and applies a timeout deadline to prevent hanging. When a timeout occurs, an optional fallback returns cached data.
+
+```typescript title="complete-example.ts"
 import { Result, error } from '@deessejs/fp';
 import { z } from 'zod';
 

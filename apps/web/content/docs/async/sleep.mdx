@@ -3,30 +3,36 @@ title: Sleep
 description: Delayed execution utilities with jitter and AbortController support
 ---
 
-The `sleep` module provides utilities for deliberate delays, essential for rate limiting, debouncing, and retry backoff.
+The `sleep` module provides utilities for deliberate delays, which are essential when you need to implement rate limiting, debouncing, or retry backoff strategies in your applications.
 
-## Why Sleep?
+## Why Use Sleep?
 
-Sometimes you need to wait — for rate limiting, debouncing, or honoring API quotas:
+Sometimes your code needs to wait before proceeding. This is useful when you need to respect rate limits imposed by external APIs, implement debouncing for user input, or create spacing between operations that would otherwise overwhelm your system.
 
-```typescript
-// Without sleep - all requests fire immediately
+Here is how you can use sleep to prevent hitting rate limits when updating multiple users. Instead of sending all requests immediately, you insert a delay between each operation.
+
+```typescript title="rate-limiting-example.ts"
+import { sleep } from '@deessejs/fp';
+
+// Without sleep, all requests fire immediately
 const results = await Promise.all(
-  users.map(user => api.updateUser(user)) // Might hit rate limit
+  users.map(user => api.updateUser(user)) // This might hit rate limit
 );
 
-// With sleep - respects API limits
+// With sleep, your code respects API limits
 for (const user of users) {
   await api.updateUser(user);
   await sleep(100); // Wait 100ms between requests
 }
 ```
 
-## sleep(millis, options?)
+## The Sleep Function
 
-Creates a Promise that resolves after a specified delay:
+The `sleep` function creates a Promise that resolves after a specified delay. You can use this when you need to pause execution for a known, fixed amount of time.
 
-```typescript
+This example shows a simple delay of one second, followed by a delay that can be cancelled using an AbortSignal.
+
+```typescript title="basic-sleep.ts"
 import { sleep } from '@deessejs/fp';
 
 // Simple delay
@@ -37,11 +43,31 @@ const controller = new AbortController();
 await sleep(5000, { signal: controller.signal });
 ```
 
-## sleepUntil(predicate, options)
+### Parameters
 
-Pauses until a predicate returns true or timeout is reached:
+The `sleep` function accepts the following parameters:
 
-```typescript
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `millis` | `number` | Yes | - | The duration to sleep in milliseconds. The value is clamped to the platform maximum, which is approximately 24.8 days on most systems. |
+| `options` | `SleepOptions` | No | `{}` | An optional configuration object that controls sleep behavior. |
+
+### Options Object
+
+The `options` parameter contains the following properties:
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `jitter` | `boolean \| number` | `undefined` | When set to `true`, adds random jitter to prevent thundering herd problems. When set to a number, uses that value as the jitter magnitude. |
+| `signal` | `AbortSignal` | `undefined` | An external AbortSignal that allows you to cancel the sleep operation before it completes. |
+
+## The Sleep Until Function
+
+The `sleepUntil` function pauses execution until a predicate returns true, or until a timeout is reached. This is particularly useful when you need to poll for a condition to become true, such as waiting for a service to become healthy or a resource to become available.
+
+This example demonstrates polling a status endpoint until it returns a successful response, with a maximum wait time of 5 seconds and checks every 100 milliseconds.
+
+```typescript title="poll-until-ready.ts"
 import { sleepUntil } from '@deessejs/fp';
 
 // Poll until condition is met (max 5 seconds)
@@ -60,36 +86,69 @@ const ready = await sleepUntil(
 );
 ```
 
-**Options:**
+### Parameters
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `timeout` | `number` | `Infinity` | Maximum wait time in ms |
-| `interval` | `number` | `10` | Polling interval in ms |
-| `signal` | `AbortSignal` | — | External abort signal |
+The `sleepUntil` function accepts the following parameters:
 
-**Returns:** `Promise<boolean>` — `true` if predicate succeeded, `false` if timeout/abort.
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `predicate` | `() => boolean \| Promise<boolean>` | Yes | - | A function that returns a boolean (or a Promise that resolves to a boolean) indicating whether the condition has been met. |
+| `options` | `object` | Yes | - | Configuration options for the polling behavior. |
 
-## sleepRandom(min, max, options?)
+### Options Object
 
-Pauses for a random duration within a range:
+The `options` parameter contains the following properties:
 
-```typescript
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `timeout` | `number` | `Infinity` | The maximum time to wait in milliseconds before giving up. Set to `Infinity` to wait indefinitely. |
+| `interval` | `number` | `10` | The time in milliseconds between each poll attempt. Lower values poll more frequently but use more CPU. |
+| `signal` | `AbortSignal` | `undefined` | An external AbortSignal that allows you to cancel the polling operation. |
+
+### Return Value
+
+The function returns a `Promise<boolean>` that resolves to `true` if the predicate succeeded before the timeout, or `false` if the timeout was reached or the operation was aborted.
+
+## The Sleep Random Function
+
+The `sleepRandom` function pauses execution for a random duration within a specified range. This is particularly useful when you need to add jitter to prevent thundering herd problems, where many clients simultaneously retry at the same time after a failure.
+
+This example shows how to sleep for a random duration between 100 and 500 milliseconds, which is useful for adding randomness to retry logic.
+
+```typescript title="random-delay.ts"
 import { sleepRandom } from '@deessejs/fp';
 
 // Sleep for 100-500ms (useful for jitter)
 const actualDuration = await sleepRandom(100, 500);
 ```
 
-**Returns:** `Promise<number>` — The actual time slept.
+### Parameters
 
-**Validation:**
-- `min < 0` or `max < 0` — throws `ValidationError`
-- `min > max` — throws `ValidationError`
+The `sleepRandom` function accepts the following parameters:
 
-## SleepOptions
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `min` | `number` | Yes | - | The minimum sleep duration in milliseconds. Must be zero or greater. |
+| `max` | `number` | Yes | - | The maximum sleep duration in milliseconds. Must be greater than or equal to `min`. |
+| `options` | `SleepOptions` | No | `{}` | An optional configuration object with `jitter` and `signal` properties. |
 
-```typescript
+### Return Value
+
+The function returns a `Promise<number>` that resolves to the actual time slept in milliseconds.
+
+### Validation Rules
+
+The function enforces the following validation rules:
+
+- If `min` is less than zero, a `ValidationError` is thrown.
+- If `max` is less than zero, a `ValidationError` is thrown.
+- If `min` is greater than `max`, a `ValidationError` is thrown.
+
+## Sleep Options Interface
+
+The `SleepOptions` interface defines the configuration options that can be passed to sleep functions. This interface provides a standardized way to control cancellation and jitter behavior across all sleep utilities.
+
+```typescript title="sleep-options.ts"
 interface SleepOptions {
   /** Add jitter to prevent thundering herd */
   jitter?: boolean | number;
@@ -101,9 +160,11 @@ interface SleepOptions {
 
 ## Cancellation
 
-Sleep operations can be cancelled using AbortSignal:
+All sleep operations can be cancelled using an AbortSignal. This is useful when you need to implement timeouts, clean up on component unmount, or abort operations based on user action.
 
-```typescript
+This example shows how to create a sleep that can be cancelled after a timeout. The controller is aborted after 1 second, causing the 5-second sleep to reject with an AbortError.
+
+```typescript title="cancellable-sleep.ts"
 import { sleep } from '@deessejs/fp';
 
 const controller = new AbortController();
@@ -123,20 +184,26 @@ setTimeout(() => controller.abort(), 1000);
 
 ## Edge Cases
 
+The sleep functions handle several edge cases gracefully:
+
 | Scenario | Behavior |
 |----------|----------|
-| `sleep(0)` | Yields to event loop, resolves on next tick |
-| Negative duration | Treated as `0` |
-| Duration > platform max | Clamped to platform maximum (~24.8 days) |
-| Abort before start | Resolves immediately if signal already aborted |
-| Abort during sleep | Rejects with `AbortError` |
-| `sleepRandom(min, max)` with `min > max` | Throws `ValidationError` |
+| `sleep(0)` | Yields to the event loop and resolves on the next tick, allowing other pending operations to run. |
+| Negative duration | Treated as zero, so no waiting occurs. |
+| Duration exceeds platform maximum | Clamped to the platform maximum, which is approximately 24.8 days on most systems. |
+| Abort before start | If the signal is already aborted when sleep begins, the function resolves immediately. |
+| Abort during sleep | The function rejects with an `AbortError`. |
+| `sleepRandom(min, max)` with `min > max` | Throws a `ValidationError`. |
 
 ## Real-World Examples
 
 ### Rate-Limited API Calls
 
-```typescript
+When you need to fetch multiple resources from an API that enforces rate limits, you can use sleep to add delays between requests. This prevents your application from being throttled or temporarily blocked by the API.
+
+The following example shows a function that fetches multiple URLs with a configurable delay between each request.
+
+```typescript title="rate-limited-fetch.ts"
 import { sleep } from '@deessejs/fp';
 
 const fetchWithRateLimit = async <T>(
@@ -158,7 +225,11 @@ const fetchWithRateLimit = async <T>(
 
 ### Polling for Condition
 
-```typescript
+When you need to wait for an external service to become ready, such as a database, cache, or microservice, you can use `sleepUntil` to poll until the condition is met or a timeout is reached.
+
+This example shows how to wait for a service to become healthy before proceeding with further operations.
+
+```typescript title="wait-for-service.ts"
 import { sleepUntil } from '@deessejs/fp';
 
 const waitForService = async (serviceId: string, deadline: number) => {
@@ -178,7 +249,11 @@ const waitForService = async (serviceId: string, deadline: number) => {
 
 ### Jittered Backoff
 
-```typescript
+When implementing retry logic, you can use `sleepRandom` to add jitter to your backoff strategy. This prevents multiple clients from retrying simultaneously after a failure, which could overwhelm the system again.
+
+This example shows a simple exponential backoff with jitter, where the delay is randomly selected from a range that doubles with each iteration up to a maximum.
+
+```typescript title="jittered-backoff.ts"
 import { sleepRandom } from '@deessejs/fp';
 
 const jitteredBackoff = async (baseDelay: number, maxDelay: number) => {
