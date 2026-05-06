@@ -69,7 +69,7 @@ export { all as allResult, traverse as traverseResult } from "./result/index.js"
 // ASYNC RESULT (type exports - functions provided by unified API below)
 // ============================================================================
 
-export type { AsyncResultInner, AsyncOk, AsyncErr, AbortError, FromPromiseOptions } from "./async-result/index.js";
+export type { AsyncResultInner, AsyncOk, AsyncErr, FromPromiseOptions } from "./async-result/index.js";
 export { okAsync, errAsync } from "./async-result/index.js";
 export { fromPromise, fromPromiseWithOptions, from, fromValue, fromError } from "./async-result/index.js";
 export { isAbortError } from "./async-result/index.js";
@@ -229,7 +229,14 @@ export type { ToResultOptions } from "./conversions.js";
 // ============================================================================
 
 export { sleep, withTimeout, sleepWithSignal, addJitter } from "./sleep.js";
-export type { TimeoutOptions, TimeoutError, SleepOptions, TimeoutCleanup, TimeoutResult } from "./sleep.js";
+export type { SleepOptions, TimeoutCleanup, TimeoutResult } from "./sleep.js";
+
+// ============================================================================
+// TIMEOUT
+// ============================================================================
+
+export { timeout, TimeoutError, AbortError } from "./timeout.js";
+export type { TimeoutOptions, TimeoutInfo } from "./timeout.js";
 
 // ============================================================================
 // YIELD
