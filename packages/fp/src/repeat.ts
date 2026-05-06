@@ -60,7 +60,7 @@ export interface RepeatOptions {
   onAttempt?: (attempt: number) => void;
 }
 
-export interface RepeatUntilOptions {
+export interface RepeatUntilOptions<T = unknown> {
   /** Maximum attempts (default: Infinity) */
   maxAttempts?: number;
   /** Delay between attempts in ms (default: 0) */
@@ -71,7 +71,7 @@ export interface RepeatUntilOptions {
   onAttempt?: (attempt: number, value: T) => void;
 }
 
-export interface RepeatedIsSomeOptions {
+export interface RepeatedIsSomeOptions<T = unknown> {
   /** Maximum attempts (default: Infinity) */
   maxAttempts?: number;
   /** Delay between attempts in ms (default: 0) */
