@@ -993,8 +993,8 @@ describe("Panic", () => {
 
       try {
         panic("out of bounds");
-      } catch (e: unknown) {
-        const p = e as { _tag: string; reason: string; error: globalThis.Error };
+      } catch (error_: unknown) {
+        const p = error_ as { _tag: string; reason: string; error: globalThis.Error };
         expect(p._tag).toBe("Panic");
         expect(p.reason).toBe("out of bounds");
         expect(p.error).toBeInstanceOf(globalThis.Error);
@@ -1006,8 +1006,8 @@ describe("Panic", () => {
 
       try {
         panic(originalError);
-      } catch (e: unknown) {
-        const p = e as { _tag: string; reason: string; error: globalThis.Error };
+      } catch (error_: unknown) {
+        const p = error_ as { _tag: string; reason: string; error: globalThis.Error };
         expect(p._tag).toBe("Panic");
         expect(p.reason).toBe("callback failed");
         expect(p.error).toBe(originalError);
@@ -1030,8 +1030,8 @@ describe("Panic", () => {
     it("should create frozen Panic object", () => {
       try {
         panic("test");
-      } catch (e: unknown) {
-        const p = e as { _tag: string; reason: string; error: globalThis.Error };
+      } catch (error_: unknown) {
+        const p = error_ as { _tag: string; reason: string; error: globalThis.Error };
         expect(Object.isFrozen(p)).toBe(true);
         // Note: Native Error objects cannot be frozen, so we only check the panic wrapper
       }
@@ -1042,8 +1042,8 @@ describe("Panic", () => {
     it("should return true for Panic values", () => {
       try {
         panic("test panic");
-      } catch (e: unknown) {
-        expect(isPanic(e)).toBe(true);
+      } catch (error_: unknown) {
+        expect(isPanic(error_)).toBe(true);
       }
     });
 
@@ -1160,8 +1160,8 @@ describe("matchErrorPartial()", () => {
 
     try {
       panic(new globalThis.Error("test error"));
-    } catch (e: unknown) {
-      matchErrorPartial(e as { _tag: string; error: globalThis.Error; reason: string }, {
+    } catch (error_: unknown) {
+      matchErrorPartial(error_ as { _tag: string; error: globalThis.Error; reason: string }, {
         NotFoundError: (e) => e,
       }, (e) => {
         receivedValue = e;
@@ -1232,8 +1232,8 @@ describe("Panic in async context", () => {
     try {
       await getUserOrPanic("invalid");
       fail("Expected panic to be thrown");
-    } catch (e: unknown) {
-      expect(isPanic(e)).toBe(true);
+    } catch (error_: unknown) {
+      expect(isPanic(error_)).toBe(true);
     }
   });
 
@@ -1248,8 +1248,8 @@ describe("Panic in async context", () => {
     try {
       await getValueOrPanic(-1);
       fail("Expected panic to be thrown");
-    } catch (e: unknown) {
-      expect(isPanic(e)).toBe(true);
+    } catch (error_: unknown) {
+      expect(isPanic(error_)).toBe(true);
     }
   });
 });

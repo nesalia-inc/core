@@ -3,7 +3,7 @@
  */
 
 import { error } from "./error/builder.js";
-import type { Error } from "./error/types.js";
+import  { type Error } from "./error/types.js";
 import { err, type Result } from "./result/index.js";
 
 // ============================================================================
@@ -80,11 +80,11 @@ const normalizeTimeoutError = <T, E extends Error>(
     // Check if it's an ES6 class constructor by checking prototype
     if (timeout.prototype && timeout.prototype.constructor === timeout) {
       // It's a constructor - use Reflect.construct to support ES6 classes
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       return Reflect.construct(timeout as unknown as new (args: TimeoutInfo) => Error, [info]) as Error;
     }
     // It's a regular function or factory function
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     return (timeout as (info: TimeoutInfo) => Error)(info);
   }
   // Default to library TimeoutError
@@ -172,9 +172,9 @@ export const timeout = async <T, E extends Error = Error>(
             abortSignal.removeEventListener("abort", abortHandler);
             resolve(result);
           },
-          (reason) => {
+          (error_) => {
             abortSignal.removeEventListener("abort", abortHandler);
-            resolve(err(reason as unknown as E));
+            resolve(err(error_ as unknown as E));
           }
         );
       });

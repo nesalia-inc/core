@@ -95,9 +95,9 @@ export { err as failureAsync } from "./async-result/index.js";
 
 import * as ResultModule from "./result/index.js";
 import * as AsyncResultModule from "./async-result/index.js";
-import type { Result, Ok, Err } from "./result/index.js";
-import type { AsyncResult } from "./async-result/index.js";
-import type { Error } from "./error/types.js";
+import  { type Result, type Ok, type Err } from "./result/index.js";
+import  { type AsyncResult } from "./async-result/index.js";
+import  { type Error } from "./error/types.js";
 
 // Internal helper to check if value is AsyncResult (uses Thenable pattern)
 const isAsyncResultValue = <T, E>(val: unknown): val is AsyncResult<T, E> =>

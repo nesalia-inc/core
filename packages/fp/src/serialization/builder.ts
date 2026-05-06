@@ -66,7 +66,7 @@ export const errorReviver = (key: string, value: unknown): unknown => {
         const args = obj.args;
 
         if (typeof entry === "function") {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+           
           return (entry as (args: unknown) => unknown)(args);
         }
       }
