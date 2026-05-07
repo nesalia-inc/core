@@ -10,7 +10,7 @@
 
 import { ok, err, type Result } from "../result/index.js";
 import { okAsync, errAsync, type AsyncResult } from "../async-result/index.js";
-import type { Error as FpError } from "../error/types.js";
+import  { type Error as FpError } from "../error/types.js";
 
 /**
  * Wraps a synchronous function in a try/catch

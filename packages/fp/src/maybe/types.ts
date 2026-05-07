@@ -13,6 +13,14 @@ import { type Error } from "../error/types.js";
 export type Maybe<T> = Some<T> | None;
 
 /**
+ * TapBoth handlers for Maybe - symmetric observation
+ */
+export interface MaybeTapBothHandlers<T> {
+  some: (value: T) => void;
+  none: () => void;
+}
+
+/**
  * Some type - represents a present value
  * @typeParam T - The type of the value
  */
@@ -28,6 +36,7 @@ export interface Some<T> {
   getOrElse(defaultValue: T): T;
   getOrCompute(fn: () => T): T;
   tap(fn: (value: T) => void): Maybe<T>;
+  tapBoth(handlers: MaybeTapBothHandlers<T>): Some<T>;
   toResult(onNone: () => Error<unknown>): Result<T, Error<unknown>>;
 }
 
@@ -47,5 +56,6 @@ export interface None {
   getOrElse<T>(defaultValue: T): T;
   getOrCompute<T>(fn: () => T): T;
   tap(fn: (value: never) => void): None;
+  tapBoth(handlers: MaybeTapBothHandlers<never>): None;
   toResult(onNone: () => Error<unknown>): Result<never, Error<unknown>>;
 }

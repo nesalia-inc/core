@@ -1,0 +1,288 @@
+---
+title: Retry
+description: Resilient operations with backoff and jitter for handling transient failures
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+The retry system provides resilient operations by automatically retrying failed operations with configurable backoff strategies and jitter.
+
+## Why Retry?
+
+Network requests, database operations, and external API calls can fail transiently. The retry system gives you:
+
+- **Automatic retry** - Failed operations are automatically retried without manual loops
+- **Backoff strategies** - Prevents overwhelming failing services with exponential delay
+- **Jitter** - Randomization prevents thundering herd problems
+- **Type safety** - Full TypeScript inference with Result integration
+
+## Creating Retry Policies
+
+### Retry Policy Function
+
+You create a retry policy by calling the `retryPolicy` function with optional configuration. The function returns a policy that you can apply to operations.
+
+```typescript title="creating-retry-policy.ts"
+import { retryPolicy } from '@deessejs/fp';
+
+// Default policy with sensible defaults
+const defaultPolicy = retryPolicy();
+
+// Custom policy with aggressive settings
+const aggressivePolicy = retryPolicy({
+  maxAttempts: 5,
+  initialDelay: 50,
+  maxDelay: 2000,
+  backoffMultiplier: 1.5,
+  jitter: { enabled: true, factor: 0.2 }
+});
+```
+
+### Retry Policy Options
+
+The `retryPolicy` function accepts an options object with the following properties. Each option controls a specific aspect of retry behavior.
+
+```typescript title="retry-policy-options.ts"
+interface RetryPolicy {
+  /** Maximum number of attempts before giving up (default: 3).
+      The first attempt counts as attempt 1, so a value of 3 means
+      up to 2 retries after the initial attempt. */
+  maxAttempts: number;
+
+  /** Initial delay in milliseconds before the first retry (default: 100).
+      This delay applies after the first failure. */
+  initialDelay: number;
+
+  /** Maximum delay cap in milliseconds (default: 5000).
+      The delay between retries will never exceed this value,
+      even with exponential backoff. */
+  maxDelay: number;
+
+  /** Maximum total time in milliseconds for the entire operation including all attempts.
+      If set, the operation will fail with a timeout error even if attempts remain.
+      If not set, retries will continue indefinitely until maxAttempts is reached. */
+  maxTotalTime?: number;
+
+  /** Multiplier for exponential backoff (default: 2).
+      Each subsequent retry delay is calculated as:
+      delay = initialDelay * (backoffMultiplier ^ (attempt - 1))
+      With a multiplier of 2, delays double each time: 100ms, 200ms, 400ms, and so on. */
+  backoffMultiplier: number;
+
+  /** Jitter configuration to prevent synchronized retries.
+      Jitter adds randomization to delays to avoid thundering herd problems
+      where many clients retry at exactly the same time after a service outage. */
+  jitter: JitterConfig;
+
+  /** Filter function to control which errors trigger a retry.
+      You receive the error and return true to retry or false to stop immediately.
+      This lets you retry only on transient errors like network timeouts
+      while immediately failing on permanent errors like 404 Not Found. */
+  shouldRetry?: (error: E) => boolean;
+
+  /** Observability hooks for monitoring retry behavior.
+      You can attach callbacks for retry attempts, successes, and failures
+      to integrate with your logging or metrics systems. */
+  onRetry?: RetryHooks<T, E>;
+}
+
+interface JitterConfig {
+  /** Enable or disable jitter randomization (default: true). */
+  enabled: boolean;
+
+  /** Factor from 0 to 1 representing the percentage of the delay to randomize.
+      A factor of 0.3 means the actual delay will be randomized within 30%
+      of the calculated delay. For example, a 100ms delay with factor 0.3
+      would range from 70ms to 130ms. */
+  factor: number;
+}
+
+interface RetryHooks<T, E> {
+  /** Called immediately before each retry attempt.
+      Receives the attempt number, the error that caused the retry,
+      and the delay in milliseconds before this retry. */
+  onRetry?: (attempt: number, error: E, delay: number) => void;
+
+  /** Called when the operation finally succeeds after some retries.
+      Receives the successful result and the total number of attempts made. */
+  onSuccess?: (result: Ok<T>, attemptCount: number) => void;
+
+  /** Called when all retry attempts have been exhausted and the operation failed.
+      Receives the final error, the total number of attempts made,
+      and an array of all errors encountered in order. */
+  onFailure?: (error: E, attemptCount: number, allErrors: readonly E[]) => void;
+}
+```
+
+## Retrying Operations
+
+### Retry for Synchronous Operations
+
+You use the static `Result.retry` method when you have a synchronous function that returns a Result. The method takes your retry policy and the function to retry, and it handles the retry logic automatically.
+
+```typescript title="sync-retry.ts"
+import { Result, retryPolicy } from '@deessejs/fp';
+
+// A function that returns a Result, potentially flaky
+const flakyOperation = (): Result<User, NetworkError> => {
+  return fetchFromUnreliableServer();
+};
+
+// Apply retry policy to the synchronous operation
+const policy = retryPolicy({ maxAttempts: 3 });
+const result = Result.retry(policy, flakyOperation);
+```
+
+### Retry for Async Operations
+
+You use the static `Result.retryAsync` method when you have an async function that returns a Promise wrapping a Result. This is the most common case when dealing with network requests or other I/O operations.
+
+```typescript title="async-retry.ts"
+import { Result, retryPolicy } from '@deessejs/fp';
+
+// An async function that returns a Result wrapped in a Promise
+const flakyAsyncOperation = async (): Promise<Result<User, NetworkError>> => {
+  return fetchUserFromAPI();
+};
+
+// Retry the async operation with the policy
+const policy = retryPolicy({ maxAttempts: 3 });
+const result = await Result.retryAsync(policy, flakyAsyncOperation);
+```
+
+### Retry with Cancellation Support
+
+You can pass an AbortSignal to `retryAsync` to allow cancellation of the retry operation. This is useful when you need to set a timeout for the entire retry sequence or when the user navigates away and you want to cancel in-flight requests.
+
+```typescript title="retry-with-abort.ts"
+import { Result, retryPolicy } from '@deessejs/fp';
+
+// Create an AbortController to signal cancellation
+const controller = new AbortController();
+
+// Call retryAsync with the abort signal in the options
+const result = await Result.retryAsync(
+  retryPolicy({ maxAttempts: 5 }),
+  () => fetchUserData('user-123'),
+  { signal: controller.signal }
+);
+
+// Cancel the operation after 10 seconds
+setTimeout(() => controller.abort(), 10000);
+```
+
+## Backoff Calculation
+
+The delay between retry attempts follows an exponential backoff formula. Understanding this helps you tune the policy for your use case.
+
+The base delay is calculated using the initial delay and backoff multiplier:
+
+```
+delay = min(initialDelay * (backoffMultiplier ^ (attempt - 1)), maxDelay)
+```
+
+With jitter applied, the actual delay is randomized within a range around the base delay:
+
+```
+actualDelay = delay * (1 - jitter.factor + (random() * jitter.factor * 2))
+```
+
+Here is an example table showing how delays grow with an initial delay of 100ms, a multiplier of 2, and 30% jitter applied:
+
+| Attempt | Base Delay | With 30% Jitter (range) |
+|---------|------------|--------------------------|
+| 1 | 100ms | 70-130ms |
+| 2 | 200ms | 140-260ms |
+| 3 | 400ms | 280-520ms |
+| 4 | 800ms | 560-1040ms |
+| 5 | 1600ms | 1120-2080ms |
+
+The jitter range ensures that while retries still happen quickly at first, they spread out over time, reducing load on recovering services.
+
+## Selective Retry with shouldRetry
+
+By default, the retry mechanism retries on any `Err` result. You can use the `shouldRetry` option to filter which errors should trigger a retry. This lets you distinguish between transient errors that might succeed on retry and permanent errors that will never succeed.
+
+```typescript title="selective-retry.ts"
+const networkOnlyPolicy = retryPolicy({
+  maxAttempts: 3,
+  shouldRetry: (error) => error._tag === 'NetworkError'
+});
+
+const extendedPolicy = retryPolicy({
+  maxAttempts: 5,
+  shouldRetry: (error) =>
+    error._tag === 'NetworkError' || error._tag === 'TimeoutError'
+});
+```
+
+## Combining with Try
+
+You can wrap potentially throwing operations with `Result.attemptAsync` inside a retry. This pattern is useful when you have legacy code that throws exceptions instead of returning Results.
+
+```typescript title="retry-with-attempt.ts"
+import { Result, retryPolicy } from '@deessejs/fp';
+
+// Wrap an operation that might throw in a Result
+const safeFetchUser = async (id: string) =>
+  Result.attemptAsync(
+    () => fetch(`/api/users/${id}`).then(r => r.json()),
+    (cause) => NetworkError({ url: `/api/users/${id}`, cause })
+  );
+
+// Retry the safe operation
+const result = await Result.retryAsync(
+  retryPolicy({ maxAttempts: 3 }),
+  () => safeFetchUser('user-123')
+);
+```
+
+## Observability Hooks
+
+You can monitor retry behavior by passing hook functions to the retry policy. These hooks let you integrate with your metrics, logging, and alerting systems.
+
+```typescript title="observability-hooks.ts"
+const policy = retryPolicy({
+  maxAttempts: 3,
+  onRetry: {
+    onRetry: (attempt, error, delay) => {
+      console.log(`Attempt ${attempt} failed, retrying in ${delay}ms: ${error._tag}`);
+    },
+    onSuccess: (result, attemptCount) => {
+      metrics.increment('retry.success', { attemptCount });
+    },
+    onFailure: (error, attemptCount, allErrors) => {
+      metrics.increment('retry.failure', { attemptCount });
+      logger.error('All retry attempts failed', { errors: allErrors });
+    }
+  }
+});
+```
+
+## Using with Pipe
+
+You can use `Result.retry` within a pipe chain to add retry logic to your data transformations. The retry policy is applied as a transformation that wraps the previous step.
+
+```typescript title="retry-in-pipe.ts"
+import { pipe, Result, retryPolicy } from '@deessejs/fp';
+
+const result = await pipe(
+  'user-123',
+  fetchUserById,
+  Result.retry(retryPolicy({ maxAttempts: 5 }))
+);
+```
+
+## See Also
+
+<Cards>
+  <Card title="Sleep" href="./sleep">
+    Sleep utilities used internally
+  </Card>
+  <Card title="Timeout" href="./timeout">
+    Time-bound operations
+  </Card>
+  <Card title="Repeat" href="./repeat">
+    Repeated operation execution
+  </Card>
+</Cards>

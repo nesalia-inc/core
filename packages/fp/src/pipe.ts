@@ -15,6 +15,47 @@ const isThenable = (value: unknown): value is Thenable =>
   typeof (value as { then?: unknown }).then === "function";
 
 // ============================================================================
+// DUAL (DATA-FIRST / DATA-LAST)
+// ============================================================================
+
+/**
+ * Creates a function that works both as data-first and data-last.
+ * The first argument can be either data or a function that transforms data.
+ *
+ * @typeParam A - First argument type (the data or function)
+ * @typeParam B - Second argument type (the function or data)
+ * @typeParam R - Return type
+ * @param arity - The arity of the function (number of arguments)
+ * @param fn - The actual implementation
+ * @returns A function that can be called with data-first or data-last style
+ *
+ * @example
+ * import { dual } from '@deessejs/fp';
+ *
+ * // 2-ary function - can be called map(result, fn) or map(fn)(result)
+ * const map = dual(2, <A, B>(result: { map: (fn: (a: A) => B) => unknown }, fn: (a: A) => B) =>
+ *   result.map(fn)
+ * );
+ *
+ * // Data-first
+ * map(result, fn)
+ *
+ * // Data-last
+ * map(fn)(result)
+ */
+export function dual(arity: 2 | 3 | 4, fn: AnyFn): AnyFn {
+  return function(this: unknown, ...args: unknown[]): unknown {
+    if (args.length === arity - 1 && typeof args[0] === "function") {
+      // Data-last: first arg is a function, we need to return a function that takes data
+      const [transformFn, ...rest] = args;
+      return (data: unknown) => fn.call(this, data, transformFn, ...rest);
+    }
+    // Data-first: all args provided
+    return fn.apply(this, args);
+  };
+}
+
+// ============================================================================
 // PIPE (SYNC)
 // ============================================================================
 
@@ -344,3 +385,200 @@ export const reduce = <A, B>(
     }
     return accumulator;
   };
+
+// ============================================================================
+// DEBOUNCE
+// ============================================================================
+
+/**
+ * Options for debounce
+ */
+export interface DebounceOptions {
+  /** Wait time in milliseconds before executing */
+  wait: number;
+  /** If true, execute on the leading edge instead of trailing */
+  leading?: boolean;
+}
+
+/**
+ * Creates a debounced version of a function.
+ * The function will be delayed by the specified wait time, but if called again
+ * within the wait period, the timer resets.
+ *
+ * @typeParam T - The function type to debounce
+ * @param fn - The function to debounce
+ * @param options - Debounce options (wait is required)
+ * @returns A debounced function
+ *
+ * @example
+ * import { debounce } from '@deessejs/fp';
+ *
+ * const debouncedSearch = debounce(searchUser, { wait: 300 });
+ * // Calls searchUser 300ms after the last call
+ */
+export function debounce<T extends (...args: unknown[]) => unknown>(
+  fn: T,
+  options: DebounceOptions
+): T & { cancel: () => void } {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  let lastArgs: unknown[] | null = null;
+
+  const debounced = function(this: unknown, ...args: unknown[]): unknown {
+    lastArgs = args;
+    if (timeoutId !== null) {
+      clearTimeout(timeoutId);
+    }
+    if (options.leading && timeoutId === null) {
+      return fn.apply(this, args);
+    }
+    timeoutId = setTimeout(() => {
+      timeoutId = null;
+      if (lastArgs !== null && !options.leading) {
+        fn.apply(this, lastArgs);
+        lastArgs = null;
+      }
+    }, options.wait);
+    // eslint-disable-next-line @typescript-eslint/consistent-return -- setTimeout callback doesn't need to return
+    return undefined;
+  } as T & { cancel: () => void };
+
+  debounced.cancel = () => {
+    if (timeoutId !== null) {
+      clearTimeout(timeoutId);
+      timeoutId = null;
+    }
+  };
+
+  return debounced;
+}
+
+// ============================================================================
+// THROTTLE
+// ============================================================================
+
+/**
+ * Options for throttle
+ */
+export interface ThrottleOptions {
+  /** Minimum interval between executions in milliseconds */
+  interval: number;
+}
+
+/**
+ * Creates a throttled version of a function.
+ * The function will execute at most once per the specified interval.
+ *
+ * @typeParam T - The function type to throttle
+ * @param fn - The function to throttle
+ * @param options - Throttle options (interval is required)
+ * @returns A throttled function
+ *
+ * @example
+ * import { throttle } from '@deessejs/fp';
+ *
+ * const throttledSave = throttle(saveUser, { interval: 1000 });
+ * // Calls saveUser at most once per second
+ */
+export function throttle<T extends (...args: unknown[]) => unknown>(
+  fn: T,
+  options: ThrottleOptions
+): T & { cancel: () => void } {
+  let lastExecution = 0;
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  let pendingArgs: unknown[] | null = null;
+
+  const throttled = function(this: unknown, ...args: unknown[]): unknown {
+    const now = Date.now();
+    const timeSinceLastExecution = now - lastExecution;
+
+    if (timeSinceLastExecution >= options.interval) {
+      lastExecution = now;
+      return fn.apply(this, args);
+    }
+
+    // Schedule execution for when the interval has passed
+    if (timeoutId === null) {
+      const remaining = options.interval - timeSinceLastExecution;
+      pendingArgs = args;
+      timeoutId = setTimeout(() => {
+        lastExecution = Date.now();
+        timeoutId = null;
+        if (pendingArgs !== null) {
+          fn.apply(this, pendingArgs);
+          pendingArgs = null;
+        }
+      }, remaining);
+    }
+    // eslint-disable-next-line @typescript-eslint/consistent-return -- setTimeout callback doesn't need to return
+    return undefined;
+  } as T & { cancel: () => void };
+
+  throttled.cancel = () => {
+    if (timeoutId !== null) {
+      clearTimeout(timeoutId);
+      timeoutId = null;
+    }
+  };
+
+  return throttled;
+}
+
+// ============================================================================
+// MEMOIZE
+// ============================================================================
+
+/**
+ * Options for memoize
+ */
+export interface MemoizeOptions {
+  /** Maximum number of entries to cache */
+  maxSize?: number;
+}
+
+/**
+ * Creates a memoized version of a function.
+ * Results are cached based on the serialized arguments.
+ *
+ * @typeParam T - The function type to memoize
+ * @param fn - The function to memoize
+ * @param options - Memoize options (maxSize is optional)
+ * @returns A memoized function
+ *
+ * @example
+ * import { memoize } from '@deessejs/fp';
+ *
+ * const memoizedFetch = memoize(fetchUser, { maxSize: 100 });
+ * // Subsequent calls with same arguments return cached result
+ */
+export function memoize<T extends (...args: unknown[]) => unknown>(
+  fn: T,
+  options: MemoizeOptions = {}
+): T & { cache: Map<string, unknown>; clear: () => void } {
+  const maxSize = options.maxSize ?? 100;
+  const cache = new Map<string, unknown>();
+
+  const memoized = function(this: unknown, ...args: unknown[]): unknown {
+    const key = JSON.stringify(args);
+    if (cache.has(key)) {
+      return cache.get(key);
+    }
+    const result = fn.apply(this, args);
+    // Only cache non-Promise results by default for safety
+    if (!isThenable(result)) {
+      if (cache.size >= maxSize) {
+        // Remove oldest entry (Map preserves insertion order)
+        const firstKey = cache.keys().next().value;
+        if (firstKey !== undefined) {
+          cache.delete(firstKey);
+        }
+      }
+      cache.set(key, result);
+    }
+    return result;
+  } as T & { cache: Map<string, unknown>; clear: () => void };
+
+  memoized.cache = cache;
+  memoized.clear = () => { cache.clear(); };
+
+  return memoized;
+}

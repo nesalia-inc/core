@@ -107,3 +107,16 @@ export type ErrorBuilder<T = object> = (args?: T) => Error<T>;
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ExtractError<T extends ErrorBuilder<any>> = T extends ErrorBuilder<infer E> ? Error<E> : never;
+
+/**
+ * Panic - represents unrecoverable programmer defects
+ *
+ * Panic is used for violations of contract (e.g., callbacks throwing in map/tap,
+ * catch handler throwing in attempt, or programmer assertion failures).
+ * Unlike domain errors, Panic should never occur in production.
+ */
+export type Panic = Readonly<{
+  readonly _tag: "Panic";
+  readonly error: globalThis.Error;
+  readonly reason: string;
+}>;

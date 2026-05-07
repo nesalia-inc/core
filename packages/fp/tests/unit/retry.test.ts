@@ -1,8 +1,342 @@
-import { describe, it, expect, vi } from "vitest";
-import { retryAsync, exponentialBackoff, linearBackoff, constantBackoff, calculateDelay, RetryAbortedError } from "../../src/retry.js";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { retryPolicy, retry, retryAsyncPolicy, retryAsync, exponentialBackoff, linearBackoff, constantBackoff, calculateDelay } from "../../src/retry.js";
+import { isOk, isErr } from "../../src/result/index.js";
 
 describe("Retry", () => {
-  describe("retryAsync", () => {
+  let originalRandom: () => number;
+
+  beforeEach(() => {
+    originalRandom = Math.random;
+    // Mock Math.random to return predictable values for jitter testing
+    Math.random = () => 0.5; // Return middle value (0.5) for predictable jitter
+  });
+
+  afterEach(() => {
+    Math.random = originalRandom;
+  });
+
+  describe("retryPolicy", () => {
+    it("should create policy with defaults", () => {
+      const policy = retryPolicy();
+
+      expect(policy.maxAttempts).toBe(3);
+      expect(policy.initialDelay).toBe(100);
+      expect(policy.maxDelay).toBe(5000);
+      expect(policy.maxTotalTime).toBeUndefined();
+      expect(policy.backoffMultiplier).toBe(2);
+      expect(policy.jitter.enabled).toBe(true);
+      expect(policy.jitter.factor).toBe(0.3);
+      expect(policy.shouldRetry({} as Error)).toBe(true);
+      expect(policy.hooks).toEqual({});
+    });
+
+    it("should create policy with custom options", () => {
+      const onRetry = vi.fn();
+      const onSuccess = vi.fn();
+      const onFailure = vi.fn();
+
+      const policy = retryPolicy({
+        maxAttempts: 5,
+        initialDelay: 50,
+        maxDelay: 2000,
+        maxTotalTime: 30000,
+        backoffMultiplier: 1.5,
+        jitter: { enabled: true, factor: 0.2 },
+        shouldRetry: (error: Error) => error.message === "retryable",
+        hooks: { onRetry, onSuccess, onFailure }
+      });
+
+      expect(policy.maxAttempts).toBe(5);
+      expect(policy.initialDelay).toBe(50);
+      expect(policy.maxDelay).toBe(2000);
+      expect(policy.maxTotalTime).toBe(30000);
+      expect(policy.backoffMultiplier).toBe(1.5);
+      expect(policy.jitter.enabled).toBe(true);
+      expect(policy.jitter.factor).toBe(0.2);
+      expect(policy.shouldRetry(new Error("retryable"))).toBe(true);
+      expect(policy.shouldRetry(new Error("not retryable"))).toBe(false);
+      expect(policy.hooks.onRetry).toBe(onRetry);
+      expect(policy.hooks.onSuccess).toBe(onSuccess);
+      expect(policy.hooks.onFailure).toBe(onFailure);
+    });
+
+    it("should create policy with jitter disabled", () => {
+      const policy = retryPolicy({
+        jitter: { enabled: false, factor: 0 }
+      });
+
+      expect(policy.jitter.enabled).toBe(false);
+    });
+  });
+
+  describe("retry (sync)", () => {
+    it("should return ok value on success", () => {
+      const policy = retryPolicy();
+      const result = retry(policy, () => 42);
+
+      expect(isOk(result)).toBe(true);
+      if (isOk(result)) {
+        expect(result.value).toBe(42);
+      }
+    });
+
+    it("should return ok after retries when operation eventually succeeds", () => {
+      let attempts = 0;
+      const policy = retryPolicy({ maxAttempts: 3 });
+      const result = retry(policy, () => {
+        attempts++;
+        if (attempts < 3) throw new Error("fail");
+        return 42;
+      });
+
+      expect(isOk(result)).toBe(true);
+      if (isOk(result)) {
+        expect(result.value).toBe(42);
+      }
+      expect(attempts).toBe(3);
+    });
+
+    it("should return err after max attempts exhausted", () => {
+      const policy = retryPolicy({ maxAttempts: 2 });
+      const result = retry(policy, () => {
+        throw new Error("fail");
+      });
+
+      expect(isErr(result)).toBe(true);
+      if (isErr(result)) {
+        expect(result.error.message).toBe("fail");
+      }
+    });
+
+    it("should respect shouldRetry filter", () => {
+      const policy = retryPolicy<Error>({
+        maxAttempts: 3,
+        shouldRetry: (error) => error.message === "retryable"
+      });
+
+      const result = retry(policy, () => {
+        throw new Error("not retryable");
+      });
+
+      expect(isErr(result)).toBe(true);
+      if (isErr(result)) {
+        expect(result.error.message).toBe("not retryable");
+      }
+    });
+
+    it("should call onSuccess hook on success", () => {
+      const onSuccess = vi.fn();
+      const policy = retryPolicy({
+        hooks: { onSuccess }
+      });
+
+      retry(policy, () => 42);
+
+      expect(onSuccess).toHaveBeenCalledTimes(1);
+      expect(onSuccess).toHaveBeenCalledWith(expect.any(Object), 1);
+    });
+
+    it("should call onFailure hook when all attempts fail", () => {
+      const onFailure = vi.fn();
+      const policy = retryPolicy({
+        maxAttempts: 3,
+        hooks: { onFailure }
+      });
+
+      retry(policy, () => {
+        throw new Error("fail");
+      });
+
+      expect(onFailure).toHaveBeenCalledTimes(1);
+      expect(onFailure).toHaveBeenCalledWith(
+        expect.objectContaining({ message: "fail" }),
+        3,
+        expect.any(Array)
+      );
+    });
+
+    it("should call onRetry hook before each retry", () => {
+      const onRetry = vi.fn();
+      const policy = retryPolicy({
+        maxAttempts: 3,
+        hooks: { onRetry }
+      });
+
+      retry(policy, () => {
+        throw new Error("fail");
+      });
+
+      // Called for attempt 1 (before retry 2) and attempt 2 (before retry 3)
+      expect(onRetry).toHaveBeenCalledTimes(2);
+      expect(onRetry).toHaveBeenNthCalledWith(1, 1, expect.objectContaining({ message: "fail" }), expect.any(Number));
+      expect(onRetry).toHaveBeenNthCalledWith(2, 2, expect.objectContaining({ message: "fail" }), expect.any(Number));
+    });
+
+    it("should return err with RetryAbortedError when signal is aborted", () => {
+      const controller = new AbortController();
+      controller.abort();
+
+      const policy = retryPolicy();
+      const result = retry(policy, () => 42, controller.signal);
+
+      expect(isErr(result)).toBe(true);
+      if (isErr(result)) {
+        expect(result.error.name).toBe("RetryAbortedError");
+      }
+    });
+
+    it("should return err with RetryTimeoutError when maxTotalTime exceeded", () => {
+      const policy = retryPolicy({
+        maxAttempts: 10,
+        initialDelay: 1000, // Long delay to ensure timeout kicks in
+        maxTotalTime: 50 // Very short timeout
+      });
+
+      const result = retry(policy, () => {
+        throw new Error("fail");
+      });
+
+      expect(isErr(result)).toBe(true);
+      if (isErr(result)) {
+        expect(result.error.name).toBe("RetryTimeoutError");
+      }
+    });
+  });
+
+  describe("retryAsyncPolicy", () => {
+    it("should return ok value on success", async () => {
+      const policy = retryPolicy();
+      const result = await retryAsyncPolicy(policy, async () => 42);
+
+      expect(isOk(result)).toBe(true);
+      if (isOk(result)) {
+        expect(result.value).toBe(42);
+      }
+    });
+
+    it("should return ok after retries when operation eventually succeeds", async () => {
+      let attempts = 0;
+      const policy = retryPolicy({ maxAttempts: 3, initialDelay: 10 });
+      const result = await retryAsyncPolicy(policy, async () => {
+        attempts++;
+        if (attempts < 3) throw new Error("fail");
+        return 42;
+      });
+
+      expect(isOk(result)).toBe(true);
+      if (isOk(result)) {
+        expect(result.value).toBe(42);
+      }
+      expect(attempts).toBe(3);
+    });
+
+    it("should return err after max attempts exhausted", async () => {
+      const policy = retryPolicy({ maxAttempts: 2, initialDelay: 10 });
+      const result = await retryAsyncPolicy(policy, async () => {
+        throw new Error("fail");
+      });
+
+      expect(isErr(result)).toBe(true);
+      if (isErr(result)) {
+        expect(result.error.message).toBe("fail");
+      }
+    });
+
+    it("should respect shouldRetry filter", async () => {
+      const policy = retryPolicy<Error>({
+        maxAttempts: 3,
+        shouldRetry: (error) => error.message === "retryable",
+        initialDelay: 10
+      });
+
+      const result = await retryAsyncPolicy(policy, async () => {
+        throw new Error("not retryable");
+      });
+
+      expect(isErr(result)).toBe(true);
+      if (isErr(result)) {
+        expect(result.error.message).toBe("not retryable");
+      }
+    });
+
+    it("should call onSuccess hook on success", async () => {
+      const onSuccess = vi.fn();
+      const policy = retryPolicy({
+        hooks: { onSuccess }
+      });
+
+      await retryAsyncPolicy(policy, async () => 42);
+
+      expect(onSuccess).toHaveBeenCalledTimes(1);
+      expect(onSuccess).toHaveBeenCalledWith(expect.any(Object), 1);
+    });
+
+    it("should call onFailure hook when all attempts fail", async () => {
+      const onFailure = vi.fn();
+      const policy = retryPolicy({
+        maxAttempts: 3,
+        hooks: { onFailure }
+      });
+
+      await retryAsyncPolicy(policy, async () => {
+        throw new Error("fail");
+      });
+
+      expect(onFailure).toHaveBeenCalledTimes(1);
+      expect(onFailure).toHaveBeenCalledWith(
+        expect.objectContaining({ message: "fail" }),
+        3,
+        expect.any(Array)
+      );
+    });
+
+    it("should call onRetry hook before each retry", async () => {
+      const onRetry = vi.fn();
+      const policy = retryPolicy({
+        maxAttempts: 3,
+        hooks: { onRetry }
+      });
+
+      await retryAsyncPolicy(policy, async () => {
+        throw new Error("fail");
+      });
+
+      // Called for attempt 1 (before retry 2) and attempt 2 (before retry 3)
+      expect(onRetry).toHaveBeenCalledTimes(2);
+    });
+
+    it("should return err with RetryAbortedError when signal is aborted", async () => {
+      const controller = new AbortController();
+      controller.abort();
+
+      const policy = retryPolicy();
+      const result = await retryAsyncPolicy(policy, async () => 42, controller.signal);
+
+      expect(isErr(result)).toBe(true);
+      if (isErr(result)) {
+        expect(result.error.name).toBe("RetryAbortedError");
+      }
+    });
+
+    it("should return err with RetryTimeoutError when maxTotalTime exceeded", async () => {
+      const policy = retryPolicy({
+        maxAttempts: 10,
+        initialDelay: 100, // Will ensure timeout kicks in
+        maxTotalTime: 50 // Very short timeout
+      });
+
+      const result = await retryAsyncPolicy(policy, async () => {
+        throw new Error("fail");
+      });
+
+      expect(isErr(result)).toBe(true);
+      if (isErr(result)) {
+        expect(result.error.name).toBe("RetryTimeoutError");
+      }
+    });
+  });
+
+  describe("retryAsync (legacy)", () => {
     it("should return value on success", async () => {
       const result = await retryAsync(async () => 42);
       expect(result).toBe(42);
@@ -175,7 +509,7 @@ describe("Retry", () => {
 
       await expect(
         retryAsync(async () => { throw new Error("fail"); }, { attempts: 3, signal: controller.signal })
-      ).rejects.toThrow("Retry aborted");
+      ).rejects.toThrow("RetryAbortedError");
     });
 
     it("should throw RetryAbortedError with correct name", async () => {
@@ -185,8 +519,8 @@ describe("Retry", () => {
       try {
         await retryAsync(async () => { throw new Error("fail"); }, { attempts: 3, signal: controller.signal });
         fail("Should have thrown");
-      } catch (error) {
-        expect(error instanceof RetryAbortedError).toBe(true);
+      } catch (error: unknown) {
+        expect((error as { name?: string }).name).toBe("RetryAbortedError");
       }
     });
 

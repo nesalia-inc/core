@@ -1,0 +1,227 @@
+---
+title: Conversions
+description: Convert between Result, Maybe, Try, and nullable values
+---
+
+Conversion functions allow you to transform between different error-handling types and work with nullable values. These conversions let you bridge the gap between different error-handling patterns in your codebase, enabling you to combine libraries and patterns that use different conventions.
+
+## Maybe to Result
+
+### toResult function
+
+The toResult function converts a Maybe into a Result. When the Maybe contains a value (Some), the function wraps it in Ok. When the Maybe is empty (None), the function calls your error factory to create an error. This pattern is particularly useful when you have optional values from external sources and need to handle them within a Result-based error handling system.
+
+The following example shows how to convert a Maybe to a Result using a custom error type. You create an error definition with Zod schema validation, then pass a factory function that creates the error when the Maybe is None.
+
+```typescript title="maybe-to-result.ts"
+import { some, none, toResult, error } from '@deessejs/fp';
+import { z } from 'zod';
+
+const NotFoundError = error({
+  name: 'NotFoundError',
+  schema: z.object({ key: z.string() }),
+  message: (args) => `Not found: ${args.key}`,
+});
+
+toResult(some(42), () => NotFoundError({ key: 'answer' })); // Ok(42)
+toResult(none(), () => NotFoundError({ key: 'answer' }));    // Err(NotFoundError)
+```
+
+### fromMaybe function
+
+The fromMaybe function is an alias for toResult and provides the same behavior. You can use either name depending on which reads more naturally in your code. The function accepts the same parameters and produces the same output types.
+
+Here is how you can use fromMaybe to convert a Maybe to a Result with a simple string error.
+
+```typescript title="from-maybe.ts"
+import { fromMaybe } from '@deessejs/fp';
+
+fromMaybe(some(42), () => 'error'); // Ok(42)
+fromMaybe(none(), () => 'error');    // Err('error')
+```
+
+## Result to Maybe
+
+### toMaybeFromResult function
+
+The toMaybeFromResult function converts a Result into a Maybe. When the Result is Ok, the function extracts the value and wraps it in Some. When the Result is Err, the function returns None, discarding the error information. This conversion is useful when you want to use Result values with Maybe-based APIs, but you do not need the error details.
+
+The following example demonstrates converting Ok and Err values to Maybe.
+
+```typescript title="result-to-maybe.ts"
+import { ok, err, toMaybeFromResult } from '@deessejs/fp';
+
+toMaybeFromResult(ok(42)); // Some(42)
+toMaybeFromResult(err('oops')); // None
+```
+
+### fromResult function
+
+The fromResult function is an alias for toMaybeFromResult and behaves identically. You can choose whichever name fits better in your codebase's naming conventions.
+
+Here is how fromResult converts Result values to Maybe values.
+
+```typescript title="from-result.ts"
+import { fromResult } from '@deessejs/fp';
+
+fromResult(ok(42)); // Some(42)
+fromResult(err('oops')); // None
+```
+
+## Nullable to Result
+
+### resultFromNullable function
+
+The resultFromNullable function converts a nullable value directly to Result in a single operation. This function combines the behavior of fromNullable and toResult, making it a convenient way to handle null and undefined values from sources like databases, configuration files, or external APIs.
+
+The function takes two parameters. The first parameter is the nullable value you want to convert. The second parameter is an error factory function that returns an error when the value is null or undefined.
+
+This function is especially useful for database lookups where a missing record returns null, environment variables that may not be set, or any API that uses null to represent absence.
+
+The following example defines a NotFoundError and demonstrates converting null and undefined values to Err while preserving valid values as Ok.
+
+```typescript title="nullable-to-result.ts"
+import { resultFromNullable, error } from '@deessejs/fp';
+import { z } from 'zod';
+
+const NotFoundError = error({
+  name: 'NotFoundError',
+  schema: z.object({ field: z.string() }),
+  message: (args) => `Field "${args.field}" not found`,
+});
+
+// Non-null value becomes Ok
+resultFromNullable('hello', () => NotFoundError({ field: 'name' })); // Ok('hello')
+
+// Null/undefined becomes Err
+resultFromNullable(null, () => NotFoundError({ field: 'name' }));  // Err(NotFoundError)
+resultFromNullable(undefined, () => NotFoundError({ field: 'name' })); // Err(NotFoundError)
+```
+
+This is useful for database lookups, environment variables, and other sources where null/undefined indicates absence. The following example shows a typical database lookup pattern.
+
+```typescript title="db-lookup.ts"
+import { resultFromNullable } from '@deessejs/fp';
+
+const user = resultFromNullable(
+  database.findUser(id),
+  () => ({ code: 'NOT_FOUND', message: 'User not found' })
+);
+```
+
+## Throwable to Result
+
+### resultFromThrowable function
+
+The resultFromThrowable function wraps a synchronous function that might throw in a Result. This lets you handle thrown exceptions as structured errors instead of relying on try-catch blocks. When the function executes successfully, the returned value is wrapped in Ok. When the function throws, the thrown error is captured and wrapped in Err.
+
+The function takes a single parameter: a throwing function that takes no arguments and returns a value. The function does not accept arguments, so if you need to pass parameters, use a closure or partial application.
+
+This pattern is particularly useful for parsing operations like JSON.parse, validation libraries that throw on invalid input, and any legacy code that uses exceptions for error handling.
+
+The following example shows how to safely parse JSON without throwing exceptions.
+
+```typescript title="throwable-to-result.ts"
+import { resultFromThrowable } from '@deessejs/fp';
+
+resultFromThrowable(() => JSON.parse('{"valid": true}')); // Ok({ valid: true })
+resultFromThrowable(() => JSON.parse('invalid json'));   // Err(SyntaxError: Unexpected token)
+```
+
+For custom error types, you can transform the caught error using mapErr to convert the raw exception into a structured error that matches your application's error conventions.
+
+```typescript title="custom-error-transform.ts"
+import { resultFromThrowable, mapErr } from '@deessejs/fp';
+
+const parseJson = (input: string) =>
+  mapErr(
+    resultFromThrowable(() => JSON.parse(input)),
+    e => ({ code: 'PARSE_ERROR', originalError: e.message })
+  );
+```
+
+## Conversions Overview
+
+| From    | To     | Function name                   |
+|---------|--------|---------------------------------|
+| Maybe   | Result | toResult, fromMaybe             |
+| Result  | Maybe  | toMaybeFromResult, fromResult   |
+| Nullable| Result | resultFromNullable              |
+| Throwable| Result | resultFromThrowable            |
+
+## Real-World Examples
+
+### Database Lookup
+
+When querying a database that may or may not have a matching record, you can use resultFromNullable to convert the nullable result directly into a Result. This eliminates the need to manually check for null and wrap the value, providing a clean error handling flow.
+
+```typescript title="find-user.ts"
+import { resultFromNullable } from '@deessejs/fp';
+
+const findUser = (id: string) =>
+  resultFromNullable(
+    database.find(id),
+    () => ({ code: 'USER_NOT_FOUND', id })
+  );
+```
+
+### Environment Variables
+
+Environment variables are strings that may be undefined when not set. You can use resultFromNullable to convert parsed environment variables into Results with descriptive errors when the variable is missing or has an invalid format.
+
+```typescript title="get-port.ts"
+import { resultFromNullable } from '@deessejs/fp';
+
+const getPort = () =>
+  resultFromNullable(
+    parseInt(process.env.PORT, 10),
+    () => ({ code: 'INVALID_PORT', value: process.env.PORT })
+  );
+```
+
+### Safe JSON Parsing
+
+JSON parsing throws on invalid input, which makes it a perfect candidate for resultFromThrowable. By wrapping JSON.parse in this function, you get a structured error that you can handle without try-catch blocks, making the code easier to compose and test.
+
+```typescript title="safe-parse.ts"
+import { resultFromThrowable } from '@deessejs/fp';
+
+const safeParse = <T>(input: string) =>
+  resultFromThrowable(() => JSON.parse(input) as T);
+
+const result = safeParse<User>('{"id": 1}');
+
+if (result.ok) {
+  console.log(result.value);
+} else {
+  console.error('Parse failed:', result.error.message);
+}
+```
+
+### Combining with Maybe Operations
+
+You can chain conversion functions with Maybe operations to create powerful data pipelines. This example shows how to first convert a Result to Maybe, then flat-map over the Maybe to transform the user object and extract the nullable name field, converting it to a Maybe in the process.
+
+```typescript title="combine-maybe.ts"
+import { some, toMaybeFromResult, flatMap, fromNullable } from '@deessejs/fp';
+
+const getUserName = (id: string) =>
+  flatMap(
+    toMaybeFromResult(findUser(id)),
+    user => fromNullable(user.name)
+  );
+```
+
+## See Also
+
+<Cards>
+  <Card title="Result" href="../core/result">
+    For explicit success/failure
+  </Card>
+  <Card title="Maybe" href="../core/maybe">
+    For optional values
+  </Card>
+  <Card title="Try" href="../core/try">
+    For wrapping throwing functions
+  </Card>
+</Cards>

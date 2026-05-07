@@ -5,7 +5,7 @@
  * Inspired by Python's exception classes.
  */
 
-import { type ErrorOptions, type ErrorBuilder, type Error, type ErrorGroup } from "./types.js";
+import { type ErrorOptions, type ErrorBuilder, type Error, type ErrorGroup, type Panic } from "./types.js";
 import { isError, isErrorGroup } from "./guards.js";
 import { some, none, type Maybe } from "../maybe/index.js";
 
@@ -247,4 +247,29 @@ export const exceptionGroup = (exceptions: readonly (Error | ErrorGroup)[]): Err
   } as ErrorGroup;
 
   return Object.freeze(self);
+};
+
+/**
+ * Creates a Panic - an unrecoverable programmer defect
+ *
+ * Panic represents violations of contract that should never occur in production:
+ * - Callbacks throwing in map/tap/flatMap
+ * - Catch handler throwing in attempt()
+ * - Programmer assertion failures
+ *
+ * @param errorOrReason - Either a native Error or a reason string
+ * @throws The error, propagating through async/generator contexts
+ */
+export const panic = (errorOrReason: Error | string): never => {
+  const err: globalThis.Error = typeof errorOrReason === "string"
+    ? new globalThis.Error(errorOrReason)
+    : errorOrReason;
+
+  const panicValue: Panic = Object.freeze({
+    _tag: "Panic",
+    error: err,
+    reason: typeof errorOrReason === "string" ? errorOrReason : err.message,
+  });
+
+  throw panicValue;
 };

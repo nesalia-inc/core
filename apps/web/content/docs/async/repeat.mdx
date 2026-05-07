@@ -1,0 +1,345 @@
+---
+title: Repeat
+description: Repeated operation execution for polling and batch processing
+---
+
+The repeat utilities execute operations multiple times, collecting results or stopping on first error.
+
+## Why Repeat?
+
+Some operations need to be executed multiple times:
+
+- **Polling** - Check for a condition until it becomes true
+- **Batch processing** - Process items in chunks with retry
+- **Health checks** - Verify system availability with multiple probes
+- **Idempotent operations** - Ensure an operation succeeds via repetition
+
+## Basic Repeat
+
+The `Result.repeat` static method executes an async operation a specified number of times, collecting all results into an array. This is useful when you need to perform an operation multiple times and aggregate the outcomes, such as checking system health across multiple probes or processing items in a batch.
+
+Here is an example that performs a health check operation five times with a one-second delay between each attempt:
+
+```typescript title="repeat-example.ts"
+import { Result, error } from '@deessejs/fp';
+import { z } from 'zod';
+
+const HealthError = error({
+  name: 'HealthError',
+  schema: z.object({ component: z.string(), cause: z.unknown().optional() })
+});
+
+const healthResult = await Result.repeat(checkHealth, {
+  count: 5,
+  delay: 1000
+});
+// Result<HealthCheck[], HealthError>
+```
+
+### RepeatOptions Parameter Reference
+
+The `RepeatOptions` interface provides fine-grained control over the repeat behavior:
+
+```typescript title="repeat-options.ts"
+interface RepeatOptions<T, E = Error> {
+  /** Number of repetitions (> 0) */
+  count: number;
+
+  /** Delay between attempts */
+  delay?: number | (() => number | Promise<number>);
+
+  /** Stop on first error (default: false) */
+  stopOnError?: boolean;
+
+  /** Collect errors in results (default: false) */
+  continueOnError?: boolean;
+
+  /** External cancellation signal */
+  abortSignal?: AbortSignal;
+
+  /** Called before each attempt */
+  onAttempt?: (attempt: number) => void;
+}
+```
+
+The `count` parameter specifies how many times the operation will be executed. It must be greater than zero. When `count` is set to zero, the method returns an empty success result immediately. When `count` is negative, an error is returned.
+
+The `delay` parameter controls the wait time between attempts. You can provide a static number of milliseconds, or you can pass a function that returns a number or a Promise that resolves to a number. This flexibility allows you to implement dynamic delay strategies, such as backing off exponentially on each attempt. When `delay` is zero, there is no pause between attempts. When `delay` is negative, it is treated as zero.
+
+The `stopOnError` parameter determines whether the repeat operation halts immediately when an error occurs. By default, this is false, meaning all attempts will be made regardless of failures. When set to true, the operation stops on the first error and returns that error immediately.
+
+The `continueOnError` parameter changes how errors are handled. When true, all attempts are made and results are collected, with errors included in the results array alongside successful outcomes. This allows you to see which specific attempts failed while still completing the full sequence.
+
+The `abortSignal` parameter accepts an AbortSignal, allowing external cancellation of the repeat operation. When the signal is triggered, the operation stops and returns an AbortError.
+
+The `onAttempt` callback is invoked before each attempt, receiving the attempt number as its argument. This lets you track progress, log attempts, or implement custom monitoring.
+
+## Repeat Until Predicate
+
+The `Result.repeatUntil` static method executes an operation repeatedly until a predicate function returns true. This is particularly useful for polling scenarios where you need to wait for a condition to be met, such as waiting for a message to appear in a queue or for a resource to become available.
+
+Here is an example that polls a queue until a message is received or the maximum number of attempts is exhausted:
+
+```typescript title="repeat-until-example.ts"
+const queueResult = await Result.repeatUntil(
+  () => pollQueue(),
+  (message) => message !== null,
+  { maxAttempts: 10, delay: 500 }
+);
+// Result<Message | null, QueueError | RepeatedUntilError>
+```
+
+### RepeatUntilOptions Parameter Reference
+
+The `RepeatUntilOptions` interface controls the repeat-until behavior:
+
+```typescript title="repeat-until-options.ts"
+interface RepeatUntilOptions<T, E = Error> {
+  /** Maximum attempts (default: Infinity) */
+  maxAttempts?: number;
+
+  /** Delay between attempts */
+  delay?: number | (() => number | Promise<number>);
+
+  /** External cancellation signal */
+  abortSignal?: AbortSignal;
+
+  /** Called before each attempt */
+  onAttempt?: (attempt: number, value: T) => void;
+}
+```
+
+The `maxAttempts` parameter limits how many times the operation will be tried. The default is Infinity, meaning the operation will repeat indefinitely until the predicate is satisfied or an external abort signal triggers cancellation. Setting this to zero causes an immediate error, while positive values allow that many attempts before giving up.
+
+The `delay` parameter works identically to the `repeat` method, providing a pause between attempts. You can use a static number or a function that returns a dynamic delay value.
+
+The `abortSignal` parameter enables external cancellation, similar to the `repeat` method.
+
+The `onAttempt` callback receives both the attempt number and the value returned by the operation, allowing you to inspect each result as the loop progresses.
+
+## Repeated Is Some
+
+The `Result.repeatedIsSome` static method is a specialized variant that continues executing until a Maybe value becomes Some. This combines the simplicity of the Maybe pattern with retry logic, useful for cache lookups where you want to keep trying until a value is found.
+
+Here is an example that repeatedly checks a cache until the desired key is found:
+
+```typescript title="repeated-is-some-example.ts"
+const result = await Result.repeatedIsSome(
+  () => findInCache(key),
+  { maxAttempts: 3, delay: 100 }
+);
+// Result<T, CacheError | NotFoundError | RepeatedUntilError>
+```
+
+## Behavior
+
+### Execution Model
+
+All repeat operations execute sequentially. Each attempt completes (success or error) before the next begins. This sequential execution ensures predictable ordering of results and prevents race conditions when multiple attempts interact with shared state. The delay, when specified, is applied between attempts. It is not applied before the first attempt.
+
+### Boundary Values
+
+| Parameter | Value | Behavior |
+|-----------|-------|----------|
+| `count` | `0` | Returns `Ok([])` immediately |
+| `count` | `< 0` | Returns `Err<InvalidRepeatOptionsError>` |
+| `maxAttempts` | `0` | Returns `Err<RepeatedUntilError>` immediately |
+| `maxAttempts` | `Infinity` | Runs until predicate satisfied or aborted |
+| `delay` | `0` | No delay between attempts |
+| `delay` | `< 0` | Treated as `0` |
+
+### Collection Mode
+
+When you configure `repeat` with `stopOnError: false`, all attempts run and all results are collected into an array. This mode is useful when you want to gather data from multiple sources or perform health checks across several components.
+
+Here is how you can run three health checks and collect all results:
+
+```typescript title="collection-mode.ts"
+// All attempts run, all results collected
+const results = await Result.repeat(checkHealth, {
+  count: 3,
+  stopOnError: false
+});
+// Ok<HealthCheck[]> if all succeed
+// Err<RepeatExhaustedError> if any fails, with errors array
+```
+
+If all attempts succeed, the method returns an `Ok` containing the array of results. If any attempt fails, the method returns an `Err` with a `RepeatExhaustedError` that includes the count of attempts made and an array of all errors encountered.
+
+### Continuation on Error Mode
+
+When you enable `continueOnError: true`, the repeat operation continues executing even when errors occur, collecting both successful results and errors into the same array. This provides complete visibility into what happened during the repeat sequence.
+
+Here is how you can continue despite errors and collect all outcomes:
+
+```typescript title="continue-on-error-mode.ts"
+// Continue despite errors, collect all results including errors
+const results = await Result.repeat(checkHealth, {
+  count: 3,
+  stopOnError: false,
+  continueOnError: true
+});
+// Ok<HealthCheck[]> if all succeed
+// Ok<(HealthCheck | Error)[]> if some fail - errors are collected
+```
+
+When `continueOnError: true`, all attempts are made regardless of failures. The results array contains both successes and failures mixed together. Critically, if all attempts fail, the method still returns `Ok<(T | Error)[]>` rather than an error. This allows you to handle partial failures gracefully by inspecting the result array.
+
+### Early Termination Mode
+
+When you configure `stopOnError: true`, the repeat operation halts immediately when an error occurs. This is useful when subsequent attempts would be meaningless or potentially harmful if a failure has already occurred, such as with connection attempts where a failure indicates the service is unavailable.
+
+Here is how you can stop immediately on the first error:
+
+```typescript title="early-termination.ts"
+// Stop on first error
+const result = await Result.repeat(connectService, {
+  count: 3,
+  stopOnError: true
+});
+// Err<ConnectionError> on first failure
+// Ok<ConnectionResult> if all succeed
+```
+
+## Error Types
+
+### RepeatedUntilError
+
+When `repeatUntil` exhausts all attempts without the predicate being satisfied, it returns a `RepeatedUntilError`. This error includes the number of attempts made, the last value returned by the operation, and a string representation of the predicate for debugging purposes.
+
+```typescript title="repeated-until-error.ts"
+const RepeatedUntilError = error({
+  name: 'RepeatedUntilError',
+  schema: z.object({
+    attempts: z.number(),
+    lastValue: z.unknown(),
+    predicate: z.string()
+  })
+});
+```
+
+### RepeatExhaustedError
+
+When `Result.repeat` fails with `stopOnError: false` and any attempts fail, it returns a `RepeatExhaustedError`. This error contains a tag identifying it as a repeat exhaustion error, the number of attempts that were made, and an array of all errors encountered during those attempts.
+
+```typescript title="repeat-exhausted-error.ts"
+interface RepeatExhaustedError {
+  _tag: 'RepeatExhaustedError';
+  attempts: number;
+  errors: E[];
+}
+```
+
+### AbortError
+
+When an operation is cancelled via an `abortSignal`, the repeat operation returns an `AbortError`. This error can include an optional reason explaining why the abort was triggered.
+
+```typescript title="abort-error.ts"
+const AbortError = error({
+  name: 'AbortError',
+  schema: z.object({ reason: z.unknown().optional() })
+});
+```
+
+## Combining with Timeout
+
+You can combine repeat operations with timeout to create robust polling behaviors with an overall time limit. This pattern is particularly useful when you want to keep trying until a condition is met but also want to give up if it takes too long.
+
+Here is how you can wrap a repeat-until operation with a timeout deadline:
+
+```typescript title="repeat-with-timeout.ts"
+const message = await Result.timeout(
+  Result.repeatUntil(
+    () => pollQueue(queueId),
+    (msg) => msg !== null,
+    { maxAttempts: Infinity, delay: 500 }
+  ),
+  { deadline: 30000 }
+);
+```
+
+This creates a polling operation that runs indefinitely with 500ms between attempts, but will fail with a timeout error if it takes longer than 30 seconds to find a message.
+
+## Examples
+
+### Polling for Data
+
+When you need to poll until data becomes available, you can use `repeatUntil` with a predicate that checks for non-null results. This example polls a queue up to 20 times with a 500ms delay between each attempt.
+
+```typescript title="polling-for-data.ts"
+// Poll until data is available
+const message = await Result.repeatUntil(
+  () => pollQueue(queueId),
+  (msg) => msg !== null,
+  { maxAttempts: 20, delay: 500 }
+);
+
+match(message, {
+  ok: (msg) => processMessage(msg),
+  err: (err) => {
+    if (err._tag === 'RepeatedUntilError') {
+      return handleTimeout();
+    }
+    return handleError(err);
+  }
+});
+```
+
+The `match` function lets you handle both success and error cases. When a `RepeatedUntilError` occurs, you know the polling exhausted all attempts without finding data, so you can handle it as a timeout scenario.
+
+### Batch Processing
+
+For batch processing scenarios, you can use `repeat` with `stopOnError: true` to process items sequentially while stopping immediately if any item fails. This ensures you do not continue processing when an error occurs.
+
+```typescript title="batch-processing.ts"
+const processItems = async (items: string[]) => {
+  const results = await Result.repeat(
+    () => processNextItem(items),
+    {
+      count: items.length,
+      stopOnError: true
+    }
+  );
+  return results;
+};
+```
+
+This pattern processes items one at a time and halts on the first failure, which is useful when the order of processing matters or when subsequent operations depend on earlier ones succeeding.
+
+### Health Check with Graceful Degradation
+
+When building systems that need to report overall health, you can use `repeat` with `continueOnError: true` to check multiple components while gracefully handling partial failures. This lets you get a complete picture of system health rather than failing entirely on a single component failure.
+
+```typescript title="health-check-graceful-degradation.ts"
+const checkSystemHealth = async () => {
+  const results = await Result.repeat(checkComponent, {
+    count: 3,
+    stopOnError: false,
+    continueOnError: true,
+    delay: 500
+  });
+
+  return match(results, {
+    ok: (checks) => checks.map(c =>
+      c instanceof Error ? { healthy: false, error: c } : c
+    ),
+    err: (err) => [{ healthy: false, error: err }]
+  });
+};
+```
+
+This implementation runs three health checks with a 500ms delay between each. It maps the results to a consistent format regardless of whether all checks succeeded or some failed, enabling the calling code to handle the full range of health states uniformly.
+
+## See Also
+
+<Cards>
+  <Card title="Retry" href="./retry">
+    Retry on transient failures
+  </Card>
+  <Card title="Timeout" href="./timeout">
+    Time-bound operations
+  </Card>
+  <Card title="Sleep" href="./sleep">
+    Delay utilities
+  </Card>
+</Cards>

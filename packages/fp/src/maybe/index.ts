@@ -3,7 +3,7 @@
  */
 
 // Types
-export type { Maybe, Some, None } from "./types.js";
+export type { Maybe, Some, None, MaybeTapBothHandlers } from "./types.js";
 
 // Builder functions
 export { some, none, fromNullable } from "./builder.js";
@@ -12,7 +12,7 @@ export { some, none, fromNullable } from "./builder.js";
 export { isSome, isNone } from "./builder.js";
 
 // Chainable functions
-export { map, flatMap, flatten, tap, match } from "./builder.js";
+export { map, flatMap, flatten, tap, tapBoth, match } from "./builder.js";
 
 // Conversion functions
 export { toNullable, toUndefined, getOrElse, getOrCompute, toResult } from "./builder.js";

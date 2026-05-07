@@ -1,0 +1,655 @@
+---
+title: Result
+description: Explicit success and failure with typed errors and generator composition
+---
+
+The `Result` type is the foundation of explicit error handling in @deessejs/fp. It represents a value that can be either a success (Ok) or a failure (Err), making error handling visible in the type system rather than hidden behind exceptions.
+
+## Why Result?
+
+TypeScript promises type safety, but traditional error handling with exceptions breaks that promise. When a function can throw, the type system cannot help you handle errors - they're invisible until runtime.
+
+### The Problem with Exceptions
+
+This function may throw, but the type signature says it returns User with no indication of possible failure. TypeScript cannot enforce error handling at compile time, making it easy to forget try/catch and leading to unhandled exceptions at runtime.
+
+```typescript title="exceptions.ts"
+// This function CAN throw, but the type says it returns User
+function processUser(data: string): User {
+  return JSON.parse(data); // No error in the type!
+}
+
+// Callers have no idea this can fail
+try {
+  const user = processUser(data);
+} catch (e) {
+  // But what if you forget?
+}
+```
+
+### The Result Solution
+
+With Result, errors become explicit in the type. The function signature tells you exactly whether it can fail, and TypeScript forces you to handle both cases. This prevents forgotten error handling and makes code reviews easier.
+
+```typescript title="result-intro.ts"
+import { ok, err, error } from '@deessejs/fp';
+import { z } from 'zod';
+
+const ParseError = error({
+  name: 'ParseError',
+  schema: z.object({ message: z.string() }),
+  message: (args) => `Parse failed: ${args.message}`,
+});
+
+const parseUser = (data: string) => {
+  try {
+    return ok(JSON.parse(data));
+  } catch (e) {
+    return err(ParseError({ message: e instanceof Error ? e.message : 'Unknown' }));
+  }
+};
+
+const result = parseUser(data);
+
+if (result.ok) {
+  console.log(result.value);
+} else {
+  console.error('Failed:', result.error.message);
+}
+```
+
+Understanding these core concepts is essential before diving deeper:
+
+- **Result&lt;T, E&gt;** - Two generic types: the success value type (T) and the error type (E)
+- **ok(value)** - Factory function to create a success result
+- **err(error)** - Factory function to create a failure result
+- **map** - Transform the value inside Ok without changing the error path
+- **flatMap** - Chain operations that can fail, stopping early if an error occurs
+- **Result.gen** - Generator-based composition for writing linear, readable async error handling
+
+## Core Concepts
+
+### Ok and Err
+
+The Result type has exactly two possible states: Ok for success and Err for failure. Ok holds the value directly, while Err holds error information. You can always check which state you're in using the `ok` boolean property.
+
+```typescript title="ok-err.ts"
+import { ok, err } from '@deessejs/fp';
+
+// Success - the ok property is true, value contains the data
+const success = ok({ id: '123', name: 'Alice' });
+// { ok: true, value: { id: '123', name: 'Alice' } }
+
+// Failure - the ok property is false, error contains the failure reason
+const failure = err({ code: 'NOT_FOUND', message: 'User not found' });
+// { ok: false, error: { code: 'NOT_FOUND', message: 'User not found' } }
+```
+
+### Generator Composition
+
+When you need to perform multiple operations that can fail in sequence, nesting becomes a problem. The generator composition solves this by letting you write async operations in a linear, readable style using generators. Each `yield*` either passes a success value forward or exits early with an error, without requiring nested callbacks or explicit if-checks at every step.
+
+The generator yields Ok values to continue execution, yields Err values to short-circuit with an error, or yields a Promise to await async operations. The function returns a plain Result that you can handle with the same tools as any other Result.
+
+```typescript title="result-gen.ts"
+import { Result, ok, err, error } from '@deessejs/fp';
+import { z } from 'zod';
+
+const NotFoundError = error({
+  name: 'NotFoundError',
+  schema: z.object({ id: z.string() }),
+});
+
+const ValidationError = error({
+  name: 'ValidationError',
+  schema: z.object({ field: z.string() }),
+});
+
+async function getUserResource(userId: string, resourceId: string) {
+  return Result.gen(async function* () {
+    const user = yield* ok({ id: userId, name: 'Alice', active: true });
+
+    if (!user.active) {
+      yield* ValidationError({ field: 'user.active' });
+    }
+
+    const resource = yield* ok({ id: resourceId, ownerId: userId });
+
+    return { user, resource };
+  });
+}
+```
+
+## Factory Functions
+
+### Creating Success with ok
+
+The `ok` function creates a success result that wraps your value. It takes a value of any type and returns a Result where `ok: true` and `value` contains your data. Use `ok` when an operation completes successfully and you want to pass the result through the Result type system.
+
+```typescript title="ok-factory.ts"
+import { ok } from '@deessejs/fp';
+
+ok(42);        // Ok(42)
+ok('hello');   // Ok('hello')
+ok({ id: 1 }); // Ok({ id: 1 })
+```
+
+### Creating Failure with err
+
+The `err` function creates a failure result that wraps your error. It takes an error value of any type and returns a Result where `ok: false` and `error` contains your error data. Use `err` when an operation fails and you need to propagate that failure through the Result type system.
+
+```typescript title="err-factory.ts"
+import { err } from '@deessejs/fp';
+
+err('error');                              // Err('error')
+err({ code: 404, message: 'Not found' }); // Err({ code: 404, message: 'Not found' })
+```
+
+## Static Methods
+
+### Wrapping Throwing Functions
+
+#### Attempt (Sync)
+
+When you have a function that might throw, wrapping it with Attempt converts it to a Result. This pattern is especially useful for parsing, JSON conversion, and any I/O operations that can fail unexpectedly.
+
+The function accepts two parameters:
+
+- **fn** - A synchronous function that may throw. This is the operation you want to wrap.
+- **catch** - An optional callback that receives the thrown error and should return an error value in your error type. If you don't provide a catch function, the thrown error becomes the error value directly.
+
+```typescript title="result-attempt.ts"
+import { Result, error } from '@deessejs/fp';
+import { z } from 'zod';
+
+const ParseError = error({
+  name: 'ParseError',
+  schema: z.object({ message: z.string() }),
+  message: (args) => `Parse failed: ${args.message}`,
+});
+
+const parseResult = Result.attempt(
+  () => JSON.parse(input),
+  (cause) => ParseError({ message: cause instanceof Error ? cause.message : 'Unknown' })
+);
+```
+
+#### Attempt Async
+
+The async version of Attempt wraps promises that may reject. It works the same way as the sync version but handles async operations. This is particularly useful for API calls, file system operations, and any async operation where rejection indicates failure rather than an exception.
+
+The function accepts two parameters:
+
+- **fn** - An async function that may reject. This is the async operation you want to wrap.
+- **catch** - An optional callback that receives the rejection reason and should return an error value in your error type.
+
+```typescript title="result-attempt-async.ts"
+import { Result, error } from '@deessejs/fp';
+
+const NetworkError = error({
+  name: 'NetworkError',
+  schema: z.object({ url: z.string() }),
+});
+
+const fetchResult = await Result.attemptAsync(
+  async () => {
+    const response = await fetch('/api/user');
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  },
+  (cause) => NetworkError({ url: '/api/user', cause })
+);
+```
+
+### Type Guards
+
+#### Is Ok
+
+Use this type guard to narrow a Result to its success case. After checking this condition, TypeScript knows `result.value` exists and has type T. Use this when you want to handle the success path explicitly.
+
+```typescript title="result-is-ok.ts"
+import { Result } from '@deessejs/fp';
+
+if (Result.isOk(result)) {
+  result.value; // Fully narrowed
+}
+```
+
+#### Is Err
+
+Use this type guard to narrow a Result to its failure case. After checking this condition, TypeScript knows `result.error` exists and has type E. Use this when you want to handle the error path explicitly.
+
+```typescript title="result-is-err.ts"
+import { Result } from '@deessejs/fp';
+
+if (Result.isErr(result)) {
+  result.error; // Error type
+}
+```
+
+### Transformation
+
+#### Map
+
+Transform the value inside an Ok result without affecting the error path. If the Result is Err, the transformation is skipped and the error passes through unchanged. This lets you chain transformations on successful values without worrying about errors short-circuiting your pipeline.
+
+The function accepts one parameter:
+
+- **fn** - A callback that receives the Ok value and returns a new value (or can return a Result to chain further operations).
+
+```typescript title="result-map.ts"
+import { Result, pipe, ok } from '@deessejs/fp';
+
+const doubled = pipe(ok(2), Result.map(x => x * 2));
+// Ok(4)
+
+// Also available as method
+ok(2).map(x => x * 2);
+```
+
+#### Flat Map
+
+Chain operations that can fail together. Unlike Map, the callback passed to Flat Map can return a Result, and if that Result is Err, execution short-circuits immediately. This is the primary way to sequence operations where each step might fail.
+
+The function accepts one parameter:
+
+- **fn** - A callback that receives the Ok value and must return a Result (either Ok or Err). If you need to transform the value without the possibility of failing, use Map instead.
+
+```typescript title="result-flat-map.ts"
+import { Result, pipe, ok } from '@deessejs/fp';
+
+const userResult = pipe(
+  ok({ userId: '123' }),
+  Result.flatMap(({ userId }) => fetchUser(userId))
+);
+```
+
+#### Map Error
+
+Transform the error inside an Err result without affecting the value path. If the Result is Ok, the transformation is skipped and the value passes through unchanged. Use this to normalize errors, enrich them with additional context, or convert them to a different error type while preserving successful values.
+
+The function accepts one parameter:
+
+- **fn** - A callback that receives the error value and should return a new error value.
+
+```typescript title="result-map-err.ts"
+import { Result, pipe, err } from '@deessejs/fp';
+
+const mapped = pipe(
+  err('not found'),
+  Result.mapErr(e => new Error(e))
+);
+// Err(Error: 'not found')
+```
+
+### Observation
+
+#### Tap
+
+Execute a side effect on the Ok value without transforming it. The original Result passes through unchanged - both Ok and Err values remain intact. Use Tap for logging, debugging, or triggering side effects that shouldn't affect the computation pipeline.
+
+The function accepts one parameter:
+
+- **fn** - A callback that receives the Ok value and can return anything (it's ignored).
+
+```typescript title="result-tap.ts"
+import { Result, pipe, ok } from '@deessejs/fp';
+
+pipe(
+  ok({ name: 'Alice' }),
+  Result.tap(user => console.log('User:', user.name))
+);
+```
+
+#### Tap Error
+
+Execute a side effect on the Err value without transforming it. The original Result passes through unchanged. Use this for logging errors, monitoring, or side effects that should happen when something fails.
+
+The function accepts one parameter:
+
+- **fn** - A callback that receives the error value and can return anything (it's ignored).
+
+```typescript title="result-tap-err.ts"
+import { Result, pipe, err } from '@deessejs/fp';
+
+pipe(
+  err('oops'),
+  Result.tapErr(e => console.error('Error:', e))
+);
+```
+
+#### Tap Both
+
+Execute different side effects depending on whether the Result is Ok or Err. This is symmetric - both the success callback and the error callback receive their respective values, and the original Result always passes through unchanged. Use this when you need to handle both success and failure side effects in one place, such as tracking metrics for both outcomes.
+
+The function accepts one parameter:
+
+- **callbacks** - An object with an `ok` callback for success values and an `err` callback for errors. Both callbacks can return anything (their return values are ignored).
+
+```typescript title="result-tap-both.ts"
+import { Result, pipe, ok, err } from '@deessejs/fp';
+
+pipe(
+  ok(42),
+  Result.tapBoth({
+    ok: (v) => console.log('Success:', v),
+    err: (e) => console.error('Failed:', e)
+  })
+);
+```
+
+### Extraction
+
+#### Get Or Else
+
+Extract the Ok value, falling back to a default if the Result is Err. The default is evaluated immediately, so use this when your fallback is cheap or you want to guarantee a non-null result. For expensive defaults that should only be computed when needed, use Get Or Compute instead.
+
+The function accepts one parameter:
+
+- **defaultValue** - The value to return if the Result is Err. This is evaluated immediately, so only use this for cheap values.
+
+```typescript title="result-get-or-else.ts"
+import { Result, pipe, ok, err } from '@deessejs/fp';
+
+pipe(ok(42), Result.getOrElse(0));     // 42
+pipe(err('oops'), Result.getOrElse(0)); // 0
+```
+
+#### Get Or Compute
+
+Extract the Ok value, computing a fallback lazily only if the Result is Err. The callback is wrapped in a function, so it's not executed until needed. Use this when the fallback is expensive (like querying a database or making an API call) and you only want to pay the cost if the primary path fails.
+
+The function accepts one parameter:
+
+- **fn** - A callback that returns the fallback value. This is only called if the Result is Err.
+
+```typescript title="result-get-or-compute.ts"
+import { Result, pipe, err } from '@deessejs/fp';
+
+pipe(err('oops'), Result.getOrCompute(() => expensiveDefault()));
+```
+
+#### Unwrap
+
+Extract the Ok value directly, throwing if the Result is Err. This is useful for internal code where you're confident the Result is Ok, but it should rarely be used at boundaries where you handle errors explicitly. The thrown error is the error value from the Err case.
+
+This method takes no parameters - it simply extracts the value or throws.
+
+```typescript title="result-unwrap.ts"
+import { Result, ok } from '@deessejs/fp';
+
+ok(42).unwrap(); // 42
+err('oops').unwrap(); // throws
+```
+
+#### Unwrap Or
+
+Extract the Ok value if it exists, otherwise return a provided default. Unlike Get Or Else which works with pipe, Unwrap Or is a method on the Result instance. The default is returned as-is, not wrapped in a function.
+
+The function accepts one parameter:
+
+- **defaultValue** - The value to return if the Result is Err.
+
+```typescript title="result-unwrap-or.ts"
+import { Result, err } from '@deessejs/fp';
+
+err('oops').unwrapOr(0); // 0
+```
+
+#### Or Else
+
+Transform an Err into a new Result, effectively recovering from errors. If the Result is Ok, it passes through unchanged. Use this when you want to handle errors by providing an alternative success value, such as falling back to cached data or default configurations.
+
+The function accepts one parameter:
+
+- **fn** - A callback that receives the error and must return a new Result (Ok or Err).
+
+```typescript title="result-or-else.ts"
+import { Result, pipe, ok, err } from '@deessejs/fp';
+
+pipe(
+  err('not found'),
+  Result.orElse(e => ok(defaultUser))
+);
+```
+
+### Pattern Matching
+
+#### Match
+
+Handle both Ok and Err cases in one expression, returning a value from each branch. The match object has an `ok` callback for success values and an `err` callback for errors. Exactly one callback runs, and its return value becomes the result of the match operation.
+
+This is equivalent to a switch statement on the Result's state, but expressed as a functional transform. Use Match when you need to transform a Result into a plain value in one step, with different logic for each case.
+
+The function accepts one parameter:
+
+- **callbacks** - An object with an `ok` callback that receives the value and returns a new value, and an `err` callback that receives the error and returns a new value.
+
+```typescript title="result-match.ts"
+import { Result, pipe, ok, err } from '@deessejs/fp';
+
+pipe(
+  ok(42),
+  Result.match({
+    ok: (v) => `Got: ${v}`,
+    err: (e) => `Error: ${e}`
+  })
+);
+```
+
+### Conversion
+
+#### To Nullable
+
+Convert the Result to a nullable value. Ok returns the value directly, while Err returns null. This is useful when you want to integrate with code that doesn't use Result but needs to handle the absence of a value gracefully.
+
+This method takes no parameters - it simply converts the Result's state to a nullable value.
+
+```typescript title="result-to-nullable.ts"
+import { Result, ok, err } from '@deessejs/fp';
+
+ok(42).toNullable();   // 42
+err('oops').toNullable(); // null
+```
+
+#### To Undefined
+
+Convert the Result to an optional undefined value. Ok returns the value directly, while Err returns undefined. Similar to To Nullable but uses undefined instead of null, which may be preferable in some JavaScript codebases.
+
+This method takes no parameters - it simply converts the Result's state to an undefined value.
+
+```typescript title="result-to-undefined.ts"
+import { Result } from '@deessejs/fp';
+
+ok(42).toUndefined();   // 42
+err('oops').toUndefined(); // undefined
+```
+
+#### To Maybe
+
+Convert the Result to a Maybe. Ok becomes Some with the value, while Err becomes None. This is useful when you want to work with the Maybe API or when the error information isn't needed downstream.
+
+This method takes no parameters - it simply converts the Result to a Maybe type.
+
+```typescript title="result-to-maybe.ts"
+import { Result } from '@deessejs/fp';
+
+ok(42).toMaybe();   // Some(42)
+err('oops').toMaybe(); // None
+```
+
+### Combination
+
+#### All
+
+Combine multiple Results into one. If all are Ok, you get an Ok containing an array of values. If any is Err, you get the first Err immediately (fail-fast behavior). Use this when you need all operations to succeed to proceed, such as parallel data fetching that must complete before rendering.
+
+The function accepts one parameter:
+
+- **results** - An array of Results to combine. All must be Ok for the result to be Ok.
+
+```typescript title="result-all.ts"
+import { Result } from '@deessejs/fp';
+
+const users = await Result.all(
+  fetchUser('1'),
+  fetchUser('2'),
+  fetchUser('3')
+);
+// Result<User[], UserError>
+```
+
+#### Race
+
+Resolve multiple Results concurrently and return the first one to settle (whether success or failure). Use this when you have redundant sources and want the fastest response, like querying multiple API replicas.
+
+The function accepts one parameter:
+
+- **results** - An array of Results to race. The first to settle (whether Ok or Err) wins.
+
+```typescript title="result-race.ts"
+import { Result } from '@deessejs/fp';
+
+const winner = await Result.race(
+  fetchFromPrimary(),
+  fetchFromSecondary()
+);
+```
+
+#### Traverse
+
+Map a function over an array of items, collecting Results. If all succeed, you get Ok with all transformed values. If any fail, you get the first Err (fail-fast). This is more convenient than mapping manually with All and handles the array transformation cleanly.
+
+The function accepts two parameters:
+
+- **items** - An array of items to transform.
+- **fn** - A function that takes an item and returns a Result. If any Result is Err, the traversal stops early.
+
+```typescript title="result-traverse.ts"
+import { Result } from '@deessejs/fp';
+
+const users = await Result.traverse(
+  ['1', '2', '3'],
+  (id) => fetchUser(id)
+);
+```
+
+#### All Settled
+
+Wait for all Results to complete regardless of outcome. Each result includes its status - success results have `ok: true` with `value`, while failures have `ok: false` with `error`. Use this when you need feedback on every operation, like sending notifications where each failure should be reported but shouldn't stop others.
+
+The function accepts one parameter:
+
+- **results** - An array of Results to settle. All will be waited for, regardless of success or failure.
+
+```typescript title="result-all-settled.ts"
+import { Result } from '@deessejs/fp';
+
+const results = await Result.allSettled([
+  fetchUser('1'),
+  fetchUser('2')
+]);
+// Outcome<User, UserError>[] - each element has ok/value or ok:false/error
+```
+
+### Async Operations
+
+#### From Promise
+
+Convert a Promise to an AsyncResult. If the promise resolves, you get Ok with the resolved value. If it rejects, you get Err with a transformed error. This is the bridge between Promise-based code and the Result type system.
+
+The function accepts two parameters:
+
+- **promise** - A Promise that may reject.
+- **catchFn** - An optional callback that receives the rejection reason and returns an error value.
+
+```typescript title="result-from-promise.ts"
+import { Result } from '@deessejs/fp';
+
+const result = await Result.fromPromise(
+  fetch('/api/user'),
+  (cause) => NetworkError({ cause })
+);
+```
+
+#### Await Async Result
+
+Await an AsyncResult inside a generator. Use this inside the generator composition to sequence async operations without breaking the generator pattern. The awaited AsyncResult must resolve before the generator continues.
+
+The function accepts one parameter:
+
+- **asyncResult** - An AsyncResult (Result of an async operation) to await.
+
+```typescript title="result-await.ts"
+const result = await Result.gen(async function* () {
+  const user = yield* Result.await(fetchUser(id));
+  const posts = yield* Result.await(fetchPosts(user.id));
+  return { user, posts };
+});
+```
+
+### Serialization
+
+#### Serialize
+
+Convert a Result to a plain JSON-serializable object. This is necessary when you need to store or transmit Results across boundaries that don't understand custom types, like localStorage, HTTP bodies, or message queues.
+
+The serialized format uses `_tag` to distinguish Ok from Err, making deserialization straightforward. Ok results have `_tag: 'Ok'` with the value, while Err results have `_tag: 'Err'` with the error.
+
+The function accepts one parameter:
+
+- **result** - The Result to serialize.
+
+```typescript title="result-serialize.ts"
+import { Result, ok } from '@deessejs/fp';
+
+const json = Result.serialize(ok({ id: '123' }));
+// { _tag: 'Ok', value: { id: '123' } }
+```
+
+#### Deserialize
+
+Reconstruct a Result from a serialized object. The errorRegistry maps error type names to their constructor functions, enabling proper error reconstruction. Without the registry, errors would be deserialized as plain objects without their typed methods.
+
+The function accepts two parameters:
+
+- **errorRegistry** - An object mapping error type names to their constructor functions. This allows proper type reconstruction.
+- **json** - The serialized JSON object with `_tag` and value/error properties.
+
+```typescript title="result-deserialize.ts"
+import { Result, ok } from '@deessejs/fp';
+
+const result = Result.deserialize(
+  { NotFoundError, ValidationError },
+  { _tag: 'Ok', value: { id: '123' } }
+);
+```
+
+### Retry
+
+See [Retry](../async/retry.mdx) for retry and async retry static methods.
+
+### Timeout
+
+See [Timeout](../async/timeout.mdx) for the timeout static method.
+
+### Repeat
+
+See [Repeat](../async/repeat.mdx) for repeat and repeat until static methods.
+
+## See Also
+
+<Cards>
+  <Card title="Maybe" href="./maybe">
+    For optional values (null/undefined)
+  </Card>
+  <Card title="Error" href="./error">
+    For structured errors with enrichment
+  </Card>
+  <Card title="Try" href="./try">
+    For wrapping sync functions that might throw
+  </Card>
+  <Card title="Composition" href="./composition">
+    pipe, flow, tap for function composition
+  </Card>
+</Cards>

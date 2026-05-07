@@ -2,7 +2,8 @@ import { baseUrl, createMetadata } from "@/lib/metadata";
 import { RootProvider } from 'fumadocs-ui/provider/next';
 import { TooltipProvider } from "@/components/ui/tooltip";
 import './global.css';
-import { Space_Grotesk, Space_Mono } from 'next/font/google';
+import { GeistSans } from 'geist/font/sans';
+import { GeistMono } from 'geist/font/mono';
 
 export const metadata = createMetadata({
   title: {
@@ -12,21 +13,9 @@ export const metadata = createMetadata({
   metadataBase: baseUrl,
 });
 
-
-const spaceGrotesk = Space_Grotesk({
-  subsets: ['latin'],
-  variable: '--font-sans',
-});
-
-const spaceMono = Space_Mono({
-  weight: ['400', '700'],
-  subsets: ['latin'],
-  variable: '--font-mono',
-});
-
 export default function Layout({ children }: LayoutProps<'/'>) {
   return (
-    <html lang="en" className={`${spaceGrotesk.variable} ${spaceMono.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning>
       <body className="flex flex-col min-h-screen bg-black text-white antialiased">
         <TooltipProvider>
           <RootProvider>{children}</RootProvider>

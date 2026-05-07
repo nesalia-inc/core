@@ -1,0 +1,630 @@
+---
+title: Maybe
+description: Explicit optional values with Some and None
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+The `Maybe` type represents a value that can be either present (Some) or absent (None). It is the functional alternative to null and undefined. When you use Maybe, you make absence explicit in your type system, which prevents many runtime errors that plague TypeScript codebases.
+
+## Why Maybe?
+
+TypeScript's null and undefined are the source of many runtime errors. When a value can be absent, the type system should make that explicit. This section explains the problem with traditional nullable types and how Maybe provides a better alternative.
+
+### The Problem with Null
+
+Consider a typical TypeScript scenario where you search for a user in an array. The type system cannot tell you whether the user exists, so you get User | undefined, but the compiler will not warn you if you access properties without checking first.
+
+This code demonstrates the problem. A variable may be undefined, but the type does not make that abundantly clear in every context.
+
+```typescript title="the-problem-with-null.ts"
+// This could be undefined, but the type does not tell us at the call site
+const user = users.find(u => u.id === id);
+// Type: User | undefined
+
+// No compiler warning if you forget to check, then you get a runtime error
+console.log(user.name); // Runtime error: Cannot read property 'name' of undefined
+```
+
+### The Maybe Solution
+
+With Maybe, absence becomes explicit in your types. You wrap the potentially missing value in a Maybe type, and the compiler forces you to handle both cases.
+
+This code shows how to use Maybe to make absence explicit. The fromNullable function converts a potentially null or undefined value into a Maybe, and isSome acts as a type guard that narrows the type within the conditional block.
+
+```typescript title="the-maybe-solution.ts"
+import { some, fromNullable, isSome, Maybe } from '@deessejs/fp';
+
+const user: Maybe<User> = fromNullable(users.find(u => u.id === id));
+
+if (isSome(user)) {
+  console.log(user.value.name); // TypeScript knows it is safe to access
+}
+```
+
+Here are the key concepts you need to understand:
+
+- Maybe&lt;T&gt; has two states: Some&lt;T&gt; when a value is present, or None when it is absent
+- some(value) wraps a present value in a Some
+- none() represents absence as a singleton instance
+- fromNullable(value) converts null or undefined to None, and other values to Some
+- isSome() is a type guard that narrows to the success branch
+
+## Core Concepts
+
+### Some and None
+
+Maybe&lt;T&gt; has two possible states that represent whether a value exists. Understanding these states is fundamental to working with Maybe effectively.
+
+The table below shows the two states and their properties:
+
+| State | Description | Properties |
+|-------|-------------|-------------|
+| Some&lt;T&gt; | Present value | _tag: "Some", value: T |
+| None | Absent value | _tag: "None" |
+
+You create a Some by wrapping a present value with the some function. The value can be any non-null, non-undefined value.
+
+```typescript title="creating-some-and-none.ts"
+import { some, none, Maybe } from '@deessejs/fp';
+
+// Present value
+const present: Maybe<number> = some(42);
+// { _tag: "Some", value: 42 }
+
+// Absent value
+const absent: Maybe<number> = none();
+// { _tag: "None" }
+```
+
+### The Difference from Null
+
+The fromNullable function only treats null and undefined as absent. This is intentional because 0, empty string, and false are valid values that should not be converted to None.
+
+The following example demonstrates this behavior. You can see that zero, empty string, and false all produce Some, while null and undefined produce None.
+
+```typescript title="from-nullable-behavior.ts"
+import { fromNullable } from '@deessejs/fp';
+
+fromNullable(42);        // Some(42)
+fromNullable(null);       // None
+fromNullable(undefined);  // None
+fromNullable(0);         // Some(0) -- NOT None
+fromNullable('');         // Some('') -- NOT None
+fromNullable(false);      // Some(false) -- NOT None
+```
+
+## Reference
+
+### Creating Maybes
+
+This section covers all the ways you can create Maybe values.
+
+#### Wrapping a Value with Some
+
+The some function creates a Some with a present value. The value you pass must be non-null and non-undefined, otherwise you will get a runtime error. This function is useful when you know you have a value and want to wrap it in the Maybe type.
+
+```typescript title="using-some.ts"
+import { some } from '@deessejs/fp';
+
+some(42);        // Some(42)
+some('hello');   // Some('hello')
+some({ id: 1 }); // Some({ id: 1 })
+```
+
+#### Creating None
+
+The none function creates a None representing an absent value. This function returns a singleton instance, which means that all calls to none() return the same object. This makes comparisons like none() === none() work correctly because they all reference the same singleton.
+
+```typescript title="using-none.ts"
+import { none } from '@deessejs/fp';
+
+none(); // None
+```
+
+#### Converting Nullable Values
+
+The fromNullable function converts a nullable value to Maybe. It returns Some if the value is not null or undefined, and None otherwise. This is the most common way to create a Maybe from existing code that uses null or undefined.
+
+The function signature is fromNullableMaybe&lt;T&gt;(value: T | null | undefined): Maybe&lt;T&gt;. The type parameter T is inferred from the input value.
+
+```typescript title="using-from-nullable.ts"
+import { fromNullable } from '@deessejs/fp';
+
+fromNullable(42);        // Some(42)
+fromNullable(null);      // None
+fromNullable(undefined); // None
+```
+
+### Type Guards
+
+Type guards let you narrow the type of a Maybe within conditional blocks. They return a boolean that TypeScript uses to narrow the type.
+
+#### Checking for Some
+
+The isSome function is a type guard that narrows to the Some branch. When you call isSome(maybe) and the result is true, TypeScript knows the maybe is a Some and allows you to access the value property. When the result is false, TypeScript knows it is a None.
+
+```typescript title="using-is-some.ts"
+import { some, isSome } from '@deessejs/fp';
+
+const result = some(42);
+
+if (isSome(result)) {
+  console.log(result.value); // 42
+}
+```
+
+#### Checking for None
+
+The isNone function is a type guard that narrows to the None branch. You use this when you want to handle the case where no value is present.
+
+```typescript title="using-is-none.ts"
+import { none, isNone } from '@deessejs/fp';
+
+const result = none();
+
+if (isNone(result)) {
+  console.log('No value');
+}
+```
+
+### Transformation
+
+These functions transform Maybe values while preserving the optional nature of the data.
+
+#### Mapping over a Maybe
+
+The map function transforms the value inside a Some. If the Maybe is a Some, it applies the function to the value and wraps the result in a new Some. If the Maybe is a None, it passes through unchanged and returns None.
+
+This function is useful when you want to apply a transformation to a value that might not exist. You do not need to check if the value exists before transforming it.
+
+```typescript title="using-map.ts"
+import { some, none, map } from '@deessejs/fp';
+
+map(some(2), x => x * 2);    // Some(4)
+map(none(), x => x * 2);     // None
+```
+
+The map function is also available as a method on the Maybe object, which allows for more fluent chaining.
+
+```typescript title="map-as-method.ts"
+some(2).map(x => x * 2); // Some(4)
+```
+
+#### Chaining Operations with FlatMap
+
+The flatMap function chains operations that return a Maybe. If the input Maybe is a Some, it applies the function to the value and returns the result. If the input is a None, it returns None without calling the function. This is useful when you have a series of operations where each step might fail (return None).
+
+The function signature is `flatMap&lt;T, U&gt;(maybe: Maybe&lt;T&gt;, fn: (value: T) =&gt; Maybe&lt;U&gt;): Maybe&lt;U&gt;`.
+
+```typescript title="using-flat-map.ts"
+import { some, none, flatMap } from '@deessejs/fp';
+
+const findUser = (id: number) =>
+  id > 0 ? some({ id, name: 'John' }) : none();
+
+const getEmail = (user: { name: string }) =>
+  some(user.name.toLowerCase() + '@example.com');
+
+flatMap(some(1), findUser);                            // Some({ id: 1, name: 'John' })
+flatMap(some(-1), findUser);                           // None
+flatMap(some(1), x => flatMap(findUser(x.id), getEmail)); // Some('john@example.com')
+```
+
+FlatMap is also available as a method on the Maybe object.
+
+```typescript title="flat-map-as-method.ts"
+some(1).flatMap(findUser); // Some({ id: 1, name: 'John' })
+```
+
+#### Filtering a Maybe
+
+The filter function returns Some if the predicate passes. If the predicate fails, or if the input is already None, it returns None. This lets you conditionally keep or discard values based on a condition.
+
+The function signature is `filterMaybe&lt;T&gt;(maybe: Maybe&lt;T&gt;, predicate: (value: T) =&gt; boolean): Maybe&lt;T&gt;`.
+
+```typescript title="using-filter.ts"
+import { some, none, filter } from '@deessejs/fp';
+
+filter(some(42), x => x > 10);    // Some(42)
+filter(some(5), x => x > 10);     // None
+filter(none(), x => x > 10);      // None
+```
+
+The filter function is also available as a method.
+
+```typescript title="filter-as-method.ts"
+some(42).filter(x => x > 10); // Some(42)
+```
+
+#### Flattening Nested Maybes
+
+The flatten function reduces a nested Maybe. It turns Maybe&lt;Maybe&lt;T&gt;&gt; into Maybe&lt;T&gt;. This is useful when you have a chain of operations that accidentally produces a nested Maybe.
+
+```typescript title="using-flatten.ts"
+import { some, flatten } from '@deessejs/fp';
+
+flatten(some(some(42))); // Some(42)
+flatten(some(none()));   // None
+flatten(none());          // None
+```
+
+Flatten is also available as a method.
+
+```typescript title="flatten-as-method.ts"
+some(some(42)).flatten(); // Some(42)
+```
+
+### Extraction
+
+These functions extract the value from a Maybe, providing various fallback strategies.
+
+#### Getting the Value or a Default
+
+The getOrElse function returns the value if the Maybe is a Some, or a default value if it is a None. This is useful when you want to provide a fallback value without having to check the state of the Maybe first.
+
+The function signature is getOrElseMaybe&lt;T&gt;(maybe: Maybe&lt;T&gt;, defaultValue: T): T. The defaultValue parameter is of type T, not Maybe&lt;T&gt;.
+
+```typescript title="using-get-or-else.ts"
+import { some, none, getOrElse } from '@deessejs/fp';
+
+getOrElse(some(42), 0);   // 42
+getOrElse(none(), 0);     // 0
+```
+
+The getOrElse function is also available as a method.
+
+```typescript title="get-or-else-as-method.ts"
+some(42).getOrElse(0);   // 42
+none().getOrElse(0);      // 0
+```
+
+#### Computing a Default Lazily
+
+The getOrCompute function returns the value if the Maybe is a Some, or computes a default value lazily if it is a None. The second parameter is a function that returns the default value, not the value itself. This is useful when the default value is expensive to compute and you want to avoid the computation unless it is actually needed.
+
+The function signature is `getOrComputeMaybe&lt;T&gt;(maybe: Maybe&lt;T&gt;, fn: () =&gt; T): T`.
+
+```typescript title="using-get-or-compute.ts"
+import { some, none, getOrCompute } from '@deessejs/fp';
+
+const expensive = () => { console.log('computing...'); return 0; };
+
+getOrCompute(some(42), expensive); // 42 (never logs)
+getOrCompute(none(), expensive);    // logs 'computing...', returns 0
+```
+
+The getOrCompute function is also available as a method.
+
+```typescript title="get-or-compute-as-method.ts"
+none().getOrCompute(() => 0); // 0
+```
+
+### Side Effects
+
+#### Performing Side Effects with Tap
+
+The tap function executes a function on the value without changing the Maybe. This is useful for logging, debugging, or performing other side effects while chaining transformations. The function you pass is only called when the Maybe is a Some. When the Maybe is a None, nothing happens.
+
+The function signature is `tapMaybe&lt;T&gt;(maybe: Maybe&lt;T&gt;, fn: (value: T) =&gt; void): Maybe&lt;T&gt;`. The function returns the original Maybe unchanged, so you can insert it anywhere in a chain.
+
+```typescript title="using-tap.ts"
+import { some, none, tap } from '@deessejs/fp';
+
+tap(some(42), x => console.log('Got:', x)); // Logs: 'Got: 42', returns Some(42)
+tap(none(), x => console.log('Got:', x));    // Nothing logged, returns None
+```
+
+The tap function is also available as a method.
+
+```typescript title="tap-as-method.ts"
+some(42).tap(x => console.log(x)); // Some(42)
+```
+
+### Pattern Matching
+
+Pattern matching provides a complete way to handle both cases of a Maybe, similar to switch statements in other languages.
+
+#### Matching Both Cases
+
+The match function handles both Some and None cases, returning a single value of any type. You provide two functions: one for the Some case that receives the value, and one for the None case that receives no arguments. The return type of both functions must be the same.
+
+This is the most expressive way to handle a Maybe because you always have to handle both cases, and the compiler verifies that you have provided handlers for each case.
+
+```typescript title="using-match.ts"
+import { some, none, match } from '@deessejs/fp';
+
+match(some(42), x => x * 2, () => 0); // 84
+match(none(), x => x * 2, () => 0);   // 0
+```
+
+The two branches can return different types, which makes match powerful for conversions.
+
+```typescript title="match-returning-different-types.ts"
+match(
+  some('hello'),
+  value => value.length,  // string to number
+  () => -1                // fallback
+); // 5
+```
+
+Match is also available as a method with object syntax, which some developers find more readable because it makes the branch purpose explicit.
+
+```typescript title="match-as-method.ts"
+some(42).match({ onSome: x => x * 2, onNone: () => 0 }); // 84
+none().match({ onSome: x => x * 2, onNone: () => 0 });   // 0
+```
+
+### Comparison
+
+These functions let you compare two Maybe values for equality.
+
+#### Comparing for Equality
+
+The equals function compares two Maybes for equality. It returns true if both are Some with equal values, or if both are None. It returns false if one is Some and the other is None, or if two Some values have different values.
+
+The comparison uses strict equality (===) for the underlying values.
+
+```typescript title="using-equals.ts"
+import { some, none, equals } from '@deessejs/fp';
+
+equals(some(42), some(42)); // true
+equals(some(42), some(10)); // false
+equals(some(42), none());    // false
+equals(none(), none());      // true
+```
+
+The equals function is also available as a method.
+
+```typescript title="equals-as-method.ts"
+some(42).equals(some(42)); // true
+```
+
+#### Comparing with a Custom Comparator
+
+The equalsWith function compares two Maybes using a custom comparator function. This is useful when you want to compare objects by specific properties rather than by reference equality.
+
+The comparator function receives the two values and should return true if they are considered equal.
+
+```typescript title="using-equals-with.ts"
+import { some, equalsWith } from '@deessejs/fp';
+
+equalsWith(
+  some({ id: 1, name: 'John' }),
+  some({ id: 2, name: 'John' }),
+  (a, b) => a.name === b.name
+); // true (comparing by name only)
+```
+
+### Conversion
+
+These functions convert Maybe values to other types.
+
+#### Converting to Nullable
+
+The toNullable function converts a Maybe to a nullable value. It returns the value if the Maybe is a Some, or null if it is a None.
+
+```typescript title="using-to-nullable.ts"
+import { some, none, toNullable } from '@deessejs/fp';
+
+toNullable(some(42)); // 42
+toNullable(none());    // null
+```
+
+#### Converting to Undefined
+
+The toUndefined function converts a Maybe to an undefined value. It returns the value if the Maybe is a Some, or undefined if it is a None.
+
+```typescript title="using-to-undefined.ts"
+import { some, none, toUndefined } from '@deessejs/fp';
+
+toUndefined(some(42)); // 42
+toUndefined(none());    // undefined
+```
+
+#### Converting to Result
+
+The toResult function converts a Maybe to a Result type. A Some becomes an Ok with the value, and a None becomes an Err using the error provided by the onNone function.
+
+This is useful when you want to propagate the absence as an error in a context where errors are expected and handled.
+
+```typescript title="using-to-result.ts"
+import { some, none, toResult, error } from '@deessejs/fp';
+import { z } from 'zod';
+
+const NotFoundError = error({
+  name: 'NotFoundError',
+  schema: z.object({ key: z.string() }),
+  message: (args) => `Not found: ${args.key}`,
+});
+
+toResult(some(42), () => NotFoundError({ key: 'value' })); // Ok(42)
+toResult(none(), () => NotFoundError({ key: 'value' }));    // Err(NotFoundError)
+```
+
+For more on structured errors, see [Error](./error.mdx).
+
+### Combination
+
+These functions combine multiple Maybe values into a single Maybe.
+
+#### Combining Multiple Maybes
+
+The all function combines multiple Maybes into one. It returns Some with an array of all values if all inputs are Some. If any input is None, it returns None immediately (fail-fast behavior).
+
+```typescript title="using-all.ts"
+import { some, none, all } from '@deessejs/fp';
+
+all(some(1), some(2), some(3));   // Some([1, 2, 3])
+all(some(1), none(), some(3));    // None
+```
+
+The all function also supports passing an array of Maybes.
+
+```typescript title="all-with-array.ts"
+all([some(1), some(2), some(3)]); // Some([1, 2, 3])
+```
+
+#### Traversing over Items
+
+The traverse function maps over an array of items, applying a function that returns a Maybe to each item. If any result is None, the entire traversal returns None. If all results are Some, it returns Some with an array of all the unwrapped values.
+
+This is useful when you have an array of IDs and want to look up each one, but any missing item should cause the whole operation to fail.
+
+```typescript title="using-traverse.ts"
+import { some, none, traverse } from '@deessejs/fp';
+
+const findUser = (id: number) =>
+  id > 0 ? some({ id, name: 'John' }) : none();
+
+traverse([1, 2, 3], findUser);     // Some([{id: 1}, {id: 2}, {id: 3}])
+traverse([1, -1, 3], findUser);    // None
+```
+
+## Method Chaining
+
+Maybe objects support method chaining for fluent transformations. This lets you compose multiple operations in a readable sequence without嵌套 callback functions.
+
+The following example shows a chain that doubles a value, adds one, filters for values greater than 10, and then optionally keeps the value. Each method returns a Maybe, so you can continue chaining.
+
+```typescript title="method-chaining.ts"
+import { some, none, fromNullable } from '@deessejs/fp';
+
+const result = some(5)
+  .map(x => x * 2)                           // Some(10)
+  .map(x => x + 1)                           // Some(11)
+  .filter(x => x > 10)                       // Some(11)
+  .flatMap(x => x > 10 ? some(x) : none());  // Some(11)
+```
+
+## Real-World Examples
+
+This section shows how to apply Maybe in practical scenarios you might encounter.
+
+### Finding an Item in a List
+
+This example demonstrates a common pattern: finding a user by ID and providing a fallback when the user is not found.
+
+You define a User interface and an array of users. The findUser function uses fromNullable to convert the result of Array.find into a Maybe. Then you use getOrElse to provide a default Guest user when the lookup fails.
+
+```typescript title="finding-an-item.ts"
+import { fromNullable, getOrElse } from '@deessejs/fp';
+
+interface User {
+  id: number;
+  name: string;
+}
+
+const users: User[] = [
+  { id: 1, name: 'Alice' },
+  { id: 2, name: 'Bob' },
+];
+
+const findUser = (id: number): Maybe<User> =>
+  fromNullable(users.find(u => u.id === id));
+
+const user = getOrElse(findUser(1), { id: 0, name: 'Guest' });
+// { id: 1, name: 'Alice' }
+
+const unknown = getOrElse(findUser(999), { id: 0, name: 'Guest' });
+// { id: 0, name: 'Guest' }
+```
+
+### Optional Configuration
+
+This example shows how to handle optional configuration using Maybe. When you have a partial configuration object, you can use fromNullable to convert it, then use map to apply transformations that fill in defaults.
+
+The map function only applies when you have a Some, so if getConfig returns null or undefined, the entire chain returns None and no transformation occurs.
+
+```typescript title="optional-configuration.ts"
+import { fromNullable, map } from '@deessejs/fp';
+
+interface Config {
+  apiUrl: string;
+  timeout: number;
+}
+
+const getConfig = (): Partial<Config> => {
+  return { apiUrl: 'https://api.example.com' };
+};
+
+const maybeConfig = fromNullable(getConfig());
+
+const withTimeout = map(maybeConfig, config => ({
+  ...config,
+  timeout: config.timeout ?? 5000,
+}));
+// Some({ apiUrl: '...', timeout: 5000 }) if config exists
+```
+
+### Chained Property Access
+
+This example demonstrates safe navigation through nested properties. When you have nested optional properties, using flatMap lets you unwrap each level safely. If any level is missing, the result is None.
+
+The getCity function uses nested flatMap calls to safely navigate from a Company to its optional address to its optional city. Each flatMap only continues if the previous value was Some.
+
+```typescript title="chained-property-access.ts"
+import { some, none, flatMap, fromNullable } from '@deessejs/fp';
+
+interface Company {
+  name: string;
+  address?: {
+    city?: string;
+  };
+}
+
+const getCity = (company: Maybe<Company>): Maybe<string> =>
+  flatMap(company, c =>
+    flatMap(fromNullable(c.address), a =>
+      fromNullable(a.city)
+    )
+  );
+
+const company: Maybe<Company> = some({
+  name: 'Acme',
+  address: { city: 'Paris' }
+});
+
+getCity(company); // Some('Paris')
+
+const companyWithoutCity: Maybe<Company> = some({
+  name: 'Acme',
+  address: {}
+});
+
+getCity(companyWithoutCity); // None
+```
+
+## Maybe vs Result
+
+Both Maybe and Result represent possible failure states, but they serve different purposes. Understanding when to use each type is important for writing expressive code.
+
+| Aspect | Maybe | Result |
+|--------|-------|--------|
+| Purpose | Value may or may not exist | Operation succeeded or failed |
+| None vs Err | Absence of value | Failure with error reason |
+| Use case | Optional fields, lookups | API calls, validation, file operations |
+
+Use Maybe when you have a value that might be missing and the absence is a normal, expected state. Use Result when an operation can fail and you need to know why it failed.
+
+```typescript title="maybe-vs-result.ts"
+// Maybe: for optional values that may not exist
+const user = findUser(id); // Maybe<User>
+
+// Result: for operations that can fail with an error
+const user = fetchUser(id); // Result<User, FetchError>
+```
+
+## See Also
+
+<Cards>
+  <Card title="Result" href="./result">
+    For operations that can fail with an error
+  </Card>
+  <Card title="Try" href="./try">
+    For wrapping sync functions that might throw
+  </Card>
+  <Card title="Conversions" href="../conversions">
+    Convert between Maybe and Result
+  </Card>
+</Cards>

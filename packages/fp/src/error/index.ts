@@ -39,16 +39,17 @@ export type {
   ErrorOptions,
   ErrorBuilder,
   ExtractError,
-} from "./types";
+  Panic,
+} from "./types.js";
 
 // Guards
-export { isError, isErrorGroup, assertIsError, assertIsErrorGroup } from "./guards.js";
+export { isError, isErrorGroup, assertIsError, assertIsErrorGroup, isPanic } from "./guards.js";
 
 // Utilities
-export { getErrorMessage, flattenErrorGroup, filterErrorsByName } from "./utils.js";
+export { getErrorMessage, flattenErrorGroup, filterErrorsByName, matchErrorPartial } from "./utils.js";
 
 // Builder
-export { error, exceptionGroup } from "./builder.js";
+export { error, exceptionGroup, panic } from "./builder.js";
 
 // Functional throw
 export { raise } from "./raise.js";
