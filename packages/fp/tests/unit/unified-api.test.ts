@@ -82,7 +82,8 @@ describe("Unified API - tapBoth overloads", () => {
 
   it("should call ok handler on Ok AsyncResult", async () => {
     let calledWith: number | null = null;
-    tapBoth(okAsync(42), {
+    // eslint-disable-next-line @typescript-eslint/await-thenable -- tapBoth returns Thenable, must await to trigger side effect
+    await tapBoth(okAsync(42), {
       ok: (v) => { calledWith = v; },
       err: () => {}
     });
