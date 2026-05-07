@@ -25,10 +25,10 @@ export { map, flatMap, mapErr } from "./builder.js";
 export { mapAsync, flatMapAsync } from "./builder.js";
 
 // Accessors
-export { getOrElse, getOrCompute, unwrap, unwrapOr } from "./builder.js";
+export { getOrElse, getOrCompute, unwrap, unwrapOr, unwrapOrCompute } from "./builder.js";
 
 // Side effects
-export { tap, tapErr } from "./builder.js";
+export { tap, tapErr, tapBoth } from "./builder.js";
 
 // Pattern matching
 export { match } from "./builder.js";

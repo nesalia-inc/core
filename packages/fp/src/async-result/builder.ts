@@ -472,6 +472,53 @@ export const tap = <T, E>(result: AsyncResult<T, E>, fn: (value: T) => void): As
 export const tapErr = <T, E>(result: AsyncResult<T, E>, fn: (error: E) => void): AsyncResult<T, E> =>
   result.tapErr(fn);
 
+/**
+ * Performs side effects on both AsyncOk and AsyncErr without changing the value
+ * @param result - The AsyncResult to inspect
+ * @param handlers - Object with ok and err handler functions
+ * @returns The same AsyncResult
+ */
+export const tapBoth = <T, E>(
+  result: AsyncResult<T, E>,
+  handlers: { ok: (value: T) => void; err: (error: E) => void }
+): AsyncResult<T, E> =>
+  createAsyncResult<T, E>(
+    result.then((r) => {
+      if (isOk(r)) {
+        handlers.ok(r.value);
+      } else {
+        handlers.err(r.error);
+      }
+      return r;
+    })
+  );
+
+/**
+ * Unwraps the AsyncResult, returning default if error
+ * @param result - The AsyncResult to unwrap
+ * @param defaultValue - The default value
+ * @returns Promise resolving to the value or default
+ */
+export const unwrapOr = <T, E>(result: AsyncResult<T, E>, defaultValue: T): Promise<T> =>
+  result.unwrapOr(defaultValue);
+
+/**
+ * Unwraps the AsyncResult, computing default if error
+ * @param result - The AsyncResult to unwrap
+ * @param fn - Function to compute default if error
+ * @returns Promise resolving to the value or computed default
+ */
+export const unwrapOrCompute = async <T, E>(
+  result: AsyncResult<T, E>,
+  fn: () => T | Promise<T>
+): Promise<T> => {
+  const r = await result;
+  if (isOk(r)) {
+    return r.value;
+  }
+  return await Promise.resolve(fn());
+};
+
 // =============================================================================
 // EXTRACTION
 // =============================================================================
@@ -493,10 +540,10 @@ export const getOrElse = <T, E>(result: AsyncResult<T, E>, defaultValue: T): Pro
  */
 export const getOrCompute = async <T, E, U>(
   result: AsyncResult<T, E>,
-  fn: () => Promise<U>
+  fn: () => U | Promise<U>
 ): Promise<T | U> => {
   const r = await result;
-  return isOk(r) ? r.value : await fn();
+  return isOk(r) ? r.value : await Promise.resolve(fn());
 };
 
 /**
@@ -505,15 +552,6 @@ export const getOrCompute = async <T, E, U>(
  * @returns Promise resolving to the value
  */
 export const unwrap = async <T, E>(result: AsyncResult<T, E>): Promise<T> => result.unwrap();
-
-/**
- * Unwraps the AsyncResult, returning default if error
- * @param result - The AsyncResult to unwrap
- * @param defaultValue - The default value
- * @returns Promise resolving to the value or default
- */
-export const unwrapOr = <T, E>(result: AsyncResult<T, E>, defaultValue: T): Promise<T> =>
-  result.unwrapOr(defaultValue);
 
 // =============================================================================
 // PATTERN MATCHING

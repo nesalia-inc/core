@@ -60,7 +60,6 @@ export { all as allMaybe, filter as filterMaybe, traverse as traverseMaybe } fro
 
 export type { Result, Ok, Err, Success, ExtractResultError } from "./result/index.js";
 export { ok, err } from "./result/index.js";
-export { swap, unwrap, mapErr } from "./result/index.js";
 export { getOrElse as getOrElseResult, getOrCompute as getOrComputeResult } from "./result/index.js";
 export { toNullable as toNullableResult, toUndefined as toUndefinedResult } from "./result/index.js";
 export { all as allResult, traverse as traverseResult } from "./result/index.js";
@@ -77,7 +76,7 @@ export { unwrap as unwrapAsyncResult, unwrapOr as unwrapOrAsyncResult } from "./
 export { getOrElse as getOrElseAsyncResult, getOrCompute as getOrComputeAsyncResult } from "./async-result/index.js";
 export { mapErr as mapErrAsyncResult } from "./async-result/index.js";
 export { toNullable as toNullableAsyncResult, toUndefined as toUndefinedAsyncResult } from "./async-result/index.js";
-export { race, all as allAsync, allSettled, traverse as traverseAsync } from "./async-result/index.js";
+export { all as allAsync, traverse as traverseAsync } from "./async-result/index.js";
 export { withSignal } from "./async-result/index.js";
 
 // ============================================================================
@@ -95,9 +94,12 @@ export { err as failureAsync } from "./async-result/index.js";
 
 import * as ResultModule from "./result/index.js";
 import * as AsyncResultModule from "./async-result/index.js";
-import  { type Result, type Ok, type Err } from "./result/index.js";
-import  { type AsyncResult } from "./async-result/index.js";
-import  { type Error } from "./error/types.js";
+import { some, none } from "./maybe/index.js";
+import { toMaybeFromResult } from "./conversions.js";
+import { type Result, type Ok, type Err } from "./result/index.js";
+import { type AsyncResult, type AsyncResultInner } from "./async-result/index.js";
+import { type Maybe } from "./maybe/index.js";
+import { type Error } from "./error/types.js";
 
 // Internal helper to check if value is AsyncResult (uses Thenable pattern)
 const isAsyncResultValue = <T, E>(val: unknown): val is AsyncResult<T, E> =>
@@ -202,6 +204,213 @@ export function isErr<T, E extends Error>(res: Result<T, E> | AsyncResult<T, E>)
  */
 export function isAsyncResult<T, E extends Error>(val: unknown): val is AsyncResult<T, E> {
   return isAsyncResultValue<T, E>(val);
+}
+
+/**
+ * Unified mapErr function - works with both Result and AsyncResult
+ */
+export function mapErr<T, E extends Error, F extends Error>(res: Result<T, E>, fn: (error: E) => F): Result<T, F>;
+export function mapErr<T, E extends Error, F extends Error>(res: AsyncResult<T, E>, fn: (error: E) => F): AsyncResult<T, F>;
+export function mapErr<T, E extends Error, F extends Error>(res: Result<T, E> | AsyncResult<T, E>, fn: (error: E) => F): Result<T, F> | AsyncResult<T, F> {
+  if (isAsyncResultValue<T, E>(res)) {
+    return AsyncResultModule.mapErr(res, fn);
+  }
+  return ResultModule.mapErr(res, fn);
+}
+
+/**
+ * Unified tapBoth function - works with both Result and AsyncResult
+ */
+export function tapBoth<T, E extends Error>(res: Result<T, E>, handlers: { ok: (value: T) => void; err: (error: E) => void }): Result<T, E>;
+export function tapBoth<T, E extends Error>(res: AsyncResult<T, E>, handlers: { ok: (value: T) => void; err: (error: E) => void }): AsyncResult<T, E>;
+export function tapBoth<T, E extends Error>(res: Result<T, E> | AsyncResult<T, E>, handlers: { ok: (value: T) => void; err: (error: E) => void }): Result<T, E> | AsyncResult<T, E> {
+  if (isAsyncResultValue<T, E>(res)) {
+    return AsyncResultModule.tapBoth(res, handlers);
+  }
+  return ResultModule.tapBoth(res, handlers);
+}
+
+/**
+ * Unified getOrCompute function - works with both Result and AsyncResult
+ */
+export function getOrCompute<T, E extends Error, U>(res: Result<T, E>, fn: () => U): T | U;
+export function getOrCompute<T, E extends Error, U>(res: AsyncResult<T, E>, fn: () => U | Promise<U>): Promise<T | U>;
+// eslint-disable-next-line sonarjs/function-return-type -- Unified API intentionally returns different types based on input
+export function getOrCompute<T, E extends Error, U>(res: Result<T, E> | AsyncResult<T, E>, fn: () => U | Promise<U>): T | U | Promise<T | U> {
+  if (isAsyncResultValue<T, E>(res)) {
+    return AsyncResultModule.getOrCompute(res, fn);
+  }
+  return ResultModule.getOrCompute(res, fn);
+}
+
+/**
+ * Unified unwrap function - works with both Result and AsyncResult
+ */
+export function unwrap<T, E extends Error>(res: Result<T, E>): T;
+export function unwrap<T, E extends Error>(res: AsyncResult<T, E>): Promise<T>;
+// eslint-disable-next-line sonarjs/function-return-type -- Unified API intentionally returns different types based on input
+export function unwrap<T, E extends Error>(res: Result<T, E> | AsyncResult<T, E>): T | Promise<T> {
+  if (isAsyncResultValue<T, E>(res)) {
+    return AsyncResultModule.unwrap(res);
+  }
+  return ResultModule.unwrap(res);
+}
+
+/**
+ * Unified unwrapOr function - works with both Result and AsyncResult
+ */
+export function unwrapOr<T, E extends Error>(res: Result<T, E>, defaultValue: T): T;
+export function unwrapOr<T, E extends Error>(res: AsyncResult<T, E>, defaultValue: T): Promise<T>;
+// eslint-disable-next-line sonarjs/function-return-type -- Unified API intentionally returns different types based on input
+export function unwrapOr<T, E extends Error>(res: Result<T, E> | AsyncResult<T, E>, defaultValue: T): T | Promise<T> {
+  if (isAsyncResultValue<T, E>(res)) {
+    return AsyncResultModule.unwrapOr(res, defaultValue);
+  }
+  return ResultModule.getOrElse(res, defaultValue);
+}
+
+/**
+ * Unified unwrapOrCompute function - works with both Result and AsyncResult
+ */
+export function unwrapOrCompute<T, E extends Error>(res: Result<T, E>, fn: () => T): T;
+export function unwrapOrCompute<T, E extends Error>(res: AsyncResult<T, E>, fn: () => T | Promise<T>): Promise<T>;
+// eslint-disable-next-line sonarjs/function-return-type -- Unified API intentionally returns different types based on input
+export function unwrapOrCompute<T, E extends Error>(res: Result<T, E> | AsyncResult<T, E>, fn: () => T): T | Promise<T> {
+  if (isAsyncResultValue<T, E>(res)) {
+    return AsyncResultModule.unwrapOrCompute(res as AsyncResult<T, E>, fn);
+  }
+  return ResultModule.getOrCompute(res as Result<T, E>, fn);
+}
+
+/**
+ * Unified orElse function - works with both Result and AsyncResult
+ * Transforms the error to a new result when the result is Err
+ */
+export function orElse<T, E extends Error, U>(res: Result<T, E>, fn: (error: E) => Result<U, E>): Result<U, E>;
+export function orElse<T, E extends Error, U>(res: AsyncResult<T, E>, fn: (error: E) => AsyncResult<U, E>): AsyncResult<U, E>;
+export function orElse<T, E extends Error, U>(res: Result<T, E> | AsyncResult<T, E>, fn: (error: E) => Result<U, E> | AsyncResult<U, E>): Result<U, E> | AsyncResult<U, E> {
+  if (isAsyncResultValue<T, E>(res)) {
+    return (res as AsyncResult<T, E>).then(
+      (r) => (r.ok ? r : fn(r.error)) as unknown as AsyncResultInner<U, E>,
+      (error) => { throw error; }
+    ) as unknown as AsyncResult<U, E>;
+  }
+  // For sync Result, pass through if Ok, apply fn if Err
+  if (res.ok) {
+    return res as unknown as Result<U, E>;
+  }
+  return fn(res.error);
+}
+
+/**
+ * Unified swap function - works with both Result and AsyncResult
+ */
+export function swap<T, E extends Error>(res: Result<T, E>): unknown;
+export function swap<T, E extends Error>(res: AsyncResult<T, E>): AsyncResult<E, T>;
+export function swap<T, E extends Error>(res: Result<T, E> | AsyncResult<T, E>): unknown {
+  if (isAsyncResultValue<T, E>(res)) {
+    // For AsyncResult, swap creates an AsyncResult with swapped types
+    return createAsyncResultFromSwap(res);
+  }
+  return ResultModule.swap(res);
+}
+
+/**
+ * Helper to create swapped AsyncResult
+ */
+const createAsyncResultFromSwap = <T, E>(res: AsyncResult<T, E>): AsyncResult<E, T> => {
+  return res.then((r) => {
+    if (r.ok) {
+      return { ok: false as const, error: r.value as T };
+    }
+    return { ok: true as const, value: r.error as E };
+  }) as unknown as AsyncResult<E, T>;
+};
+
+/**
+ * Unified toNullable function - works with both Result and AsyncResult
+ */
+export function toNullable<T, E extends Error>(res: Result<T, E>): T | null;
+export function toNullable<T, E extends Error>(res: AsyncResult<T, E>): Promise<T | null>;
+// eslint-disable-next-line sonarjs/function-return-type -- Unified API intentionally returns different types based on input
+export function toNullable<T, E extends Error>(res: Result<T, E> | AsyncResult<T, E>): T | null | Promise<T | null> {
+  if (isAsyncResultValue<T, E>(res)) {
+    return AsyncResultModule.toNullable(res);
+  }
+  return ResultModule.toNullable(res);
+}
+
+/**
+ * Unified toUndefined function - works with both Result and AsyncResult
+ */
+export function toUndefined<T, E extends Error>(res: Result<T, E>): T | undefined;
+export function toUndefined<T, E extends Error>(res: AsyncResult<T, E>): Promise<T | undefined>;
+// eslint-disable-next-line sonarjs/function-return-type -- Unified API intentionally returns different types based on input
+export function toUndefined<T, E extends Error>(res: Result<T, E> | AsyncResult<T, E>): T | undefined | Promise<T | undefined> {
+  if (isAsyncResultValue<T, E>(res)) {
+    return AsyncResultModule.toUndefined(res);
+  }
+  return ResultModule.toUndefined(res);
+}
+
+/**
+ * Unified toMaybe function - works with both Result and AsyncResult
+ */
+export function toMaybe<T, E extends Error>(res: Result<T, E>): Maybe<T>;
+export function toMaybe<T, E extends Error>(res: AsyncResult<T, E>): Promise<Maybe<T>>;
+// eslint-disable-next-line sonarjs/function-return-type -- Unified API intentionally returns different types based on input
+export function toMaybe<T, E extends Error>(res: Result<T, E> | AsyncResult<T, E>): Maybe<T> | Promise<Maybe<T>> {
+  if (isAsyncResultValue<T, E>(res)) {
+    return (res as AsyncResult<T, E>).then((r: AsyncResultInner<T, E>) =>
+      r.ok ? some(r.value as NonNullable<T>) : none()
+    );
+  }
+  return toMaybeFromResult(res);
+}
+
+/**
+ * Unified all function - works with both Result and AsyncResult
+ */
+export function all<T, E extends Error>(...results: Array<Result<T, E>>): Result<T[], E>;
+export function all<T, E extends Error>(...results: Array<AsyncResult<T, E>>): AsyncResult<T[], E>;
+export function all<T, E extends Error>(...results: Array<Result<T, E> | AsyncResult<T, E>>): Result<T[], E> | AsyncResult<T[], E> {
+  if (results.length === 0) {
+    return ResultModule.all();
+  }
+  if (isAsyncResultValue<T, E>(results[0])) {
+    return AsyncResultModule.all(...results as Array<AsyncResult<T, E>>);
+  }
+  return ResultModule.all(...results as Array<Result<T, E>>);
+}
+
+/**
+ * Unified race function - works with AsyncResult only (sync Result has no race)
+ */
+export function race<T, E extends Error>(...results: Array<AsyncResult<T, E>>): Promise<T> {
+  return AsyncResultModule.race(...results);
+}
+
+/**
+ * Unified traverse function - works with both Result and AsyncResult
+ */
+export function traverse<T, U, E extends Error>(items: readonly T[], fn: (item: T) => Result<U, E>): Result<U[], E>;
+export function traverse<T, U, E extends Error>(items: readonly T[], fn: (item: T) => AsyncResult<U, E>): Promise<AsyncResult<U[], E>>;
+export function traverse<T, U, E extends Error>(items: readonly T[], fn: (item: T) => Result<U, E> | AsyncResult<U, E>): Result<U[], E> | Promise<AsyncResult<U[], E>> {
+  const firstResult = items.length > 0 ? fn(items[0]) : null;
+  if (firstResult === null) {
+    return ResultModule.traverse(items, fn as (item: T) => Result<U, E>);
+  }
+  if (isAsyncResultValue<U, E>(firstResult)) {
+    return AsyncResultModule.traverse([...items], fn as (item: T) => AsyncResult<U, E>);
+  }
+  return ResultModule.traverse(items, fn as (item: T) => Result<U, E>);
+}
+
+/**
+ * Unified allSettled function - works with AsyncResult only (sync Result uses all)
+ */
+export function allSettled<T, E extends Error>(...results: Array<AsyncResult<T, E>>): AsyncResult<[T[], E[]], E[]> {
+  return AsyncResultModule.allSettled(...results);
 }
 
 // ============================================================================
