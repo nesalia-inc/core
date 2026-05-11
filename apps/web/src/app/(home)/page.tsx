@@ -112,18 +112,16 @@ export default function Homepage() {
             {/* Installation Tab */}
             <div className="pt-4 max-w-md mx-auto">
               <Tabs defaultValue="npm" className="w-full">
-                <div className="border border-border">
-                  <TabsList className="w-full bg-muted/30 border-b border-border p-0 rounded-none h-auto justify-center flex">
-                    <TabsTrigger value="npm" className="flex-1 rounded-none data-[state=active]:bg-background border-b-2 border-transparent data-[state=active]:border-b-accent data-[state=active]:text-accent-foreground h-full uppercase text-[10px] tracking-widest font-normal">npm</TabsTrigger>
-                    <TabsTrigger value="agents" className="flex-1 rounded-none data-[state=active]:bg-background border-b-2 border-transparent data-[state=active]:border-b-accent data-[state=active]:text-accent-foreground h-full uppercase text-[10px] tracking-widest font-normal">agents</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="npm" className="m-0 p-2">
-                    <CodeBlock code="npm install @deessejs/fp" />
-                  </TabsContent>
-                  <TabsContent value="agents" className="m-0 p-2">
-                    <CodeBlock code="npx skills add deessejs/fp" />
-                  </TabsContent>
-                </div>
+                <TabsList className="w-full bg-transparent border border-border h-12 p-0 rounded-none">
+                  <TabsTrigger value="npm" className="flex-1 rounded-none data-[state=active]:bg-accent data-[state=active]:text-accent-foreground border-r border-border last:border-r-0 h-full uppercase text-xs tracking-widest font-normal">npm</TabsTrigger>
+                  <TabsTrigger value="agents" className="flex-1 rounded-none data-[state=active]:bg-accent data-[state=active]:text-accent-foreground h-full uppercase text-xs tracking-widest font-normal">agents</TabsTrigger>
+                </TabsList>
+                <TabsContent value="npm" className="mt-0">
+                  <CodeBlock code="npm install @deessejs/fp" />
+                </TabsContent>
+                <TabsContent value="agents" className="mt-0">
+                  <CodeBlock code="npx skills add deessejs/fp" />
+                </TabsContent>
               </Tabs>
               <p className="mt-4 text-[10px] text-muted-foreground font-mono tracking-widest">
                 Or <a href="https://github.com/nesalia-inc/fp/starter" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-foreground">git clone</a> the starter template
