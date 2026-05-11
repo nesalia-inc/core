@@ -88,6 +88,7 @@ const CodeBlock = ({ code, label, lang = "typescript", showLineNumbers = false }
 // --- Page Content ---
 
 export default function Homepage() {
+  const [installTab, setInstallTab] = useState<"npm" | "agents">("npm");
   return (
     <div className="min-h-screen bg-background text-foreground font-sans selection:bg-accent selection:text-accent-foreground">
 
@@ -111,18 +112,29 @@ export default function Homepage() {
 
             {/* Installation Tab */}
             <div className="pt-4 max-w-md mx-auto">
-              <Tabs defaultValue="npm" className="border border-border w-full gap-0 flex flex-col">
-                <TabsList className="flex-row bg-muted/30 border-b border-border p-0 rounded-none h-auto justify-center">
-                  <TabsTrigger value="npm" className="px-6 rounded-none data-[state=active]:bg-background border-b-2 border-transparent data-[state=active]:border-b-accent data-[state=active]:text-accent-foreground h-full uppercase text-[10px] tracking-widest font-normal max-w-[120px]">npm</TabsTrigger>
-                  <TabsTrigger value="agents" className="px-6 rounded-none data-[state=active]:bg-background border-b-2 border-transparent data-[state=active]:border-b-accent data-[state=active]:text-accent-foreground h-full uppercase text-[10px] tracking-widest font-normal max-w-[120px]">agents</TabsTrigger>
-                </TabsList>
-                <TabsContent value="npm" className="mt-0 border-t-0">
-                  <CodeBlock code="npm install @deessejs/fp" />
-                </TabsContent>
-                <TabsContent value="agents" className="mt-0 border-t-0">
-                  <CodeBlock code="npx skills add deessejs/fp" />
-                </TabsContent>
-              </Tabs>
+              <div className="border border-border">
+                <div className="flex">
+                  <button
+                    onClick={() => setInstallTab("npm")}
+                    className={`flex-1 px-6 py-3 uppercase text-[10px] tracking-widest font-normal border-r border-border transition-colors ${installTab === "npm" ? "bg-background text-accent" : "bg-muted/30 text-muted-foreground hover:bg-muted/50"}`}
+                  >
+                    npm
+                  </button>
+                  <button
+                    onClick={() => setInstallTab("agents")}
+                    className={`flex-1 px-6 py-3 uppercase text-[10px] tracking-widest font-normal transition-colors ${installTab === "agents" ? "bg-background text-accent" : "bg-muted/30 text-muted-foreground hover:bg-muted/50"}`}
+                  >
+                    agents
+                  </button>
+                </div>
+                <div className="p-2">
+                  {installTab === "npm" ? (
+                    <CodeBlock code="npm install @deessejs/fp" />
+                  ) : (
+                    <CodeBlock code="npx skills add deessejs/fp" />
+                  )}
+                </div>
+              </div>
               <p className="mt-4 text-[10px] text-muted-foreground font-mono tracking-widest">
                 Or <a href="https://github.com/nesalia-inc/fp/starter" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-foreground">git clone</a> the starter template
               </p>
