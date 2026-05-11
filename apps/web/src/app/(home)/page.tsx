@@ -134,7 +134,7 @@ export default function Homepage() {
           <section className="space-y-8">
             <h2 className="text-2xl uppercase tracking-tighter">Simplified Flow</h2>
             <Tabs defaultValue="result" className="border border-border w-full">
-              <TabsList className="flex bg-muted/30 border-b border-border h-14 p-0 rounded-none w-full justify-center">
+              <TabsList className="flex bg-muted/30 border-b border-border h-14 p-0 rounded-none justify-center inline-flex">
                 {['result', 'maybe', 'async', 'retry'].map((tab) => (
                   <TabsTrigger
                     key={tab}
