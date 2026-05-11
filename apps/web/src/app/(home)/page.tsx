@@ -125,7 +125,7 @@ export default function Homepage() {
                 </TabsContent>
               </Tabs>
               <p className="mt-4 text-[10px] text-muted-foreground font-mono tracking-widest">
-                Or <a href="#" className="underline underline-offset-4 hover:text-foreground">git clone</a> the starter template
+                Or <a href="https://github.com/nesalia-inc/fp/starter" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-foreground">git clone</a> the starter template
               </p>
             </div>
           </section>
