@@ -13,7 +13,6 @@ import {
   Search,
   Code2,
   Cpu,
-  Github
 } from "lucide-react";
 import {
   Tabs,
