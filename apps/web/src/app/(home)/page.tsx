@@ -148,7 +148,7 @@ export default function Homepage() {
                 </TabsList>
 
               {/* min-h to prevent layout shift */}
-              <div className="min-h-[320px] h-full flex-1">
+              <div className="min-h-[320px] h-full flex-1 -ml-px">
                 <TabsContent value="result" className="m-0 h-full">
                   <div className="flex flex-col h-full">
                     <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
