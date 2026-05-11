@@ -41,8 +41,8 @@ const CodeBlock = ({ code, label }: { code: string; label?: string }) => {
   };
 
   return (
-    <div className="group relative border border-border bg-muted/20 p-6 font-mono text-sm leading-relaxed h-full">
-      {label && <div className="mb-4 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{label}</div>}
+    <div className="group relative border border-border bg-muted/20 p-3 font-mono text-sm leading-relaxed h-full">
+      {label && <div className="mb-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{label}</div>}
       <pre className="overflow-x-auto text-foreground whitespace-pre-wrap">{code}</pre>
       <button
         onClick={copy}
@@ -82,9 +82,9 @@ export default function Homepage() {
             {/* Installation Tab */}
             <div className="pt-4 max-w-md mx-auto">
               <Tabs defaultValue="npm" className="w-full flex flex-col items-center">
-                <TabsList className="w-full bg-transparent border border-border h-12 p-0 rounded-none">
-                  <TabsTrigger value="npm" className="flex-1 rounded-none data-[state=active]:bg-accent data-[state=active]:text-accent-foreground border-r border-border last:border-r-0 h-full uppercase text-xs tracking-widest font-normal">npm</TabsTrigger>
-                  <TabsTrigger value="agents" className="flex-1 rounded-none data-[state=active]:bg-accent data-[state=active]:text-accent-foreground h-full uppercase text-xs tracking-widest font-normal">agents</TabsTrigger>
+                <TabsList className="w-full bg-transparent border border-border h-10 p-0 rounded-none">
+                  <TabsTrigger value="npm" className="flex-1 rounded-none data-[state=active]:bg-accent data-[state=active]:text-accent-foreground border-r border-border last:border-r-0 h-full uppercase text-[10px] tracking-widest font-normal">npm</TabsTrigger>
+                  <TabsTrigger value="agents" className="flex-1 rounded-none data-[state=active]:bg-accent data-[state=active]:text-accent-foreground h-full uppercase text-[10px] tracking-widest font-normal">agents</TabsTrigger>
                 </TabsList>
                 <TabsContent value="npm" className="mt-0">
                   <CodeBlock code="npm install @deessejs/fp" />
@@ -93,7 +93,7 @@ export default function Homepage() {
                   <CodeBlock code="npx skills add deessejs/fp" />
                 </TabsContent>
               </Tabs>
-              <p className="mt-4 text-[10px] text-muted-foreground font-mono uppercase tracking-widest">
+              <p className="mt-4 text-[10px] text-muted-foreground font-mono tracking-widest">
                 Or <a href="#" className="underline underline-offset-4 hover:text-foreground">git clone</a> the starter template
               </p>
             </div>
@@ -102,8 +102,8 @@ export default function Homepage() {
           {/* Feature Examples (Before/After) */}
           <section className="space-y-8">
             <h2 className="text-2xl uppercase tracking-tighter">Simplified Flow</h2>
-            <Tabs defaultValue="result" className="border border-border">
-              <TabsList className="flex bg-muted/30 border-b border-border h-14 p-0 rounded-none">
+            <Tabs defaultValue="result" className="border border-border flex flex-col items-center">
+              <TabsList className="flex bg-muted/30 border-b border-border h-14 p-0 rounded-none w-full justify-center">
                 {['result', 'maybe', 'async', 'retry'].map((tab) => (
                   <TabsTrigger
                     key={tab}
