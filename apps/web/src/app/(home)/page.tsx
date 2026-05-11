@@ -111,14 +111,14 @@ export default function Homepage() {
             {/* Installation Tab */}
             <div className="pt-4 max-w-md mx-auto">
               <Tabs defaultValue="npm" className="border border-border w-full gap-0">
-                <TabsList className="flex-col bg-muted/30 border-b border-r border-border p-0 rounded-none h-auto justify-center">
-                  <TabsTrigger value="npm" className="px-6 rounded-none data-[state=active]:bg-background border-b border-border data-[state=active]:text-accent-foreground h-full uppercase text-[10px] tracking-widest font-normal max-w-[120px]">npm</TabsTrigger>
-                  <TabsTrigger value="agents" className="px-6 rounded-none data-[state=active]:bg-background data-[state=active]:text-accent-foreground h-full uppercase text-[10px] tracking-widest font-normal max-w-[120px]">agents</TabsTrigger>
+                <TabsList className="flex-row bg-muted/30 border-b border-border p-0 rounded-none h-auto justify-center">
+                  <TabsTrigger value="npm" className="px-6 rounded-none data-[state=active]:bg-background border-b-2 border-transparent data-[state=active]:border-b-accent data-[state=active]:text-accent-foreground h-full uppercase text-[10px] tracking-widest font-normal max-w-[120px]">npm</TabsTrigger>
+                  <TabsTrigger value="agents" className="px-6 rounded-none data-[state=active]:bg-background border-b-2 border-transparent data-[state=active]:border-b-accent data-[state=active]:text-accent-foreground h-full uppercase text-[10px] tracking-widest font-normal max-w-[120px]">agents</TabsTrigger>
                 </TabsList>
-                <TabsContent value="npm" className="mt-0">
+                <TabsContent value="npm" className="mt-0 border-t-0">
                   <CodeBlock code="npm install @deessejs/fp" />
                 </TabsContent>
-                <TabsContent value="agents" className="mt-0">
+                <TabsContent value="agents" className="mt-0 border-t-0">
                   <CodeBlock code="npx skills add deessejs/fp" />
                 </TabsContent>
               </Tabs>
