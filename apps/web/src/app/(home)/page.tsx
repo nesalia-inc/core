@@ -54,7 +54,7 @@ const CodeBlock = ({ code, label, lang = "typescript" }: { code: string; label?:
           background: "transparent",
           fontSize: "0.875rem",
         }}
-        wrapperClassName="font-mono"
+        wrapLongLines
       >
         {code}
       </SyntaxHighlighter>
