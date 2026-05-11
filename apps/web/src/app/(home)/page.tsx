@@ -152,7 +152,7 @@ export default function Homepage() {
                 <TabsContent value="result" className="m-0 h-full">
                   <div className="flex flex-col h-full">
                     <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
-                      <div className="px-6 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10 flex justify-between items-center">
+                      <div className="px-4 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10 flex justify-between items-center">
                         <div className="flex gap-2">
                           <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
                           <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
@@ -160,7 +160,7 @@ export default function Homepage() {
                         </div>
                         <span>Before</span>
                       </div>
-                      <div className="px-6 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10 flex justify-between items-center">
+                      <div className="px-4 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10 flex justify-between items-center">
                         <div className="flex gap-2">
                           <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
                           <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
@@ -179,7 +179,7 @@ export default function Homepage() {
                 <TabsContent value="async" className="m-0 h-full">
                   <div className="flex flex-col h-full">
                     <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
-                      <div className="px-6 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10 flex justify-between items-center">
+                      <div className="px-4 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10 flex justify-between items-center">
                         <div className="flex gap-2">
                           <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
                           <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
@@ -187,7 +187,7 @@ export default function Homepage() {
                         </div>
                         <span>Before</span>
                       </div>
-                      <div className="px-6 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10 flex justify-between items-center">
+                      <div className="px-4 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10 flex justify-between items-center">
                         <div className="flex gap-2">
                           <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
                           <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
@@ -206,7 +206,7 @@ export default function Homepage() {
                 <TabsContent value="maybe" className="m-0 h-full">
                   <div className="flex flex-col h-full">
                     <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
-                      <div className="px-6 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10 flex justify-between items-center">
+                      <div className="px-4 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10 flex justify-between items-center">
                         <div className="flex gap-2">
                           <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
                           <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
@@ -214,7 +214,7 @@ export default function Homepage() {
                         </div>
                         <span>Before</span>
                       </div>
-                      <div className="px-6 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10 flex justify-between items-center">
+                      <div className="px-4 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10 flex justify-between items-center">
                         <div className="flex gap-2">
                           <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
                           <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
@@ -233,7 +233,7 @@ export default function Homepage() {
                 <TabsContent value="retry" className="m-0 h-full">
                   <div className="flex flex-col h-full">
                     <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
-                      <div className="px-6 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10 flex justify-between items-center">
+                      <div className="px-4 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10 flex justify-between items-center">
                         <div className="flex gap-2">
                           <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
                           <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
@@ -241,7 +241,7 @@ export default function Homepage() {
                         </div>
                         <span>Before</span>
                       </div>
-                      <div className="px-6 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10 flex justify-between items-center">
+                      <div className="px-4 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10 flex justify-between items-center">
                         <div className="flex gap-2">
                           <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
                           <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
@@ -318,8 +318,8 @@ export default function Homepage() {
           </section>
 
           {/* FAQ */}
-          <section className="max-w-3xl space-y-8">
-            <h2 className="text-2xl uppercase tracking-tighter">Details</h2>
+          <section className="max-w-3xl mx-auto space-y-8">
+            <h2 className="text-2xl uppercase tracking-tighter text-center">Details</h2>
             <Accordion type="single" collapsible className="w-full border-t border-border">
               <FaqItem
                 q="How does it differ from fp-ts or neverthrow?"
