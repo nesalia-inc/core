@@ -112,7 +112,7 @@ export default function Homepage() {
 
             {/* Installation Tab */}
             <div className="pt-4 max-w-md mx-auto">
-              <Tabs defaultValue="npm" className="border border-border w-full">
+              <Tabs defaultValue="npm" className="border border-border w-full gap-0">
                 <TabsList className="flex-col bg-muted/30 border-b border-r border-border p-0 rounded-none h-auto justify-center">
                   <TabsTrigger value="npm" className="px-6 rounded-none data-[state=active]:bg-background border-b border-border data-[state=active]:text-accent-foreground h-full uppercase text-[10px] tracking-widest font-normal max-w-[120px]">npm</TabsTrigger>
                   <TabsTrigger value="agents" className="px-6 rounded-none data-[state=active]:bg-background data-[state=active]:text-accent-foreground h-full uppercase text-[10px] tracking-widest font-normal max-w-[120px]">agents</TabsTrigger>
@@ -134,7 +134,7 @@ export default function Homepage() {
           <section className="space-y-8">
             <h2 className="text-2xl uppercase tracking-tighter">Simplified Flow</h2>
             <div className="flex justify-center">
-              <Tabs defaultValue="result" className="border border-border w-full">
+              <Tabs defaultValue="result" className="border border-border w-full gap-0">
                 <TabsList className="flex-col bg-muted/30 border-b border-r border-border p-0 rounded-none h-auto">
                   {['result', 'maybe', 'async', 'retry'].map((tab) => (
                     <TabsTrigger
@@ -148,7 +148,7 @@ export default function Homepage() {
                 </TabsList>
 
               {/* min-h to prevent layout shift */}
-              <div className="min-h-[320px] h-full flex-1 -ml-px">
+              <div className="min-h-[320px] h-full flex-1">
                 <TabsContent value="result" className="m-0 h-full">
                   <div className="flex flex-col h-full">
                     <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
