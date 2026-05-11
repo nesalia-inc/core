@@ -346,12 +346,12 @@ export default function Homepage() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="rounded-none bg-foreground text-background hover:bg-muted-foreground h-14 px-10 uppercase tracking-widest text-xs font-bold">
+              <a href="/docs" className="inline-flex items-center justify-center rounded-none bg-foreground text-background hover:bg-muted-foreground h-14 px-10 uppercase tracking-widest text-xs font-bold">
                 Get Started
-              </Button>
-              <Button size="lg" variant="outline" className="rounded-none border-border h-14 px-10 uppercase tracking-widest text-xs font-bold">
+              </a>
+              <a href="https://github.com/nesalia-inc/fp" target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center rounded-none border border-border bg-background hover:bg-accent h-14 px-10 uppercase tracking-widest text-xs font-bold">
                 GitHub
-              </Button>
+              </a>
             </div>
           </section>
 
