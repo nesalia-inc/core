@@ -152,8 +152,22 @@ export default function Homepage() {
                 <TabsContent value="result" className="m-0 h-full">
                   <div className="flex flex-col h-full">
                     <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
-                      <div className="px-6 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10">Before</div>
-                      <div className="px-6 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10">After</div>
+                      <div className="px-6 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10 flex justify-between items-center">
+                        <div className="flex gap-2">
+                          <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
+                          <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
+                          <div className="w-3 h-3 rounded-full bg-[#28c840]" />
+                        </div>
+                        <span>Before</span>
+                      </div>
+                      <div className="px-6 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10 flex justify-between items-center">
+                        <div className="flex gap-2">
+                          <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
+                          <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
+                          <div className="w-3 h-3 rounded-full bg-[#28c840]" />
+                        </div>
+                        <span>After</span>
+                      </div>
                     </div>
                     <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border flex-1" style={{ height: "100%" }}>
                       <CodeBlock label="Traditional JS" code={`try {\n  const user = getUser(id);\n  return process(user);\n} catch (e) {\n  handleError(e);\n}`} />
@@ -165,8 +179,22 @@ export default function Homepage() {
                 <TabsContent value="async" className="m-0 h-full">
                   <div className="flex flex-col h-full">
                     <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
-                      <div className="px-6 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10">Before</div>
-                      <div className="px-6 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10">After</div>
+                      <div className="px-6 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10 flex justify-between items-center">
+                        <div className="flex gap-2">
+                          <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
+                          <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
+                          <div className="w-3 h-3 rounded-full bg-[#28c840]" />
+                        </div>
+                        <span>Before</span>
+                      </div>
+                      <div className="px-6 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10 flex justify-between items-center">
+                        <div className="flex gap-2">
+                          <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
+                          <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
+                          <div className="w-3 h-3 rounded-full bg-[#28c840]" />
+                        </div>
+                        <span>After</span>
+                      </div>
                     </div>
                     <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border flex-1" style={{ height: "100%" }}>
                       <CodeBlock label="Nested Await" code={`try {\n  const res = await fetch(url);\n  const data = await res.json();\n  return data;\n} catch (e) {\n  return null;\n}`} />
@@ -178,8 +206,22 @@ export default function Homepage() {
                 <TabsContent value="maybe" className="m-0 h-full">
                   <div className="flex flex-col h-full">
                     <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
-                      <div className="px-6 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10">Before</div>
-                      <div className="px-6 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10">After</div>
+                      <div className="px-6 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10 flex justify-between items-center">
+                        <div className="flex gap-2">
+                          <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
+                          <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
+                          <div className="w-3 h-3 rounded-full bg-[#28c840]" />
+                        </div>
+                        <span>Before</span>
+                      </div>
+                      <div className="px-6 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10 flex justify-between items-center">
+                        <div className="flex gap-2">
+                          <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
+                          <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
+                          <div className="w-3 h-3 rounded-full bg-[#28c840]" />
+                        </div>
+                        <span>After</span>
+                      </div>
                     </div>
                     <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border flex-1" style={{ height: "100%" }}>
                       <CodeBlock label="Null Checks" code={`const val = getOptional();\nif (val !== null && val !== undefined) {\n  return doSomething(val);\n}\nreturn defaultValue;`} />
@@ -191,8 +233,22 @@ export default function Homepage() {
                 <TabsContent value="retry" className="m-0 h-full">
                   <div className="flex flex-col h-full">
                     <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
-                      <div className="px-6 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10">Before</div>
-                      <div className="px-6 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10">After</div>
+                      <div className="px-6 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10 flex justify-between items-center">
+                        <div className="flex gap-2">
+                          <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
+                          <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
+                          <div className="w-3 h-3 rounded-full bg-[#28c840]" />
+                        </div>
+                        <span>Before</span>
+                      </div>
+                      <div className="px-6 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10 flex justify-between items-center">
+                        <div className="flex gap-2">
+                          <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
+                          <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
+                          <div className="w-3 h-3 rounded-full bg-[#28c840]" />
+                        </div>
+                        <span>After</span>
+                      </div>
                     </div>
                     <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border flex-1" style={{ height: "100%" }}>
                       <CodeBlock label="Manual Loop" code={`let attempts = 0;\nwhile (attempts < 3) {\n  try { return await task(); }\n  catch { attempts++; }\n}\nthrow Error("Failed");`} />
