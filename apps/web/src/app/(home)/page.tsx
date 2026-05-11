@@ -27,6 +27,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 // --- Components ---
 
@@ -67,7 +68,7 @@ export default function Homepage() {
           {/* Hero Section */}
           <section className="space-y-10 max-w-4xl">
             <div className="space-y-4">
-               <span className="text-xs font-mono uppercase tracking-[0.3em] text-accent">Version 0.1.0-alpha</span>
+               <Badge variant="outline" className="font-mono uppercase tracking-[0.3em] text-accent">Version 0.1.0-alpha</Badge>
                <h1 className="text-5xl md:text-7xl tracking-tighter leading-none uppercase">
                 Handle errors with confidence — and resilience — everywhere.
               </h1>
