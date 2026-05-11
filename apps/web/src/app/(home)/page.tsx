@@ -112,10 +112,10 @@ export default function Homepage() {
 
             {/* Installation Tab */}
             <div className="pt-4 max-w-md mx-auto">
-              <Tabs defaultValue="npm" className="w-full flex flex-col items-center">
-                <TabsList className="w-full bg-transparent border border-border h-10 p-0 rounded-none">
-                  <TabsTrigger value="npm" className="flex-1 rounded-none data-[state=active]:bg-accent data-[state=active]:text-accent-foreground border-r border-border last:border-r-0 h-full uppercase text-[10px] tracking-widest font-normal">npm</TabsTrigger>
-                  <TabsTrigger value="agents" className="flex-1 rounded-none data-[state=active]:bg-accent data-[state=active]:text-accent-foreground h-full uppercase text-[10px] tracking-widest font-normal">agents</TabsTrigger>
+              <Tabs defaultValue="npm" className="w-full">
+                <TabsList className="w-full bg-transparent border border-border h-10 p-0 rounded-none justify-center flex">
+                  <TabsTrigger value="npm" className="flex-1 rounded-none data-[state=active]:bg-accent data-[state=active]:text-accent-foreground border-r border-border last:border-r-0 h-full uppercase text-[10px] tracking-widest font-normal max-w-[120px]">npm</TabsTrigger>
+                  <TabsTrigger value="agents" className="flex-1 rounded-none data-[state=active]:bg-accent data-[state=active]:text-accent-foreground h-full uppercase text-[10px] tracking-widest font-normal max-w-[120px]">agents</TabsTrigger>
                 </TabsList>
                 <TabsContent value="npm" className="mt-0">
                   <CodeBlock code="npm install @deessejs/fp" />
