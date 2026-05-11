@@ -69,7 +69,7 @@ export default function Homepage() {
           <section className="space-y-10 max-w-4xl mx-auto text-center">
             <div className="space-y-4">
                <Badge variant="outline" className="font-mono uppercase tracking-[0.3em] text-accent">Version 0.1.0-alpha</Badge>
-               <h1 className="text-5xl md:text-7xl tracking-tighter leading-none font-bold text-center">
+               <h1 className="text-5xl md:text-7xl tracking-tighter leading-none font-semibold text-center">
                 Handle errors with confidence — and resilience — everywhere.
               </h1>
             </div>
