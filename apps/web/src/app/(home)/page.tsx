@@ -178,6 +178,7 @@ export default function Homepage() {
                 </TabsContent>
               </div>
             </Tabs>
+            </div>
           </section>
 
           {/* Bento Grid */}
