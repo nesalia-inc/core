@@ -44,7 +44,7 @@ const codeStyle = Object.fromEntries(
 
 // --- Components ---
 
-const CodeBlock = ({ code, label, lang = "typescript" }: { code: string; label?: string; lang?: string }) => {
+const CodeBlock = ({ code, label, lang = "typescript", showLineNumbers = false }: { code: string; label?: string; lang?: string; showLineNumbers?: boolean }) => {
   const [copied, setCopied] = useState(false);
 
   const copy = () => {
@@ -69,7 +69,7 @@ const CodeBlock = ({ code, label, lang = "typescript" }: { code: string; label?:
               fontFamily: "var(--font-geist-mono)",
             }}
             wrapLongLines
-            showLineNumbers
+            showLineNumbers={showLineNumbers}
           >
             {code}
           </SyntaxHighlighter>
@@ -169,8 +169,8 @@ export default function Homepage() {
                       </div>
                     </div>
                     <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border flex-1" style={{ height: "100%" }}>
-                      <CodeBlock label="Traditional JS" code={`try {\n  const user = getUser(id);\n  return process(user);\n} catch (e) {\n  handleError(e);\n}`} />
-                      <CodeBlock label="@deessejs/fp" code={`getUser(id)\n  .map(user => process(user))\n  .tapError(err => handleError(err));`} />
+                      <CodeBlock label="Traditional JS" showLineNumbers code={`try {\n  const user = getUser(id);\n  return process(user);\n} catch (e) {\n  handleError(e);\n}`} />
+                      <CodeBlock label="@deessejs/fp" showLineNumbers code={`getUser(id)\n  .map(user => process(user))\n  .tapError(err => handleError(err));`} />
                     </div>
                   </div>
                 </TabsContent>
@@ -196,8 +196,8 @@ export default function Homepage() {
                       </div>
                     </div>
                     <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border flex-1" style={{ height: "100%" }}>
-                      <CodeBlock label="Nested Await" code={`try {\n  const res = await fetch(url);\n  const data = await res.json();\n  return data;\n} catch (e) {\n  return null;\n}`} />
-                      <CodeBlock label="AsyncResult" code={`AsyncResult.fromPromise(fetch(url))\n  .flatMap(res => res.json())\n  .getOrElse(null);`} />
+                      <CodeBlock label="Nested Await" showLineNumbers code={`try {\n  const res = await fetch(url);\n  const data = await res.json();\n  return data;\n} catch (e) {\n  return null;\n}`} />
+                      <CodeBlock label="AsyncResult" showLineNumbers code={`AsyncResult.fromPromise(fetch(url))\n  .flatMap(res => res.json())\n  .getOrElse(null);`} />
                     </div>
                   </div>
                 </TabsContent>
@@ -223,8 +223,8 @@ export default function Homepage() {
                       </div>
                     </div>
                     <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border flex-1" style={{ height: "100%" }}>
-                      <CodeBlock label="Null Checks" code={`const val = getOptional();\nif (val !== null && val !== undefined) {\n  return doSomething(val);\n}\nreturn defaultValue;`} />
-                      <CodeBlock label="Maybe Type" code={`Maybe.fromNullable(getOptional())\n  .map(val => doSomething(val))\n  .getOrElse(defaultValue);`} />
+                      <CodeBlock label="Null Checks" showLineNumbers code={`const val = getOptional();\nif (val !== null && val !== undefined) {\n  return doSomething(val);\n}\nreturn defaultValue;`} />
+                      <CodeBlock label="Maybe Type" showLineNumbers code={`Maybe.fromNullable(getOptional())\n  .map(val => doSomething(val))\n  .getOrElse(defaultValue);`} />
                     </div>
                   </div>
                 </TabsContent>
@@ -250,8 +250,8 @@ export default function Homepage() {
                       </div>
                     </div>
                     <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border flex-1" style={{ height: "100%" }}>
-                      <CodeBlock label="Manual Loop" code={`let attempts = 0;\nwhile (attempts < 3) {\n  try { return await task(); }\n  catch { attempts++; }\n}\nthrow Error("Failed");`} />
-                      <CodeBlock label="Retry Policy" code={`retry(task, {\n  attempts: 3,\n  backoff: 'exponential'\n});`} />
+                      <CodeBlock label="Manual Loop" showLineNumbers code={`let attempts = 0;\nwhile (attempts < 3) {\n  try { return await task(); }\n  catch { attempts++; }\n}\nthrow Error("Failed");`} />
+                      <CodeBlock label="Retry Policy" showLineNumbers code={`retry(task, {\n  attempts: 3,\n  backoff: 'exponential'\n});`} />
                     </div>
                   </div>
                 </TabsContent>
