@@ -45,7 +45,7 @@ const codeStyle = Object.fromEntries(
 
 // --- Components ---
 
-const CodeBlock = ({ code, label, lang = "typescript", className = "" }: { code: string; label?: string; lang?: string; className?: string }) => {
+const CodeBlock = ({ code, label, lang = "typescript" }: { code: string; label?: string; lang?: string }) => {
   const [copied, setCopied] = useState(false);
 
   const copy = () => {
@@ -55,27 +55,24 @@ const CodeBlock = ({ code, label, lang = "typescript", className = "" }: { code:
   };
 
   return (
-    <div className={`group relative border border-border bg-muted/20 p-2 text-sm leading-relaxed h-full ${className}`}>
+    <div className="group relative border border-border bg-muted/20 p-2 text-sm leading-relaxed h-full">
       <div className="flex justify-between items-center gap-4">
         <div className="flex-1 min-w-0">
           {label && <div className="mb-2 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{label}</div>}
-          <div className="h-full">
-            <SyntaxHighlighter
-              language={lang}
-              style={codeStyle}
-              customStyle={{
-                margin: 0,
-                padding: "0.25rem",
-                background: "transparent",
-                fontSize: "0.875rem",
-                fontFamily: "var(--font-geist-mono)",
-                height: "100%",
-              }}
-              wrapLongLines
-            >
-              {code}
-            </SyntaxHighlighter>
-          </div>
+          <SyntaxHighlighter
+            language={lang}
+            style={codeStyle}
+            customStyle={{
+              margin: 0,
+              padding: "0.25rem",
+              background: "transparent",
+              fontSize: "0.875rem",
+              fontFamily: "var(--font-geist-mono)",
+            }}
+            wrapLongLines
+          >
+            {code}
+          </SyntaxHighlighter>
         </div>
         <button
           onClick={copy}
@@ -136,7 +133,7 @@ export default function Homepage() {
           {/* Feature Examples (Before/After) */}
           <section className="space-y-8">
             <h2 className="text-2xl uppercase tracking-tighter">Simplified Flow</h2>
-            <Tabs defaultValue="result" className="border border-border flex flex-col items-center">
+            <Tabs defaultValue="result" className="border border-border w-full">
               <TabsList className="flex bg-muted/30 border-b border-border h-14 p-0 rounded-none w-full justify-center">
                 {['result', 'maybe', 'async', 'retry'].map((tab) => (
                   <TabsTrigger
@@ -152,30 +149,30 @@ export default function Homepage() {
               {/* min-h to prevent layout shift */}
               <div className="min-h-[320px] h-full">
                 <TabsContent value="result" className="m-0 h-full">
-                  <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border h-full">
-                    <CodeBlock label="Before: Traditional JS" code={`try {\n  const user = getUser(id);\n  return process(user);\n} catch (e) {\n  handleError(e);\n}`} className="h-full" />
-                    <CodeBlock label="After: @deessejs/fp" code={`getUser(id)\n  .map(user => process(user))\n  .tapError(err => handleError(err));`} className="h-full" />
+                  <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border" style={{ height: "100%" }}>
+                    <CodeBlock label="Before: Traditional JS" code={`try {\n  const user = getUser(id);\n  return process(user);\n} catch (e) {\n  handleError(e);\n}`} />
+                    <CodeBlock label="After: @deessejs/fp" code={`getUser(id)\n  .map(user => process(user))\n  .tapError(err => handleError(err));`} />
                   </div>
                 </TabsContent>
 
                 <TabsContent value="async" className="m-0 h-full">
-                  <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border h-full">
-                    <CodeBlock label="Before: Nested Await" code={`try {\n  const res = await fetch(url);\n  const data = await res.json();\n  return data;\n} catch (e) {\n  return null;\n}`} className="h-full" />
-                    <CodeBlock label="After: AsyncResult" code={`AsyncResult.fromPromise(fetch(url))\n  .flatMap(res => res.json())\n  .getOrElse(null);`} className="h-full" />
+                  <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border" style={{ height: "100%" }}>
+                    <CodeBlock label="Before: Nested Await" code={`try {\n  const res = await fetch(url);\n  const data = await res.json();\n  return data;\n} catch (e) {\n  return null;\n}`} />
+                    <CodeBlock label="After: AsyncResult" code={`AsyncResult.fromPromise(fetch(url))\n  .flatMap(res => res.json())\n  .getOrElse(null);`} />
                   </div>
                 </TabsContent>
 
                 <TabsContent value="maybe" className="m-0 h-full">
-                  <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border h-full">
-                    <CodeBlock label="Before: Null Checks" code={`const val = getOptional();\nif (val !== null && val !== undefined) {\n  return doSomething(val);\n}\nreturn defaultValue;`} className="h-full" />
-                    <CodeBlock label="After: Maybe Type" code={`Maybe.fromNullable(getOptional())\n  .map(val => doSomething(val))\n  .getOrElse(defaultValue);`} className="h-full" />
+                  <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border" style={{ height: "100%" }}>
+                    <CodeBlock label="Before: Null Checks" code={`const val = getOptional();\nif (val !== null && val !== undefined) {\n  return doSomething(val);\n}\nreturn defaultValue;`} />
+                    <CodeBlock label="After: Maybe Type" code={`Maybe.fromNullable(getOptional())\n  .map(val => doSomething(val))\n  .getOrElse(defaultValue);`} />
                   </div>
                 </TabsContent>
 
                 <TabsContent value="retry" className="m-0 h-full">
-                  <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border h-full">
-                    <CodeBlock label="Before: Manual Loop" code={`let attempts = 0;\nwhile (attempts < 3) {\n  try { return await task(); }\n  catch { attempts++; }\n}\nthrow Error("Failed");`} className="h-full" />
-                    <CodeBlock label="After: Retry Policy" code={`retry(task, {\n  attempts: 3,\n  backoff: 'exponential'\n});`} className="h-full" />
+                  <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border" style={{ height: "100%" }}>
+                    <CodeBlock label="Before: Manual Loop" code={`let attempts = 0;\nwhile (attempts < 3) {\n  try { return await task(); }\n  catch { attempts++; }\n}\nthrow Error("Failed");`} />
+                    <CodeBlock label="After: Retry Policy" code={`retry(task, {\n  attempts: 3,\n  backoff: 'exponential'\n});`} />
                   </div>
                 </TabsContent>
               </div>
