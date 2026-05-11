@@ -98,33 +98,33 @@ const SimplifiedFlowTabs = ({ defaultValue }: { defaultValue: string }) => {
 
   if (isDesktop) {
     return (
-      <Tabs defaultValue={defaultValue} className="border border-border w-full gap-0">
-        <TabsList className="flex-col bg-muted/30 border-r border-border p-0 rounded-none h-auto">
-          {['result', 'maybe', 'async', 'retry'].map((tab) => (
-            <TabsTrigger
-              key={tab}
-              value={tab}
-              className="px-6 md:px-10 rounded-none border-b border-border data-[state=active]:bg-background uppercase text-[10px] tracking-[0.2em] font-normal w-full"
-            >
-              {tab}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-        <div className="min-h-[320px] h-full flex-1">
-          <TabsContent value="result" className="m-0 h-full">
+      <div className="flex border border-border">
+        <Tabs defaultValue={defaultValue} className="flex-1 gap-0 [&>div]:flex [&>div]:flex-1">
+          <TabsList className="flex-col bg-muted/30 border-r border-border p-0 rounded-none h-auto w-auto shrink-0">
+            {['result', 'maybe', 'async', 'retry'].map((tab) => (
+              <TabsTrigger
+                key={tab}
+                value={tab}
+                className="px-6 py-3 rounded-none border-b border-border data-[state=active]:bg-background uppercase text-[10px] tracking-[0.2em] font-normal w-full"
+              >
+                {tab}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          <TabsContent value="result" className="m-0 flex-1">
             <BeforeAfterCode type="result" />
           </TabsContent>
-          <TabsContent value="maybe" className="m-0 h-full">
+          <TabsContent value="maybe" className="m-0 flex-1">
             <BeforeAfterCode type="maybe" />
           </TabsContent>
-          <TabsContent value="async" className="m-0 h-full">
+          <TabsContent value="async" className="m-0 flex-1">
             <BeforeAfterCode type="async" />
           </TabsContent>
-          <TabsContent value="retry" className="m-0 h-full">
+          <TabsContent value="retry" className="m-0 flex-1">
             <BeforeAfterCode type="retry" />
           </TabsContent>
-        </div>
-      </Tabs>
+        </Tabs>
+      </div>
     );
   }
 
@@ -141,20 +141,18 @@ const SimplifiedFlowTabs = ({ defaultValue }: { defaultValue: string }) => {
           </TabsTrigger>
         ))}
       </TabsList>
-      <div className="min-h-[320px] h-full flex-1">
-        <TabsContent value="result" className="m-0 h-full">
-          <BeforeAfterCode type="result" />
-        </TabsContent>
-        <TabsContent value="maybe" className="m-0 h-full">
-          <BeforeAfterCode type="maybe" />
-        </TabsContent>
-        <TabsContent value="async" className="m-0 h-full">
-          <BeforeAfterCode type="async" />
-        </TabsContent>
-        <TabsContent value="retry" className="m-0 h-full">
-          <BeforeAfterCode type="retry" />
-        </TabsContent>
-      </div>
+      <TabsContent value="result" className="m-0">
+        <BeforeAfterCode type="result" />
+      </TabsContent>
+      <TabsContent value="maybe" className="m-0">
+        <BeforeAfterCode type="maybe" />
+      </TabsContent>
+      <TabsContent value="async" className="m-0">
+        <BeforeAfterCode type="async" />
+      </TabsContent>
+      <TabsContent value="retry" className="m-0">
+        <BeforeAfterCode type="retry" />
+      </TabsContent>
     </Tabs>
   );
 };
