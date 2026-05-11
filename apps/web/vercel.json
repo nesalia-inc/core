@@ -1,5 +1,5 @@
 {
-  "installCommand": "pnpm install",
+  "installCommand": "pnpm install --approve-builds",
   "buildCommand": "pnpm run build",
   "devCommand": "pnpm run dev"
 }
