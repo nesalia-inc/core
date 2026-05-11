@@ -374,7 +374,7 @@ export default function Homepage() {
 
 function FeatureCard({ icon, title, desc, category, className }: { icon: React.ReactNode, title: string, desc: string, category: string, className?: string }) {
   return (
-    <div className={`bg-background p-10 space-y-6 group hover:bg-muted/30 transition-colors ${className}`}>
+    <div className={`bg-background p-10 space-y-6 border border-transparent hover:border-accent/30 transition-colors ${className}`}>
       <div className="text-muted-foreground group-hover:text-accent transition-colors">{icon}</div>
       <div className="space-y-3">
         <span className="text-[10px] uppercase tracking-[0.2em] text-accent font-mono">{category}</span>
