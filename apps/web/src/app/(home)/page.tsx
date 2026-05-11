@@ -68,19 +68,19 @@ export default function Homepage() {
           {/* Hero Section */}
           <section className="space-y-10 max-w-4xl mx-auto text-center">
             <div className="space-y-4">
-               <Badge variant="outline" className="font-mono uppercase tracking-[0.3em] text-accent">Version 0.1.0-alpha</Badge>
+               <Badge variant="outline" className="font-mono uppercase tracking-[0.3em]">Version 0.1.0-alpha</Badge>
                <h1 className="text-5xl md:text-7xl tracking-tighter leading-none font-semibold text-center">
                 Handle errors with confidence — and resilience — everywhere.
               </h1>
             </div>
 
-            <p className="text-xl text-muted-foreground max-w-2xl leading-relaxed">
+            <p className="text-xl text-muted-foreground max-w-2xl leading-relaxed mx-auto">
               Functional programming for pragmatists. No Category Theory degree required.
               The framework-agnostic TypeScript library designed for production safety.
             </p>
 
             {/* Installation Tab */}
-            <div className="pt-4 max-w-md">
+            <div className="pt-4 max-w-md mx-auto">
               <Tabs defaultValue="npm" className="w-full">
                 <TabsList className="w-full bg-transparent border border-border h-12 p-0 rounded-none">
                   <TabsTrigger value="npm" className="flex-1 rounded-none data-[state=active]:bg-accent data-[state=active]:text-accent-foreground border-r border-border last:border-r-0 h-full uppercase text-xs tracking-widest font-normal">npm</TabsTrigger>
