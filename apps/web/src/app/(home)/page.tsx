@@ -377,7 +377,7 @@ function FeatureCard({ icon, title, desc, category, className }: { icon: React.R
     <div className={`bg-background p-10 space-y-6 border border-transparent hover:border-accent/30 transition-colors ${className}`}>
       <div className="text-muted-foreground group-hover:text-accent transition-colors">{icon}</div>
       <div className="space-y-3">
-        <span className="text-[10px] uppercase tracking-[0.2em] text-accent font-mono">{category}</span>
+        <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-mono">{category}</span>
         <h3 className="text-lg uppercase tracking-tight">{title}</h3>
         <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
       </div>
