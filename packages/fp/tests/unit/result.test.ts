@@ -19,7 +19,10 @@ import {
   unwrap,
   Result,
   traverse,
+  gen,
+  awaitResult,
 } from "../../src/result/index.js";
+import { okAsync, errAsync } from "../../src/async-result/index.js";
 
 describe("Result", () => {
   describe("ok", () => {
@@ -716,6 +719,194 @@ describe("Result", () => {
 
       const result = traverse(["", "a", "b"], validate);
       expect(isErr(result)).toBe(true);
+    });
+  });
+
+  describe("gen", () => {
+    it("should compose ok values through generator", async () => {
+      const result = await gen(async function* () {
+        const a = yield ok(1);
+        const b = yield ok(2);
+        return a + b;
+      });
+
+      expect(isOk(result)).toBe(true);
+      if (isOk(result)) {
+        expect(result.value).toBe(3);
+      }
+    });
+
+    it("should short-circuit on err", async () => {
+      const result = await gen(async function* () {
+        const a = yield ok(1);
+        const b = yield err(new Error("failure"));
+        const c = yield ok(3); // Should not execute
+        return a + b + c;
+      });
+
+      expect(isErr(result)).toBe(true);
+      if (isErr(result)) {
+        expect(result.error.message).toBe("failure");
+      }
+    });
+
+    it("should work with multiple sequential ok yields", async () => {
+      const result = await gen(async function* () {
+        const user = yield ok({ id: "1", name: "Alice" });
+        const profile = yield ok({ id: "1", bio: "Developer" });
+        return { user, profile };
+      });
+
+      expect(isOk(result)).toBe(true);
+      if (isOk(result)) {
+        expect(result.value).toEqual({
+          user: { id: "1", name: "Alice" },
+          profile: { id: "1", bio: "Developer" },
+        });
+      }
+    });
+
+    it("should propagate err from sequential yields", async () => {
+      const result = await gen(async function* () {
+        const user = yield ok({ id: "1" });
+        const profile = yield err(new Error("profile not found"));
+        return { user, profile };
+      });
+
+      expect(isErr(result)).toBe(true);
+    });
+
+    it("should handle raw value yields by wrapping in ok", async () => {
+      const result = await gen(async function* () {
+        const a = yield ok(1);
+        const b = yield 2; // Raw value - should be wrapped in ok
+        return a + b;
+      });
+
+      expect(isOk(result)).toBe(true);
+      if (isOk(result)) {
+        expect(result.value).toBe(3);
+      }
+    });
+
+    it("should handle early return with ok value", async () => {
+      const result = await gen(async function* () {
+        // Yield to satisfy the linter, but the value is discarded since we return immediately after
+        yield;
+        return 42;
+      });
+
+      expect(isOk(result)).toBe(true);
+      if (isOk(result)) {
+        expect(result.value).toBe(42);
+      }
+    });
+  });
+
+  describe("awaitResult", () => {
+    it("should convert AsyncOk to Ok", async () => {
+      const asyncResult = okAsync({ id: "1", name: "Alice" });
+      const result = await awaitResult(asyncResult);
+
+      expect(isOk(result)).toBe(true);
+      if (isOk(result)) {
+        expect(result.value).toEqual({ id: "1", name: "Alice" });
+      }
+    });
+
+    it("should convert AsyncErr to Err", async () => {
+      const asyncResult = errAsync(new Error("async failure"));
+      const result = await awaitResult(asyncResult);
+
+      expect(isErr(result)).toBe(true);
+      if (isErr(result)) {
+        expect(result.error.message).toBe("async failure");
+      }
+    });
+  });
+
+  describe("gen with awaitResult", () => {
+    it("should await AsyncResult and extract value", async () => {
+      const result = await gen(async function* () {
+        const user = yield ok({ id: "1" });
+        const profile = yield awaitResult(okAsync({ id: "1", bio: "Dev" }));
+        return { user, profile };
+      });
+
+      expect(isOk(result)).toBe(true);
+      if (isOk(result)) {
+        expect(result.value).toEqual({
+          user: { id: "1" },
+          profile: { id: "1", bio: "Dev" },
+        });
+      }
+    });
+
+    it("should short-circuit when AsyncResult is Err", async () => {
+      const result = await gen(async function* () {
+        const user = yield ok({ id: "1" });
+        const profile = yield awaitResult(errAsync(new Error("profile error")));
+        return { user, profile };
+      });
+
+      expect(isErr(result)).toBe(true);
+      if (isErr(result)) {
+        expect(result.error.message).toBe("profile error");
+      }
+    });
+  });
+
+  describe("gen with TaggedError", () => {
+    it("should short-circuit on TaggedError", async () => {
+      const taggedError = Object.freeze({
+        _tag: "CustomError",
+        message: "custom error occurred",
+      });
+
+      const result = await gen(async function* () {
+        const a = yield ok(1);
+        const b = yield taggedError; // TaggedError - should short-circuit
+        return a + b;
+      });
+
+      expect(isErr(result)).toBe(true);
+      if (isErr(result)) {
+        expect((result.error as unknown as { _tag: string })._tag).toBe("CustomError");
+      }
+    });
+  });
+
+  describe("gen error propagation", () => {
+    it("should propagate error through multiple sequential operations", async () => {
+      const result = await gen(async function* () {
+        const a = yield ok(1);
+        const b = yield ok(2);
+        const c = yield err(new Error("step 3 failed"));
+        const d = yield ok(4);
+        return a + b + c + d;
+      });
+
+      expect(isErr(result)).toBe(true);
+      if (isErr(result)) {
+        expect(result.error.message).toBe("step 3 failed");
+      }
+    });
+
+    it("should work with complex nested structures", async () => {
+      const result = await gen(async function* () {
+        const userId = yield ok("user-123");
+        const permissions = yield ok(["read", "write"]);
+        const profile = yield ok({ id: userId, perms: permissions });
+        return profile;
+      });
+
+      expect(isOk(result)).toBe(true);
+      if (isOk(result)) {
+        expect(result.value).toEqual({
+          id: "user-123",
+          perms: ["read", "write"],
+        });
+      }
     });
   });
 });

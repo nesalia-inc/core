@@ -499,10 +499,10 @@ describe("Full pipeline - async to sync", () => {
     const r1 = map(asyncResult, (user) => user.name);
     const r2 = map(r1, (name) => name.toUpperCase());
 
-    expect(r2.ok).toBe(true);
-    if (r2.ok) {
-      expect(r2.value).toBe("ALICE");
-    }
+    // AsyncResult is thenable, so ok is undefined until resolved
+    // Use getOrElse to extract the value after chaining
+    const finalResult = await getOrElse(r2, "");
+    expect(finalResult).toBe("ALICE");
   });
 
   it("should handle error path through pipeline", async () => {

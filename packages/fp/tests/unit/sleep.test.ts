@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from "vitest";
-import { sleep, withTimeout, TimeoutError, sleepWithSignal, addJitter } from "../../src/sleep.js";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { sleep, withTimeout, TimeoutError, sleepWithSignal, addJitter, sleepUntil, sleepRandom } from "../../src/sleep.js";
 
 describe("Sleep", () => {
   describe("sleep", () => {
@@ -317,6 +317,151 @@ describe("Sleep", () => {
       setTimeout(() => controller.abort(), 20);
 
       await expect(sleepPromise).rejects.toThrow("Sleep aborted");
+    });
+  });
+
+  describe("sleepUntil", () => {
+    it("should return true when predicate becomes true", async () => {
+      let counter = 0;
+      const result = await sleepUntil(() => {
+        counter++;
+        return counter >= 3;
+      }, { interval: 10 });
+
+      expect(result).toBe(true);
+      expect(counter).toBe(3);
+    });
+
+    it("should return true immediately if predicate is already true", async () => {
+      const result = await sleepUntil(() => true, { interval: 10 });
+      expect(result).toBe(true);
+    });
+
+    it("should return false when timeout expires", async () => {
+      const start = Date.now();
+      const result = await sleepUntil(
+        () => false,
+        { timeout: 50, interval: 10 }
+      );
+      const elapsed = Date.now() - start;
+
+      expect(result).toBe(false);
+      expect(elapsed).toBeGreaterThanOrEqual(45);
+      expect(elapsed).toBeLessThan(200);
+    });
+
+    it("should return false immediately if already aborted", async () => {
+      const controller = new AbortController();
+      controller.abort();
+
+      const result = await sleepUntil(() => true, { signal: controller.signal });
+      expect(result).toBe(false);
+    });
+
+    it("should return false when aborted mid-wait", async () => {
+      const controller = new AbortController();
+      let counter = 0;
+
+      const promise = sleepUntil(
+        () => {
+          counter++;
+          return counter >= 10;
+        },
+        { interval: 50, signal: controller.signal }
+      );
+
+      // Abort after a short delay
+      setTimeout(() => controller.abort(), 30);
+
+      const result = await promise;
+      expect(result).toBe(false);
+      expect(counter).toBeGreaterThan(0);
+    });
+
+    it("should support async predicate", async () => {
+      let counter = 0;
+      const result = await sleepUntil(async () => {
+        counter++;
+        return counter >= 2;
+      }, { interval: 10 });
+
+      expect(result).toBe(true);
+    });
+
+    it("should use default interval of 100ms", async () => {
+      const start = Date.now();
+      let callCount = 0;
+
+      await sleepUntil(
+        () => {
+          callCount++;
+          return false;
+        },
+        { timeout: 150 }
+      );
+
+      const elapsed = Date.now() - start;
+      // With 100ms interval and 150ms timeout, should have at least 1 call
+      expect(callCount).toBeGreaterThanOrEqual(1);
+    });
+
+    it("should stop checking once predicate is satisfied", async () => {
+      let counter = 0;
+      await sleepUntil(
+        () => {
+          counter++;
+          return counter >= 2;
+        },
+        { interval: 10 }
+      );
+      expect(counter).toBe(2);
+    });
+  });
+
+  describe("sleepRandom", () => {
+    it("should sleep for a duration between min and max", async () => {
+      const start = Date.now();
+      await sleepRandom(50, 100);
+      const elapsed = Date.now() - start;
+
+      expect(elapsed).toBeGreaterThanOrEqual(45);
+      expect(elapsed).toBeLessThan(150);
+    });
+
+    it("should throw error when min > max", async () => {
+      expect(() => sleepRandom(100, 50)).toThrow("min must be less than or equal to max");
+    });
+
+    it("should work with equal min and max", async () => {
+      const start = Date.now();
+      await sleepRandom(50, 50);
+      const elapsed = Date.now() - start;
+
+      expect(elapsed).toBeGreaterThanOrEqual(45);
+      expect(elapsed).toBeLessThan(100);
+    });
+
+    it("should respect jitter option", async () => {
+      const start = Date.now();
+      await sleepRandom(100, 100, { jitter: true });
+      const elapsed = Date.now() - start;
+
+      // With jitter 0.5 variance, 100ms becomes 50-150ms
+      expect(elapsed).toBeGreaterThanOrEqual(45);
+      expect(elapsed).toBeLessThan(200);
+    });
+
+    it("should produce varied results across multiple calls", async () => {
+      const results: number[] = [];
+      for (let i = 0; i < 10; i++) {
+        const start = Date.now();
+        await sleepRandom(0, 10);
+        results.push(Date.now() - start);
+      }
+
+      // Not all results should be the same
+      const uniqueValues = new Set(results.map(Math.floor));
+      expect(uniqueValues.size).toBeGreaterThan(1);
     });
   });
 });

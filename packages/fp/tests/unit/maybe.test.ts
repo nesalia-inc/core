@@ -23,6 +23,7 @@ import {
   filter,
   toResult,
   traverse,
+  race,
 } from "../../src/maybe/index.js";
 
 describe("Maybe", () => {
@@ -906,6 +907,72 @@ describe("Maybe", () => {
       expect(isSome(result)).toBe(true);
       if (isSome(result)) {
         expect(result.value).toEqual([1, 2, 3]);
+      }
+    });
+  });
+
+  describe("race", () => {
+    it("should return the first Some when at least one is Some", () => {
+      const result = race(some(1), some(2), some(3));
+      expect(isSome(result)).toBe(true);
+      if (isSome(result)) {
+        expect(result.value).toBe(1);
+      }
+    });
+
+    it("should return the first Some (second position)", () => {
+      const result = race(none(), some(2), none());
+      expect(isSome(result)).toBe(true);
+      if (isSome(result)) {
+        expect(result.value).toBe(2);
+      }
+    });
+
+    it("should return None when all are None", () => {
+      const result = race(none(), none(), none());
+      expect(isNone(result)).toBe(true);
+    });
+
+    it("should return None for single None", () => {
+      const result = race(none());
+      expect(isNone(result)).toBe(true);
+    });
+
+    it("should return Some for single Some", () => {
+      const result = race(some(42));
+      expect(isSome(result)).toBe(true);
+      if (isSome(result)) {
+        expect(result.value).toBe(42);
+      }
+    });
+
+    it("should return first Some with varied types", () => {
+      const result = race<string | number>(none(), some("hello"), some("world"));
+      expect(isSome(result)).toBe(true);
+      if (isSome(result)) {
+        expect(result.value).toBe("hello");
+      }
+    });
+
+    it("should return first Some among many", () => {
+      const result = race(none(), none(), some(42), none(), some(100));
+      expect(isSome(result)).toBe(true);
+      if (isSome(result)) {
+        expect(result.value).toBe(42);
+      }
+    });
+
+    it("should work with no arguments", () => {
+      const result = race();
+      expect(isNone(result)).toBe(true);
+    });
+
+    it("should work with array spread", () => {
+      const maybes: Maybe<number>[] = [none(), some(99), none()];
+      const result = race(...maybes);
+      expect(isSome(result)).toBe(true);
+      if (isSome(result)) {
+        expect(result.value).toBe(99);
       }
     });
   });
