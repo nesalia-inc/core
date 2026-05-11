@@ -66,10 +66,10 @@ export default function Homepage() {
         <main className="flex-1 px-6 md:px-12 py-20 space-y-32">
 
           {/* Hero Section */}
-          <section className="space-y-10 max-w-4xl">
+          <section className="space-y-10 max-w-4xl mx-auto text-center">
             <div className="space-y-4">
                <Badge variant="outline" className="font-mono uppercase tracking-[0.3em] text-accent">Version 0.1.0-alpha</Badge>
-               <h1 className="text-5xl md:text-7xl tracking-tighter leading-none uppercase">
+               <h1 className="text-5xl md:text-7xl tracking-tighter leading-none uppercase text-center">
                 Handle errors with confidence — and resilience — everywhere.
               </h1>
             </div>
