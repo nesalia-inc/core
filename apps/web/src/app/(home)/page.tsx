@@ -55,28 +55,32 @@ const CodeBlock = ({ code, label, lang = "typescript" }: { code: string; label?:
   };
 
   return (
-    <div className="group relative border border-border bg-muted/20 p-3 text-sm leading-relaxed h-full">
-      {label && <div className="mb-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{label}</div>}
-      <SyntaxHighlighter
-        language={lang}
-        style={codeStyle}
-        customStyle={{
-          margin: 0,
-          padding: "0.5rem",
-          background: "transparent",
-          fontSize: "0.875rem",
-          fontFamily: "var(--font-geist-mono)",
-        }}
-        wrapLongLines
-      >
-        {code}
-      </SyntaxHighlighter>
-      <button
-        onClick={copy}
-        className="absolute right-4 top-4 border border-border bg-background p-2 hover:bg-accent transition-colors"
-      >
-        {copied ? <Check size={14} className="text-accent-foreground" /> : <Copy size={14} />}
-      </button>
+    <div className="group relative border border-border bg-muted/20 p-3 text-sm leading-relaxed h-full flex flex-col">
+      <div className="flex justify-between items-start gap-4">
+        <div className="flex-1 min-w-0">
+          {label && <div className="mb-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{label}</div>}
+          <SyntaxHighlighter
+            language={lang}
+            style={codeStyle}
+            customStyle={{
+              margin: 0,
+              padding: "0.5rem",
+              background: "transparent",
+              fontSize: "0.875rem",
+              fontFamily: "var(--font-geist-mono)",
+            }}
+            wrapLongLines
+          >
+            {code}
+          </SyntaxHighlighter>
+        </div>
+        <button
+          onClick={copy}
+          className="border border-border bg-background p-2 hover:bg-accent transition-colors shrink-0"
+        >
+          {copied ? <Check size={14} className="text-accent-foreground" /> : <Copy size={14} />}
+        </button>
+      </div>
     </div>
   );
 };
