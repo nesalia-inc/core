@@ -150,30 +150,54 @@ export default function Homepage() {
               {/* min-h to prevent layout shift */}
               <div className="min-h-[320px] h-full flex-1">
                 <TabsContent value="result" className="m-0 h-full">
-                  <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border h-full" style={{ height: "100%" }}>
-                    <CodeBlock label="Before: Traditional JS" code={`try {\n  const user = getUser(id);\n  return process(user);\n} catch (e) {\n  handleError(e);\n}`} />
-                    <CodeBlock label="After: @deessejs/fp" code={`getUser(id)\n  .map(user => process(user))\n  .tapError(err => handleError(err));`} />
+                  <div className="flex flex-col h-full">
+                    <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
+                      <div className="px-6 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10">Before</div>
+                      <div className="px-6 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10">After</div>
+                    </div>
+                    <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border flex-1" style={{ height: "100%" }}>
+                      <CodeBlock label="Traditional JS" code={`try {\n  const user = getUser(id);\n  return process(user);\n} catch (e) {\n  handleError(e);\n}`} />
+                      <CodeBlock label="@deessejs/fp" code={`getUser(id)\n  .map(user => process(user))\n  .tapError(err => handleError(err));`} />
+                    </div>
                   </div>
                 </TabsContent>
 
                 <TabsContent value="async" className="m-0 h-full">
-                  <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border h-full" style={{ height: "100%" }}>
-                    <CodeBlock label="Before: Nested Await" code={`try {\n  const res = await fetch(url);\n  const data = await res.json();\n  return data;\n} catch (e) {\n  return null;\n}`} />
-                    <CodeBlock label="After: AsyncResult" code={`AsyncResult.fromPromise(fetch(url))\n  .flatMap(res => res.json())\n  .getOrElse(null);`} />
+                  <div className="flex flex-col h-full">
+                    <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
+                      <div className="px-6 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10">Before</div>
+                      <div className="px-6 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10">After</div>
+                    </div>
+                    <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border flex-1" style={{ height: "100%" }}>
+                      <CodeBlock label="Nested Await" code={`try {\n  const res = await fetch(url);\n  const data = await res.json();\n  return data;\n} catch (e) {\n  return null;\n}`} />
+                      <CodeBlock label="AsyncResult" code={`AsyncResult.fromPromise(fetch(url))\n  .flatMap(res => res.json())\n  .getOrElse(null);`} />
+                    </div>
                   </div>
                 </TabsContent>
 
                 <TabsContent value="maybe" className="m-0 h-full">
-                  <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border h-full" style={{ height: "100%" }}>
-                    <CodeBlock label="Before: Null Checks" code={`const val = getOptional();\nif (val !== null && val !== undefined) {\n  return doSomething(val);\n}\nreturn defaultValue;`} />
-                    <CodeBlock label="After: Maybe Type" code={`Maybe.fromNullable(getOptional())\n  .map(val => doSomething(val))\n  .getOrElse(defaultValue);`} />
+                  <div className="flex flex-col h-full">
+                    <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
+                      <div className="px-6 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10">Before</div>
+                      <div className="px-6 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10">After</div>
+                    </div>
+                    <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border flex-1" style={{ height: "100%" }}>
+                      <CodeBlock label="Null Checks" code={`const val = getOptional();\nif (val !== null && val !== undefined) {\n  return doSomething(val);\n}\nreturn defaultValue;`} />
+                      <CodeBlock label="Maybe Type" code={`Maybe.fromNullable(getOptional())\n  .map(val => doSomething(val))\n  .getOrElse(defaultValue);`} />
+                    </div>
                   </div>
                 </TabsContent>
 
                 <TabsContent value="retry" className="m-0 h-full">
-                  <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border h-full" style={{ height: "100%" }}>
-                    <CodeBlock label="Before: Manual Loop" code={`let attempts = 0;\nwhile (attempts < 3) {\n  try { return await task(); }\n  catch { attempts++; }\n}\nthrow Error("Failed");`} />
-                    <CodeBlock label="After: Retry Policy" code={`retry(task, {\n  attempts: 3,\n  backoff: 'exponential'\n});`} />
+                  <div className="flex flex-col h-full">
+                    <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
+                      <div className="px-6 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10">Before</div>
+                      <div className="px-6 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10">After</div>
+                    </div>
+                    <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border flex-1" style={{ height: "100%" }}>
+                      <CodeBlock label="Manual Loop" code={`let attempts = 0;\nwhile (attempts < 3) {\n  try { return await task(); }\n  catch { attempts++; }\n}\nthrow Error("Failed");`} />
+                      <CodeBlock label="Retry Policy" code={`retry(task, {\n  attempts: 3,\n  backoff: 'exponential'\n});`} />
+                    </div>
                   </div>
                 </TabsContent>
               </div>
