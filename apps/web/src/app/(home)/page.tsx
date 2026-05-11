@@ -69,6 +69,7 @@ const CodeBlock = ({ code, label, lang = "typescript" }: { code: string; label?:
               fontFamily: "var(--font-geist-mono)",
             }}
             wrapLongLines
+            showLineNumbers
           >
             {code}
           </SyntaxHighlighter>
