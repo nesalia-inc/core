@@ -133,18 +133,19 @@ export default function Homepage() {
           {/* Feature Examples (Before/After) */}
           <section className="space-y-8">
             <h2 className="text-2xl uppercase tracking-tighter">Simplified Flow</h2>
-            <Tabs defaultValue="result" className="border border-border w-full">
-              <TabsList className="flex bg-muted/30 border-b border-border h-14 p-0 rounded-none justify-center inline-flex">
-                {['result', 'maybe', 'async', 'retry'].map((tab) => (
-                  <TabsTrigger
-                    key={tab}
-                    value={tab}
-                    className="px-6 md:px-10 rounded-none border-r border-border data-[state=active]:bg-background uppercase text-[10px] tracking-[0.2em] h-full font-normal"
-                  >
-                    {tab}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
+            <div className="flex justify-center">
+              <Tabs defaultValue="result" className="border border-border w-full max-w-fit">
+                <TabsList className="flex-col bg-muted/30 border-b border-r border-border p-0 rounded-none h-auto">
+                  {['result', 'maybe', 'async', 'retry'].map((tab) => (
+                    <TabsTrigger
+                      key={tab}
+                      value={tab}
+                      className="px-6 md:px-10 rounded-none border-b border-border data-[state=active]:bg-background uppercase text-[10px] tracking-[0.2em] font-normal w-full"
+                    >
+                      {tab}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
 
               {/* min-h to prevent layout shift */}
               <div className="min-h-[320px] h-full">
