@@ -99,7 +99,7 @@ export default function Homepage() {
           {/* Hero Section */}
           <section className="space-y-10 max-w-4xl mx-auto text-center">
             <div className="space-y-4">
-               <Badge variant="outline" className="font-mono tracking-[0.3em]">Version 0.1.0-alpha</Badge>
+               <Badge variant="outline" className="tracking-[0.3em] gap-2"><span className="w-2 h-2 rounded-full bg-[#28c840]" />Version 0.1.0-alpha</Badge>
                <h1 className="text-5xl md:text-7xl tracking-tighter leading-none font-semibold text-center">
                 Handle errors with confidence and resilience everywhere.
               </h1>
