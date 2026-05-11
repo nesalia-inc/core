@@ -30,7 +30,7 @@ import { Button } from "@/components/ui/button";
 
 // --- Components ---
 
-const CodeBlock = ({ code, label, minHeight = "160px" }: { code: string; label?: string, minHeight?: string }) => {
+const CodeBlock = ({ code, label }: { code: string; label?: string }) => {
   const [copied, setCopied] = useState(false);
 
   const copy = () => {
@@ -40,12 +40,9 @@ const CodeBlock = ({ code, label, minHeight = "160px" }: { code: string; label?:
   };
 
   return (
-    <div
-      className="group relative border border-border bg-muted/20 p-6 font-mono text-sm leading-relaxed"
-      style={{ minHeight }}
-    >
-      {label && <div className="mb-3 text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground">{label}</div>}
-      <pre className="overflow-x-auto text-foreground font-medium">{code}</pre>
+    <div className="group relative border border-border bg-muted/20 p-6 font-mono text-sm leading-relaxed h-full">
+      {label && <div className="mb-4 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{label}</div>}
+      <pre className="overflow-x-auto text-foreground whitespace-pre-wrap">{code}</pre>
       <button
         onClick={copy}
         className="absolute right-4 top-4 border border-border bg-background p-2 hover:bg-accent transition-colors"
@@ -56,102 +53,94 @@ const CodeBlock = ({ code, label, minHeight = "160px" }: { code: string; label?:
   );
 };
 
-const SectionHeader = ({ title, subtitle }: { title: string; subtitle?: string }) => (
-  <div className="mb-12 space-y-3">
-    <h2 className="text-4xl font-bold tracking-tighter uppercase">{title}</h2>
-    {subtitle && <p className="text-muted-foreground text-lg max-w-2xl font-medium">{subtitle}</p>}
-  </div>
-);
-
 // --- Page Content ---
 
 export default function Homepage() {
   return (
-    /* Main Container: Centered with side borders to respect the 7xl max-width philosophy */
     <div className="min-h-screen bg-background text-foreground font-sans selection:bg-accent selection:text-accent-foreground">
-      <div className="max-w-7xl mx-auto border-x border-border">
 
-        <main className="px-8 md:px-16 py-24 space-y-32">
+      {/* Structure Principale centrée avec bordures latérales */}
+      <div className="max-w-7xl mx-auto border-x border-border min-h-screen flex flex-col">
+
+        <main className="flex-1 px-6 md:px-12 py-20 space-y-32">
 
           {/* Hero Section */}
-          <motion.section
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-8 max-w-5xl"
-          >
-            <div className="inline-block border border-accent px-3 py-1 text-[10px] uppercase tracking-[0.3em] font-bold text-accent mb-4">
-              v0.1.0-alpha
+          <section className="space-y-10 max-w-4xl">
+            <div className="space-y-4">
+               <span className="text-xs font-mono uppercase tracking-[0.3em] text-accent">Version 0.1.0-alpha</span>
+               <h1 className="text-5xl md:text-7xl tracking-tighter leading-none uppercase">
+                Handle errors with confidence — and resilience — everywhere.
+              </h1>
             </div>
-            <h1 className="text-6xl md:text-8xl font-black tracking-tight leading-[0.9] uppercase">
-              Handle errors with <br />
-              <span className="text-accent">confidence.</span>
-            </h1>
-            <p className="text-2xl text-muted-foreground font-semibold max-w-3xl leading-snug">
-              The framework-agnostic TypeScript library for pragmatists. <br className="hidden md:block" />
-              Build resilient systems without the category theory.
+
+            <p className="text-xl text-muted-foreground max-w-2xl leading-relaxed">
+              Functional programming for pragmatists. No Category Theory degree required.
+              The framework-agnostic TypeScript library designed for production safety.
             </p>
 
             {/* Installation Tab */}
-            <div className="pt-8 max-w-md">
+            <div className="pt-4 max-w-md">
               <Tabs defaultValue="npm" className="w-full">
-                <TabsList className="w-full bg-transparent border border-border h-14 p-0 rounded-none">
-                  <TabsTrigger value="npm" className="flex-1 rounded-none data-[state=active]:bg-accent data-[state=active]:text-accent-foreground border-r border-border last:border-r-0 h-full uppercase text-xs font-bold tracking-widest">npm</TabsTrigger>
-                  <TabsTrigger value="agents" className="flex-1 rounded-none data-[state=active]:bg-accent data-[state=active]:text-accent-foreground h-full uppercase text-xs font-bold tracking-widest">agents</TabsTrigger>
+                <TabsList className="w-full bg-transparent border border-border h-12 p-0 rounded-none">
+                  <TabsTrigger value="npm" className="flex-1 rounded-none data-[state=active]:bg-accent data-[state=active]:text-accent-foreground border-r border-border last:border-r-0 h-full uppercase text-xs tracking-widest font-normal">npm</TabsTrigger>
+                  <TabsTrigger value="agents" className="flex-1 rounded-none data-[state=active]:bg-accent data-[state=active]:text-accent-foreground h-full uppercase text-xs tracking-widest font-normal">agents</TabsTrigger>
                 </TabsList>
                 <TabsContent value="npm" className="mt-0">
-                  <CodeBlock code="npm install @deessejs/fp" minHeight="80px" />
+                  <CodeBlock code="npm install @deessejs/fp" />
                 </TabsContent>
                 <TabsContent value="agents" className="mt-0">
-                  <CodeBlock code="npx skills add deessejs/fp" minHeight="80px" />
+                  <CodeBlock code="npx skills add deessejs/fp" />
                 </TabsContent>
               </Tabs>
+              <p className="mt-4 text-[10px] text-muted-foreground font-mono uppercase tracking-widest">
+                Or <a href="#" className="underline underline-offset-4 hover:text-foreground">git clone</a> the starter template
+              </p>
             </div>
-          </motion.section>
+          </section>
 
           {/* Feature Examples (Before/After) */}
-          <section>
-            <SectionHeader
-              title="Less Noise, More Logic"
-              subtitle="Stop nesting. Start chaining. A unified API for sync and async flows."
-            />
-            {/* Fixed height container to prevent layout shifts */}
-            <Tabs defaultValue="result" className="border border-border overflow-hidden">
-              <TabsList className="flex bg-muted/30 border-b border-border h-16 p-0 rounded-none overflow-x-auto">
+          <section className="space-y-8">
+            <h2 className="text-2xl uppercase tracking-tighter">Simplified Flow</h2>
+            <Tabs defaultValue="result" className="border border-border">
+              <TabsList className="flex bg-muted/30 border-b border-border h-14 p-0 rounded-none">
                 {['result', 'maybe', 'async', 'retry'].map((tab) => (
                   <TabsTrigger
                     key={tab}
                     value={tab}
-                    className="px-10 rounded-none border-r border-border data-[state=active]:bg-background uppercase text-xs font-black tracking-widest h-full"
+                    className="px-6 md:px-10 rounded-none border-r border-border data-[state=active]:bg-background uppercase text-[10px] tracking-[0.2em] h-full font-normal"
                   >
                     {tab}
                   </TabsTrigger>
                 ))}
               </TabsList>
 
-              <div className="min-h-[300px]"> {/* Prevents layout shift */}
-                <TabsContent value="result" className="m-0">
-                  <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
-                    <CodeBlock label="Traditional JS" code={`try {\n  const user = getUser(id);\n  return process(user);\n} catch (e) {\n  handleError(e);\n}`} />
-                    <CodeBlock label="@deessejs/fp" code={`getUser(id)\n  .map(process)\n  .tapError(handleError);`} />
+              {/* min-h to prevent layout shift */}
+              <div className="min-h-[320px]">
+                <TabsContent value="result" className="m-0 h-full">
+                  <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border h-full">
+                    <CodeBlock label="Before: Traditional JS" code={`try {\n  const user = getUser(id);\n  return process(user);\n} catch (e) {\n  handleError(e);\n}`} />
+                    <CodeBlock label="After: @deessejs/fp" code={`getUser(id)\n  .map(user => process(user))\n  .tapError(err => handleError(err));`} />
                   </div>
                 </TabsContent>
-                <TabsContent value="async" className="m-0">
-                  <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
-                    <CodeBlock label="Promise Hell" code={`try {\n  const res = await fetch(url);\n  const data = await res.json();\n  return data;\n} catch (e) {\n  return null;\n}`} />
-                    <CodeBlock label="AsyncResult" code={`AsyncResult.fromPromise(fetch(url))\n  .flatMap(res => res.json())\n  .getOrElse(null);`} />
+
+                <TabsContent value="async" className="m-0 h-full">
+                  <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border h-full">
+                    <CodeBlock label="Before: Nested Await" code={`try {\n  const res = await fetch(url);\n  const data = await res.json();\n  return data;\n} catch (e) {\n  return null;\n}`} />
+                    <CodeBlock label="After: AsyncResult" code={`AsyncResult.fromPromise(fetch(url))\n  .flatMap(res => res.json())\n  .getOrElse(null);`} />
                   </div>
                 </TabsContent>
-                {/* Fallbacks for other tabs to keep height consistent */}
-                <TabsContent value="maybe" className="m-0">
-                   <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
-                    <CodeBlock label="Null Checks" code={`if (val !== null && val !== undefined) {\n  return doSomething(val);\n}\nreturn defaultValue;`} />
-                    <CodeBlock label="Maybe" code={`fromNullable(val)\n  .map(doSomething)\n  .getOrElse(defaultValue);`} />
+
+                <TabsContent value="maybe" className="m-0 h-full">
+                  <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border h-full">
+                    <CodeBlock label="Before: Null Checks" code={`const val = getOptional();\nif (val !== null && val !== undefined) {\n  return doSomething(val);\n}\nreturn defaultValue;`} />
+                    <CodeBlock label="After: Maybe Type" code={`Maybe.fromNullable(getOptional())\n  .map(val => doSomething(val))\n  .getOrElse(defaultValue);`} />
                   </div>
                 </TabsContent>
-                <TabsContent value="retry" className="m-0">
-                   <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
-                    <CodeBlock label="Manual Retry" code={`let attempts = 0;\nwhile (attempts < 3) {\n  try { return await task(); }\n  catch { attempts++; }\n}`} />
-                    <CodeBlock label="Retry Policy" code={`retry(task, {\n  limit: 3,\n  backoff: 'exponential'\n});`} />
+
+                <TabsContent value="retry" className="m-0 h-full">
+                  <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border h-full">
+                    <CodeBlock label="Before: Manual Loop" code={`let attempts = 0;\nwhile (attempts < 3) {\n  try { return await task(); }\n  catch { attempts++; }\n}\nthrow Error("Failed");`} />
+                    <CodeBlock label="After: Retry Policy" code={`retry(task, {\n  attempts: 3,\n  backoff: 'exponential'\n});`} />
                   </div>
                 </TabsContent>
               </div>
@@ -159,101 +148,107 @@ export default function Homepage() {
           </section>
 
           {/* Bento Grid */}
-          <section>
-            <SectionHeader title="System Capabilities" />
+          <section className="space-y-8">
+            <h2 className="text-2xl uppercase tracking-tighter">Capabilities</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-border border border-border">
               <FeatureCard
-                icon={<Zap size={24} strokeWidth={2.5} />}
-                title="Explicit Control"
-                desc="Errors become typed values. No more silent exceptions or broken execution flows."
+                icon={<Zap size={20} />}
+                title="Never try & catch again"
+                desc="Errors become typed values you can map, flatMap, and chain — without breaking your flow."
                 category="Core"
               />
               <FeatureCard
-                icon={<Layers size={24} strokeWidth={2.5} />}
-                title="Unified API"
-                desc="One API for sync and async. map, flatMap, tap — they work the same everywhere."
-                category="Architecture"
+                icon={<Layers size={20} />}
+                title="Async without boilerplate"
+                desc="Fluent chaining for Promises. Same API as sync code. No more nested pyramids."
+                category="Core"
+              />
+               <FeatureCard
+                icon={<Code2 size={20} />}
+                title="One API everywhere"
+                desc="Sync or Async, it doesn't matter. One set of functions to learn for everything."
+                category="Core"
               />
               <FeatureCard
-                icon={<ShieldCheck size={24} strokeWidth={2.5} />}
-                title="Domain Safety"
-                desc="Structured errors with context and Zod validation. Built for production debugging."
+                icon={<ShieldCheck size={20} />}
+                title="Errors that tell a story"
+                desc="Structured domain errors with context and Zod validation. Built for debugging."
                 category="Reliability"
-              />
-              <FeatureCard
-                icon={<RefreshCw size={24} strokeWidth={2.5} />}
-                title="Resilient Utilities"
-                desc="Exponential backoff, jitter, debounce, and timeouts. Hardened by default."
-                category="Production"
                 className="md:col-span-2"
               />
               <FeatureCard
-                icon={<Search size={24} strokeWidth={2.5} />}
-                title="No Nulls"
-                desc="Optional values are visible in the type system. Make absence an explicit state."
+                icon={<Cpu size={20} />}
+                title="Production-ready"
+                desc="Debounce, throttle, memoize, and timeouts out of the box."
+                category="Reliability"
+              />
+              <FeatureCard
+                icon={<Search size={20} />}
+                title="Make absence explicit"
+                desc="No more null checks — absence is visible in the type system from the start."
+                category="DX"
+              />
+              <FeatureCard
+                icon={<RefreshCw size={20} />}
+                title="Retry without the mess"
+                desc="Exponential backoff, jitter, and predicates handled elegantly."
+                category="DX"
+              />
+              <FeatureCard
+                icon={<Terminal size={20} />}
+                title="Composable by design"
+                desc="Pipe and flow let you build readable transformation pipelines."
                 category="DX"
               />
             </div>
           </section>
 
           {/* FAQ */}
-          <section className="max-w-4xl">
-            <SectionHeader title="Details" />
+          <section className="max-w-3xl space-y-8">
+            <h2 className="text-2xl uppercase tracking-tighter">Details</h2>
             <Accordion type="single" collapsible className="w-full border-t border-border">
               <FaqItem
                 q="How does it differ from fp-ts or neverthrow?"
-                a="We eliminate the 'function color' fatigue. Sync and Async paths share the same interface. No .unwrap() calls, no academic jargon. It's built for engineers, not mathematicians."
+                a="Unlike fp-ts, there is no steep learning curve. Unlike neverthrow, sync and async paths are unified. Results execute directly with no .unwrap() calls needed."
               />
               <FaqItem
                 q="Is it a replacement for try/catch?"
-                a="Yes. By moving errors into the type system, you force your team to handle them, making your application crash-proof by design."
+                a="Yes. Replace try/catch with ok/err to turn silent exceptions into explicit domain values."
               />
               <FaqItem
-                q="Bundle size & Performance?"
-                a="Under 2KB gzipped. Zero dependencies. Tree-shakable. Optimized for edge runtimes and high-throughput backends."
+                q="What is the bundle size?"
+                a="Approximately 2KB gzipped. Zero runtime dependencies. Fully tree-shakable."
               />
             </Accordion>
           </section>
 
-          {/* CTA - Realistic Version */}
-          <motion.section
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            className="border-2 border-foreground bg-foreground text-background p-16 text-center space-y-10"
-          >
+          {/* CTA - Honest & Minimal */}
+          <section className="border border-border bg-muted/10 p-12 text-center space-y-10">
             <div className="space-y-4">
-              <h2 className="text-5xl font-black tracking-tighter uppercase leading-none">Standardize your <br />error handling.</h2>
-              <p className="text-xl font-bold opacity-80 uppercase tracking-tight">Open Source. Early Access. PRs welcome.</p>
+              <h2 className="text-4xl tracking-tight uppercase">Write more resilient code.</h2>
+              <p className="text-muted-foreground max-w-xl mx-auto">
+                Deesse is currently in early development. Join us in building the most pragmatic error handling library for TypeScript.
+              </p>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="rounded-none bg-background text-foreground hover:bg-muted h-16 px-10 uppercase tracking-widest text-sm font-black">
-                View on GitHub
+              <Button size="lg" className="rounded-none bg-foreground text-background hover:bg-muted-foreground h-14 px-10 uppercase tracking-widest text-xs font-bold">
+                Get Started
               </Button>
-              <Button size="lg" variant="outline" className="rounded-none border-background bg-transparent hover:bg-background hover:text-foreground h-16 px-10 uppercase tracking-widest text-sm font-black transition-all">
-                Documentation
+              <Button size="lg" variant="outline" className="rounded-none border-border h-14 px-10 uppercase tracking-widest text-xs font-bold">
+                GitHub
               </Button>
             </div>
-
-            <div className="pt-8 border-t border-background/20 flex flex-col items-center gap-6">
-              <span className="text-[10px] uppercase tracking-[0.4em] font-black">Upcoming Ecosystem</span>
-              <div className="flex flex-wrap justify-center gap-12 opacity-40 font-black text-2xl tracking-tighter grayscale">
-                <span>NEXT.JS</span>
-                <span>HONO</span>
-                <span>BUN</span>
-                <span>NODE</span>
-              </div>
-            </div>
-          </motion.section>
+          </section>
 
         </main>
 
-        <footer className="border-t border-border p-12 flex flex-col md:flex-row justify-between items-center gap-6 text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">
-          <div>© 2026 @deessejs — All Rights Reserved.</div>
+        <footer className="border-t border-border py-12 px-12 flex flex-col md:flex-row justify-between items-center gap-6 text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+          <span>© 2026 @deessejs/fp</span>
           <div className="flex gap-8">
-            <a href="#" className="hover:text-foreground transition-colors">Twitter</a>
-            <a href="#" className="hover:text-foreground transition-colors">GitHub</a>
-            <a href="#" className="hover:text-foreground transition-colors">Discord</a>
+            <a href="#" className="hover:text-foreground">Documentation</a>
+            <a href="#" className="hover:text-foreground">Changelog</a>
+            <a href="#" className="hover:text-foreground">Twitter</a>
           </div>
         </footer>
       </div>
@@ -265,12 +260,12 @@ export default function Homepage() {
 
 function FeatureCard({ icon, title, desc, category, className }: { icon: React.ReactNode, title: string, desc: string, category: string, className?: string }) {
   return (
-    <div className={`bg-background p-10 space-y-6 group hover:bg-muted/10 transition-colors ${className}`}>
-      <div className="text-foreground group-hover:text-accent transition-colors">{icon}</div>
+    <div className={`bg-background p-10 space-y-6 group hover:bg-muted/30 transition-colors ${className}`}>
+      <div className="text-muted-foreground group-hover:text-accent transition-colors">{icon}</div>
       <div className="space-y-3">
-        <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-black">{category}</span>
-        <h3 className="text-xl font-black tracking-tight uppercase leading-tight">{title}</h3>
-        <p className="text-base text-muted-foreground leading-snug font-semibold">{desc}</p>
+        <span className="text-[10px] uppercase tracking-[0.2em] text-accent font-mono">{category}</span>
+        <h3 className="text-lg uppercase tracking-tight">{title}</h3>
+        <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
       </div>
     </div>
   );
@@ -278,11 +273,11 @@ function FeatureCard({ icon, title, desc, category, className }: { icon: React.R
 
 function FaqItem({ q, a }: { q: string, a: string }) {
   return (
-    <AccordionItem value={q} className="border-b border-border px-4 py-2">
-      <AccordionTrigger className="uppercase text-sm tracking-widest font-black hover:no-underline text-left py-6">
+    <AccordionItem value={q} className="border-b border-border py-2 px-0">
+      <AccordionTrigger className="uppercase text-xs tracking-widest font-normal hover:no-underline text-left py-6">
         {q}
       </AccordionTrigger>
-      <AccordionContent className="text-muted-foreground font-semibold text-lg pb-8 leading-relaxed">
+      <AccordionContent className="text-muted-foreground leading-relaxed pb-6">
         {a}
       </AccordionContent>
     </AccordionItem>
