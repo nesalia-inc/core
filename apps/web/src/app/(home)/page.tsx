@@ -28,10 +28,12 @@ import {
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 // --- Components ---
 
-const CodeBlock = ({ code, label }: { code: string; label?: string }) => {
+const CodeBlock = ({ code, label, lang = "typescript" }: { code: string; label?: string; lang?: string }) => {
   const [copied, setCopied] = useState(false);
 
   const copy = () => {
@@ -41,9 +43,21 @@ const CodeBlock = ({ code, label }: { code: string; label?: string }) => {
   };
 
   return (
-    <div className="group relative border border-border bg-muted/20 p-3 font-mono text-sm leading-relaxed h-full">
+    <div className="group relative border border-border bg-muted/20 p-3 text-sm leading-relaxed h-full">
       {label && <div className="mb-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{label}</div>}
-      <pre className="overflow-x-auto text-foreground whitespace-pre-wrap">{code}</pre>
+      <SyntaxHighlighter
+        language={lang}
+        style={oneDark}
+        customStyle={{
+          margin: 0,
+          padding: "0.5rem",
+          background: "transparent",
+          fontSize: "0.875rem",
+        }}
+        wrapperClassName="font-mono"
+      >
+        {code}
+      </SyntaxHighlighter>
       <button
         onClick={copy}
         className="absolute right-4 top-4 border border-border bg-background p-2 hover:bg-accent transition-colors"
