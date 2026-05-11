@@ -31,6 +31,18 @@ import { Badge } from "@/components/ui/badge";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 
+// Create a custom style that only keeps text colors, no backgrounds
+const codeStyle = Object.fromEntries(
+  Object.entries(oneDark).map(([key, value]) => [
+    key,
+    typeof value === "object" && value !== null
+      ? Object.fromEntries(
+          Object.entries(value).filter(([k]) => !k.toLowerCase().includes("background"))
+        )
+      : value,
+  ])
+);
+
 // --- Components ---
 
 const CodeBlock = ({ code, label, lang = "typescript" }: { code: string; label?: string; lang?: string }) => {
@@ -47,12 +59,13 @@ const CodeBlock = ({ code, label, lang = "typescript" }: { code: string; label?:
       {label && <div className="mb-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{label}</div>}
       <SyntaxHighlighter
         language={lang}
-        style={oneDark}
+        style={codeStyle}
         customStyle={{
           margin: 0,
           padding: "0.5rem",
           background: "transparent",
           fontSize: "0.875rem",
+          fontFamily: "var(--font-geist-mono)",
         }}
         wrapLongLines
       >
