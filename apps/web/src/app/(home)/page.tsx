@@ -27,7 +27,6 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 
@@ -99,7 +98,6 @@ export default function Homepage() {
           {/* Hero Section */}
           <section className="space-y-10 max-w-4xl mx-auto text-center">
             <div className="space-y-4">
-               <Badge variant="outline" className="tracking-[0.3em] gap-2"><span className="w-2 h-2 rounded-full bg-[#28c840]" />Version 0.1.0-alpha</Badge>
                <h1 className="text-5xl md:text-7xl tracking-tighter leading-none font-semibold text-center">
                 Handle errors with confidence and resilience everywhere.
               </h1>
