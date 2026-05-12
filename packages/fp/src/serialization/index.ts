@@ -46,3 +46,66 @@ export {
 
 // Error reviver
 export { errorReviver } from "./builder.js";
+
+// ============================================================================
+// RESULT SERIALIZATION CLASS (DEP-0008)
+// ============================================================================
+
+import {
+  serializeResult,
+  deserializeResult,
+} from "./builder.js";
+
+/**
+ * Static-style serialization API for Result.
+ */
+export class Result {
+  private constructor() {
+    // Prevent instantiation - this class only provides static methods
+  }
+
+  static serialize<T, E extends Error>(result: { ok: true; value: T } | { ok: false; error: E }): {
+    _tag: "Ok";
+    value: T;
+  } | {
+    _tag: "Err";
+    error: E;
+  } {
+    return serializeResult(result as any) as any;
+  }
+
+  static deserialize(errorRegistry: unknown, json: unknown) {
+    return deserializeResult(errorRegistry as any, json);
+  }
+}
+
+// ============================================================================
+// MAYBE SERIALIZATION CLASS (DEP-0008)
+// ============================================================================
+
+import {
+  serializeMaybe,
+  deserializeMaybe,
+} from "./builder.js";
+
+/**
+ * Static-style serialization API for Maybe.
+ */
+export class Maybe {
+  private constructor() {
+    // Prevent instantiation - this class only provides static methods
+  }
+
+  static serialize<T>(maybe: { ok: true; value: T } | { ok: false }): {
+    _tag: "Some";
+    value: T;
+  } | {
+    _tag: "None";
+  } {
+    return serializeMaybe(maybe as any) as any;
+  }
+
+  static deserialize<T>(json: unknown) {
+    return deserializeMaybe<T>(json);
+  }
+}

@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   Check,
@@ -55,7 +56,7 @@ const CodeBlock = ({ code, label, lang = "typescript", showLineNumbers = false }
 
   return (
     <div className="group relative border border-border bg-muted/20 p-2 text-sm leading-relaxed h-full">
-      <div className="flex justify-between items-center gap-4">
+      <div className="flex justify-between items-start gap-4">
         <div className="flex-1 min-w-0">
           {label && <div className="mb-2 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{label}</div>}
           <SyntaxHighlighter
@@ -80,6 +81,153 @@ const CodeBlock = ({ code, label, lang = "typescript", showLineNumbers = false }
         >
           {copied ? <Check size={12} className="text-accent-foreground" /> : <Copy size={12} />}
         </button>
+      </div>
+    </div>
+  );
+};
+
+// --- Responsive Tabs ---
+const SimplifiedFlowTabs = ({ defaultValue }: { defaultValue: string }) => {
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsDesktop(window.innerWidth >= 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
+  if (isDesktop) {
+    return (
+      <Tabs defaultValue={defaultValue} className="border border-border w-full gap-0 flex">
+        <TabsList className="flex-col bg-muted/30 border-r border-border p-0 rounded-none h-auto shrink-0">
+          {['result', 'maybe', 'async', 'retry'].map((tab) => (
+            <TabsTrigger
+              key={tab}
+              value={tab}
+              className="px-6 py-3 rounded-none border-b border-border data-[state=active]:bg-background uppercase text-[10px] tracking-[0.2em] font-normal w-full"
+            >
+              {tab}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        <div className="flex-1 min-h-[320px]">
+          <TabsContent value="result" className="m-0 h-full">
+            <BeforeAfterCode type="result" />
+          </TabsContent>
+          <TabsContent value="maybe" className="m-0 h-full">
+            <BeforeAfterCode type="maybe" />
+          </TabsContent>
+          <TabsContent value="async" className="m-0 h-full">
+            <BeforeAfterCode type="async" />
+          </TabsContent>
+          <TabsContent value="retry" className="m-0 h-full">
+            <BeforeAfterCode type="retry" />
+          </TabsContent>
+        </div>
+      </Tabs>
+    );
+  }
+
+  return (
+    <Tabs defaultValue={defaultValue} className="border border-border w-full gap-0">
+      <TabsList className="flex-row bg-muted/30 border-b border-border p-0 rounded-none h-auto">
+        {['result', 'maybe', 'async', 'retry'].map((tab) => (
+          <TabsTrigger
+            key={tab}
+            value={tab}
+            className="flex-1 px-4 py-3 rounded-none border-b border-border data-[state=active]:bg-background uppercase text-[10px] tracking-[0.2em] font-normal"
+          >
+            {tab}
+          </TabsTrigger>
+        ))}
+      </TabsList>
+      <TabsContent value="result" className="m-0">
+        <BeforeAfterCode type="result" />
+      </TabsContent>
+      <TabsContent value="maybe" className="m-0">
+        <BeforeAfterCode type="maybe" />
+      </TabsContent>
+      <TabsContent value="async" className="m-0">
+        <BeforeAfterCode type="async" />
+      </TabsContent>
+      <TabsContent value="retry" className="m-0">
+        <BeforeAfterCode type="retry" />
+      </TabsContent>
+    </Tabs>
+  );
+};
+
+// --- BeforeAfterCode ---
+const BeforeAfterCode = ({ type }: { type: string }) => {
+  const content: Record<string, { before: { label: string; code: string }; after: { label: string; code: string } }> = {
+    result: {
+      before: {
+        label: 'Traditional JS',
+        code: `try {\n  const user = getUser(id);\n  return process(user);\n} catch (e) {\n  handleError(e);\n}`,
+      },
+      after: {
+        label: '@deessejs/fp',
+        code: `getUser(id)\n  .map(user => process(user))\n  .tapError(err => handleError(err));`,
+      },
+    },
+    maybe: {
+      before: {
+        label: 'Null Checks',
+        code: `const val = getOptional();\nif (val !== null && val !== undefined) {\n  return doSomething(val);\n}\nreturn defaultValue;`,
+      },
+      after: {
+        label: 'Maybe Type',
+        code: `Maybe.fromNullable(getOptional())\n  .map(val => doSomething(val))\n  .getOrElse(defaultValue);`,
+      },
+    },
+    async: {
+      before: {
+        label: 'Nested Await',
+        code: `try {\n  const res = await fetch(url);\n  const data = await res.json();\n  return data;\n} catch (e) {\n  return null;\n}`,
+      },
+      after: {
+        label: 'AsyncResult',
+        code: `AsyncResult.fromPromise(fetch(url))\n  .flatMap(res => res.json())\n  .getOrElse(null);`,
+      },
+    },
+    retry: {
+      before: {
+        label: 'Manual Loop',
+        code: `let attempts = 0;\nwhile (attempts < 3) {\n  try { return await task(); }\n  catch { attempts++; }\n}\nthrow Error("Failed");`,
+      },
+      after: {
+        label: 'Retry Policy',
+        code: `retry(task, {\n  attempts: 3,\n  backoff: 'exponential'\n});`,
+      },
+    },
+  };
+
+  const { before, after } = content[type] || content.result;
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="grid grid-cols-2 divide-x divide-border">
+        <div className="px-4 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10 flex justify-between items-center">
+          <div className="flex gap-2">
+            <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
+            <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
+            <div className="w-3 h-3 rounded-full bg-[#28c840]" />
+          </div>
+          <span>Before</span>
+        </div>
+        <div className="px-4 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10 flex justify-between items-center">
+          <div className="flex gap-2">
+            <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
+            <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
+            <div className="w-3 h-3 rounded-full bg-[#28c840]" />
+          </div>
+          <span>After</span>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 divide-x divide-border flex-1" style={{ height: "100%" }}>
+        <CodeBlock label={before.label} showLineNumbers code={before.code} />
+        <CodeBlock label={after.label} showLineNumbers code={after.code} />
       </div>
     </div>
   );
@@ -124,7 +272,7 @@ export default function Homepage() {
                 </TabsContent>
               </Tabs>
               <p className="mt-4 text-[10px] text-muted-foreground font-mono tracking-widest">
-                Or <a href="https://github.com/nesalia-inc/fp/starter" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-foreground">git clone</a> the starter template
+                Or <a href="https://github.com/nesalia-inc/fp/starter" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-foreground">git clone</a> and start contributing
               </p>
             </div>
           </section>
@@ -133,130 +281,7 @@ export default function Homepage() {
           <section className="space-y-8">
             <h2 className="text-2xl uppercase tracking-tighter">Simplified Flow</h2>
             <div className="flex justify-center">
-              <Tabs defaultValue="result" className="border border-border w-full gap-0">
-                <TabsList className="flex-col bg-muted/30 border-b border-r border-border p-0 rounded-none h-auto">
-                  {['result', 'maybe', 'async', 'retry'].map((tab) => (
-                    <TabsTrigger
-                      key={tab}
-                      value={tab}
-                      className="px-6 md:px-10 rounded-none border-b border-border data-[state=active]:bg-background uppercase text-[10px] tracking-[0.2em] font-normal w-full"
-                    >
-                      {tab}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-
-              {/* min-h to prevent layout shift */}
-              <div className="min-h-[320px] h-full flex-1">
-                <TabsContent value="result" className="m-0 h-full">
-                  <div className="flex flex-col h-full">
-                    <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
-                      <div className="px-4 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10 flex justify-between items-center">
-                        <div className="flex gap-2">
-                          <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
-                          <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
-                          <div className="w-3 h-3 rounded-full bg-[#28c840]" />
-                        </div>
-                        <span>Before</span>
-                      </div>
-                      <div className="px-4 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10 flex justify-between items-center">
-                        <div className="flex gap-2">
-                          <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
-                          <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
-                          <div className="w-3 h-3 rounded-full bg-[#28c840]" />
-                        </div>
-                        <span>After</span>
-                      </div>
-                    </div>
-                    <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border flex-1" style={{ height: "100%" }}>
-                      <CodeBlock label="Traditional JS" showLineNumbers code={`try {\n  const user = getUser(id);\n  return process(user);\n} catch (e) {\n  handleError(e);\n}`} />
-                      <CodeBlock label="@deessejs/fp" showLineNumbers code={`getUser(id)\n  .map(user => process(user))\n  .tapError(err => handleError(err));`} />
-                    </div>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="async" className="m-0 h-full">
-                  <div className="flex flex-col h-full">
-                    <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
-                      <div className="px-4 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10 flex justify-between items-center">
-                        <div className="flex gap-2">
-                          <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
-                          <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
-                          <div className="w-3 h-3 rounded-full bg-[#28c840]" />
-                        </div>
-                        <span>Before</span>
-                      </div>
-                      <div className="px-4 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10 flex justify-between items-center">
-                        <div className="flex gap-2">
-                          <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
-                          <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
-                          <div className="w-3 h-3 rounded-full bg-[#28c840]" />
-                        </div>
-                        <span>After</span>
-                      </div>
-                    </div>
-                    <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border flex-1" style={{ height: "100%" }}>
-                      <CodeBlock label="Nested Await" showLineNumbers code={`try {\n  const res = await fetch(url);\n  const data = await res.json();\n  return data;\n} catch (e) {\n  return null;\n}`} />
-                      <CodeBlock label="AsyncResult" showLineNumbers code={`AsyncResult.fromPromise(fetch(url))\n  .flatMap(res => res.json())\n  .getOrElse(null);`} />
-                    </div>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="maybe" className="m-0 h-full">
-                  <div className="flex flex-col h-full">
-                    <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
-                      <div className="px-4 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10 flex justify-between items-center">
-                        <div className="flex gap-2">
-                          <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
-                          <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
-                          <div className="w-3 h-3 rounded-full bg-[#28c840]" />
-                        </div>
-                        <span>Before</span>
-                      </div>
-                      <div className="px-4 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10 flex justify-between items-center">
-                        <div className="flex gap-2">
-                          <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
-                          <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
-                          <div className="w-3 h-3 rounded-full bg-[#28c840]" />
-                        </div>
-                        <span>After</span>
-                      </div>
-                    </div>
-                    <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border flex-1" style={{ height: "100%" }}>
-                      <CodeBlock label="Null Checks" showLineNumbers code={`const val = getOptional();\nif (val !== null && val !== undefined) {\n  return doSomething(val);\n}\nreturn defaultValue;`} />
-                      <CodeBlock label="Maybe Type" showLineNumbers code={`Maybe.fromNullable(getOptional())\n  .map(val => doSomething(val))\n  .getOrElse(defaultValue);`} />
-                    </div>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="retry" className="m-0 h-full">
-                  <div className="flex flex-col h-full">
-                    <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
-                      <div className="px-4 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10 flex justify-between items-center">
-                        <div className="flex gap-2">
-                          <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
-                          <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
-                          <div className="w-3 h-3 rounded-full bg-[#28c840]" />
-                        </div>
-                        <span>Before</span>
-                      </div>
-                      <div className="px-4 py-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border bg-muted/10 flex justify-between items-center">
-                        <div className="flex gap-2">
-                          <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
-                          <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
-                          <div className="w-3 h-3 rounded-full bg-[#28c840]" />
-                        </div>
-                        <span>After</span>
-                      </div>
-                    </div>
-                    <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border flex-1" style={{ height: "100%" }}>
-                      <CodeBlock label="Manual Loop" showLineNumbers code={`let attempts = 0;\nwhile (attempts < 3) {\n  try { return await task(); }\n  catch { attempts++; }\n}\nthrow Error("Failed");`} />
-                      <CodeBlock label="Retry Policy" showLineNumbers code={`retry(task, {\n  attempts: 3,\n  backoff: 'exponential'\n});`} />
-                    </div>
-                  </div>
-                </TabsContent>
-              </div>
-            </Tabs>
+              <SimplifiedFlowTabs defaultValue="result" />
             </div>
           </section>
 
@@ -269,24 +294,28 @@ export default function Homepage() {
                 title="Never try & catch again"
                 desc="Errors become typed values you can map, flatMap, and chain — without breaking your flow."
                 category="Core"
+                href="/docs/result"
               />
               <FeatureCard
                 icon={<Layers size={20} />}
                 title="Async without boilerplate"
                 desc="Fluent chaining for Promises. Same API as sync code. No more nested pyramids."
                 category="Core"
+                href="/docs/async-result"
               />
                <FeatureCard
                 icon={<Code2 size={20} />}
                 title="One API everywhere"
                 desc="Sync or Async, it doesn't matter. One set of functions to learn for everything."
                 category="Core"
+                href="/docs/unified-api"
               />
               <FeatureCard
                 icon={<ShieldCheck size={20} />}
                 title="Errors that tell a story"
                 desc="Structured domain errors with context and Zod validation. Built for debugging."
                 category="Reliability"
+                href="/docs/errors"
                 className="md:col-span-2"
               />
               <FeatureCard
@@ -294,24 +323,28 @@ export default function Homepage() {
                 title="Production-ready"
                 desc="Debounce, throttle, memoize, and timeouts out of the box."
                 category="Reliability"
+                href="/docs/retry"
               />
               <FeatureCard
                 icon={<Search size={20} />}
                 title="Make absence explicit"
                 desc="No more null checks — absence is visible in the type system from the start."
                 category="DX"
+                href="/docs/maybe"
               />
               <FeatureCard
                 icon={<RefreshCw size={20} />}
                 title="Retry without the mess"
                 desc="Exponential backoff, jitter, and predicates handled elegantly."
                 category="DX"
+                href="/docs/retry"
               />
               <FeatureCard
                 icon={<Terminal size={20} />}
                 title="Composable by design"
                 desc="Pipe and flow let you build readable transformation pipelines."
                 category="DX"
+                href="/docs/pipe-and-flow"
               />
             </div>
           </section>
@@ -356,13 +389,10 @@ export default function Homepage() {
 
         </main>
 
-        <footer className="border-t border-border py-12 px-12 flex flex-col md:flex-row justify-between items-center gap-6 text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
-          <span>© 2026 @deessejs/fp</span>
-          <div className="flex gap-8">
-            <a href="#" className="hover:text-foreground">Documentation</a>
-            <a href="#" className="hover:text-foreground">Changelog</a>
-            <a href="#" className="hover:text-foreground">Twitter</a>
-          </div>
+        <footer className="border-t border-border h-12 px-6 flex flex-col md:flex-row justify-between items-center gap-6 text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+          <a href="https://deessejs.com" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-foreground">deessejs.com</a>
+          <span>/</span>
+          <a href="https://nesalia.com" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-foreground">nesalia.com</a>
         </footer>
       </div>
     </div>
@@ -371,16 +401,28 @@ export default function Homepage() {
 
 // --- Helper Components ---
 
-function FeatureCard({ icon, title, desc, category, className }: { icon: React.ReactNode, title: string, desc: string, category: string, className?: string }) {
+function FeatureCard({ icon, title, desc, category, className, href }: { icon: React.ReactNode, title: string, desc: string, category: string, className?: string, href: string }) {
   return (
-    <div className={`bg-background p-10 space-y-6 border border-transparent hover:border-accent/30 transition-colors ${className}`}>
+    <Link href={href} scroll={false} className={`group relative bg-background p-10 space-y-6 border border-transparent hover:border-accent/30 transition-colors block ${className}`}>
+      {/* Animated icon top-right */}
+      <span className="pointer-events-none absolute top-4 right-4 overflow-hidden">
+        {/* Plus icon */}
+        <svg viewBox="0 0 16 16" height="12" width="12" data-slot="icon" className="text-foreground transition-all duration-200 group-hover:scale-0 group-hover:opacity-0">
+          <path fill="currentColor" fill-rule="evenodd" d="M8.75 2.25V1.5h-1.5v5.75H1.5v1.5h5.75v5.75h1.5V8.75h5.75v-1.5H8.75z" clip-rule="evenodd"></path>
+        </svg>
+        {/* Arrow up-right icon */}
+        <svg viewBox="0 0 16 16" height="12" width="12" data-slot="icon" className="absolute top-0 right-0 text-foreground transition-all duration-200 scale-0 opacity-0 -translate-x-[4px] translate-y-[4px] group-hover:scale-100 group-hover:opacity-100 group-hover:translate-x-0 group-hover:translate-y-0">
+          <path fill="currentColor" fill-rule="evenodd" d="M5.75 2H5v1.5h6.44l-9.22 9.22-.53.53 1.06 1.06.53-.53 9.22-9.22V11H14V3a1 1 0 0 0-1-1z" clip-rule="evenodd"></path>
+        </svg>
+      </span>
+
       <div className="text-muted-foreground group-hover:text-accent transition-colors">{icon}</div>
       <div className="space-y-3">
         <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-mono">{category}</span>
         <h3 className="text-lg uppercase tracking-tight">{title}</h3>
         <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
       </div>
-    </div>
+    </Link>
   );
 }
 

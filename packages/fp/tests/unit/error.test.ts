@@ -16,6 +16,7 @@ import {
   panic,
   isPanic,
   matchErrorPartial,
+  matchError,
 } from "../../src/index.js";
 
 describe("error() with Zod schema validation", () => {
@@ -774,6 +775,117 @@ describe("error() without schema", () => {
   });
 });
 
+describe("ErrorBuilder.is() type guard", () => {
+  it("should return true for matching error type", () => {
+    const NotFoundError = error({
+      name: "NotFoundError",
+      schema: z.object({ id: z.string(), resource: z.string() }),
+    });
+
+    const err = NotFoundError({ id: "123", resource: "User" });
+
+    expect(NotFoundError.is(err)).toBe(true);
+  });
+
+  it("should return false for different error type", () => {
+    const NotFoundError = error({
+      name: "NotFoundError",
+      schema: z.object({ id: z.string() }),
+    });
+
+    const ValidationError = error({
+      name: "ValidationError",
+      schema: z.object({ field: z.string() }),
+    });
+
+    const err = ValidationError({ field: "email" });
+
+    expect(NotFoundError.is(err)).toBe(false);
+  });
+
+  it("should narrow type within if block", () => {
+    const NotFoundError = error({
+      name: "NotFoundError",
+      schema: z.object({ id: z.string(), resource: z.string() }),
+    });
+
+    const err = NotFoundError({ id: "123", resource: "User" });
+
+    if (NotFoundError.is(err)) {
+      // TypeScript should narrow err to NotFoundError type
+      // The error's data is in err.args
+      expect(err.args.id).toBe("123");
+      expect(err.args.resource).toBe("User");
+    }
+  });
+
+  it("should work with errors without schema", () => {
+    const SimpleError = error({ name: "SimpleError" });
+
+    const err = SimpleError({ any: "args" });
+
+    expect(SimpleError.is(err)).toBe(true);
+  });
+
+  it("should return false for non-error values", () => {
+    const MyError = error({ name: "MyError" });
+
+    expect(MyError.is(null)).toBe(false);
+    expect(MyError.is(undefined)).toBe(false);
+    expect(MyError.is("string")).toBe(false);
+    expect(MyError.is(42)).toBe(false);
+    expect(MyError.is({ name: "MyError" })).toBe(false);
+    expect(MyError.is(new globalThis.Error("test"))).toBe(false);
+  });
+
+  it("should return false for validation errors of same name", () => {
+    const ValidationError = error({
+      name: "ValidationError",
+      schema: z.object({ field: z.string() }),
+    });
+
+    // @ts-expect-error - intentionally passing wrong type to trigger validation error
+    const err = ValidationError({ field: 123 });
+
+    // Validation errors have name "ValidationErrorValidationError" (not just "ValidationError")
+    expect(ValidationError.is(err)).toBe(false);
+  });
+
+  it("should work with multiple error types in if-else chain", () => {
+    const NotFoundError = error({
+      name: "NotFoundError",
+      schema: z.object({ id: z.string(), resource: z.string() }),
+    });
+
+    const ValidationError = error({
+      name: "ValidationError",
+      schema: z.object({ field: z.string(), message: z.string() }),
+    });
+
+    const TimeoutError = error({
+      name: "TimeoutError",
+      schema: z.object({ ms: z.number() }),
+    });
+
+    const processError = (err: Error) => {
+      if (NotFoundError.is(err)) {
+        return `Not found: ${err.args.id}`;
+      }
+      if (ValidationError.is(err)) {
+        return `Validation: ${err.args.field}`;
+      }
+      if (TimeoutError.is(err)) {
+        return `Timeout: ${err.args.ms}ms`;
+      }
+      return "Unknown error";
+    };
+
+    expect(processError(NotFoundError({ id: "123", resource: "User" }))).toBe("Not found: 123");
+    expect(processError(ValidationError({ field: "email", message: "invalid" }))).toBe("Validation: email");
+    expect(processError(TimeoutError({ ms: 5000 }))).toBe("Timeout: 5000ms");
+  });
+});
+
 describe("integration with Result", () => {
   it("should work with mapErr on wrapped error", () => {
     const SizeError = error({
@@ -1251,5 +1363,111 @@ describe("Panic in async context", () => {
     } catch (error_: unknown) {
       expect(isPanic(error_)).toBe(true);
     }
+  });
+});
+
+describe("matchError()", () => {
+  it("should match specific error types exhaustively", () => {
+    const NotFoundError = error({
+      name: "NotFoundError",
+      schema: z.object({ id: z.string(), resource: z.string() }),
+    });
+
+    const ValidationError = error({
+      name: "ValidationError",
+      schema: z.object({ field: z.string(), message: z.string() }),
+    });
+
+    const notFoundErr = NotFoundError({ id: "123", resource: "User" });
+    const validationErr = ValidationError({ field: "email", message: "invalid" });
+
+    const result1 = matchError(notFoundErr as NotFoundError | ValidationError, {
+      NotFoundError: (e) => `Missing: ${e.args.id}`,
+      ValidationError: (e) => `Invalid: ${e.args.field}`,
+    });
+
+    expect(result1).toBe("Missing: 123");
+
+    const result2 = matchError(validationErr as NotFoundError | ValidationError, {
+      NotFoundError: (e) => `Missing: ${e.args.id}`,
+      ValidationError: (e) => `Invalid: ${e.args.field}`,
+    });
+
+    expect(result2).toBe("Invalid: email");
+  });
+
+  it("should work with three or more error types", () => {
+    const NotFoundError = error({ name: "NotFoundError" });
+    const ValidationError = error({ name: "ValidationError" });
+    const TimeoutError = error({ name: "TimeoutError" });
+
+    const timeoutErr = TimeoutError({ ms: 5000 });
+
+    const result = matchError(timeoutErr as NotFoundError | ValidationError | TimeoutError, {
+      NotFoundError: (e) => `Missing: ${e.args.id}`,
+      ValidationError: (e) => `Invalid: ${e.args.field}`,
+      TimeoutError: (e) => `Timeout: ${e.args.ms}ms`,
+    });
+
+    expect(result).toBe("Timeout: 5000ms");
+  });
+
+  it("should handle Panic with exhaustive matching", () => {
+    let caughtPanic: { _tag: string; reason: string } | null = null;
+
+    try {
+      panic("unrecoverable defect");
+    } catch (error_) {
+      const p = error_ as { _tag: string; reason: string; error: globalThis.Error };
+      caughtPanic = p;
+
+      const result = matchError(p as Panic, {
+        Panic: (e) => `Panic: ${e.reason}`,
+      });
+
+      expect(result).toBe("Panic: unrecoverable defect");
+    }
+
+    expect(caughtPanic).not.toBeNull();
+  });
+
+  it("should narrow error types in handlers", () => {
+    const NotFoundError = error({
+      name: "NotFoundError",
+      schema: z.object({ id: z.string(), resource: z.string() }),
+    });
+
+    const ValidationError = error({
+      name: "ValidationError",
+      schema: z.object({ field: z.string(), message: z.string() }),
+    });
+
+    const notFoundErr = NotFoundError({ id: "123", resource: "User" });
+
+    // TypeScript should narrow e to NotFoundError inside its handler
+    const result = matchError(notFoundErr as NotFoundError | ValidationError, {
+      NotFoundError: (e) => {
+        // e should be narrowed to NotFoundError
+        const _typeCheck: typeof e.args.id = e.args.id;
+        return `Missing ${_typeCheck}`;
+      },
+      ValidationError: (e) => `Invalid: ${e.args.field}`,
+    });
+
+    expect(result).toBe("Missing 123");
+  });
+
+  it("should work with errors that have no args schema", () => {
+    const SimpleError = error({ name: "SimpleError" });
+    const AnotherError = error({ name: "AnotherError" });
+
+    const simpleErr = SimpleError({});
+
+    const result = matchError(simpleErr as SimpleError | AnotherError, {
+      SimpleError: (e) => `Simple: ${e.name}`,
+      AnotherError: (e) => `Another: ${e.name}`,
+    });
+
+    expect(result).toBe("Simple: SimpleError");
   });
 });
