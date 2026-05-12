@@ -408,11 +408,11 @@ function FeatureCard({ icon, title, desc, category, className, href }: { icon: R
       {/* Animated icon top-right */}
       <span className="pointer-events-none absolute top-4 right-4 overflow-hidden">
         {/* Plus icon */}
-        <svg viewBox="0 0 16 16" height="12" width="12" data-slot="icon" className="text-muted-foreground transition-all duration-200 group-hover:scale-0 group-hover:opacity-0">
+        <svg viewBox="0 0 16 16" height="12" width="12" data-slot="icon" className="text-foreground transition-all duration-200 group-hover:scale-0 group-hover:opacity-0">
           <path fill="currentColor" fill-rule="evenodd" d="M8.75 2.25V1.5h-1.5v5.75H1.5v1.5h5.75v5.75h1.5V8.75h5.75v-1.5H8.75z" clip-rule="evenodd"></path>
         </svg>
         {/* Arrow up-right icon */}
-        <svg viewBox="0 0 16 16" height="12" width="12" data-slot="icon" className="absolute top-0 right-0 text-muted-foreground transition-all duration-200 scale-0 opacity-0 -translate-x-[4px] translate-y-[4px] group-hover:scale-100 group-hover:opacity-100 group-hover:translate-x-0 group-hover:translate-y-0">
+        <svg viewBox="0 0 16 16" height="12" width="12" data-slot="icon" className="absolute top-0 right-0 text-foreground transition-all duration-200 scale-0 opacity-0 -translate-x-[4px] translate-y-[4px] group-hover:scale-100 group-hover:opacity-100 group-hover:translate-x-0 group-hover:translate-y-0">
           <path fill="currentColor" fill-rule="evenodd" d="M5.75 2H5v1.5h6.44l-9.22 9.22-.53.53 1.06 1.06.53-.53 9.22-9.22V11H14V3a1 1 0 0 0-1-1z" clip-rule="evenodd"></path>
         </svg>
       </span>
