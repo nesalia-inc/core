@@ -271,7 +271,7 @@ export default function Homepage() {
                 </TabsContent>
               </Tabs>
               <p className="mt-4 text-[10px] text-muted-foreground font-mono tracking-widest">
-                Or <a href="https://github.com/nesalia-inc/fp/starter" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-foreground">git clone</a> the starter template
+                Or <a href="https://github.com/nesalia-inc/fp/starter" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-foreground">git clone</a> and start contributing
               </p>
             </div>
           </section>
@@ -383,7 +383,7 @@ export default function Homepage() {
         <footer className="border-t border-border py-12 px-12 flex flex-col md:flex-row justify-between items-center gap-6 text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
           <span>© 2026 @deessejs/fp</span>
           <div className="flex gap-8">
-            <a href="#" className="hover:text-foreground">Documentation</a>
+            <a href="/docs" className="hover:text-foreground">Documentation</a>
           </div>
         </footer>
       </div>
