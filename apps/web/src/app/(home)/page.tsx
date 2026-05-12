@@ -56,7 +56,7 @@ const CodeBlock = ({ code, label, lang = "typescript", showLineNumbers = false }
 
   return (
     <div className="group relative border border-border bg-muted/20 p-2 text-sm leading-relaxed h-full">
-      <div className="flex justify-between items-center gap-4">
+      <div className="flex justify-between items-start gap-4">
         <div className="flex-1 min-w-0">
           {label && <div className="mb-2 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{label}</div>}
           <SyntaxHighlighter
