@@ -384,8 +384,6 @@ export default function Homepage() {
           <span>© 2026 @deessejs/fp</span>
           <div className="flex gap-8">
             <a href="#" className="hover:text-foreground">Documentation</a>
-            <a href="#" className="hover:text-foreground">Changelog</a>
-            <a href="#" className="hover:text-foreground">Twitter</a>
           </div>
         </footer>
       </div>
