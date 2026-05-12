@@ -390,10 +390,9 @@ export default function Homepage() {
         </main>
 
         <footer className="border-t border-border h-12 px-6 flex flex-col md:flex-row justify-between items-center gap-6 text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
-          <span>© 2026 @deessejs/fp</span>
-          <div className="flex gap-8">
-            <a href="/docs" className="hover:text-foreground">Documentation</a>
-          </div>
+          <a href="https://deessejs.com" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-foreground">deessejs.com</a>
+          <span>/</span>
+          <a href="https://nesalia.com" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-foreground">nesalia.com</a>
         </footer>
       </div>
     </div>
