@@ -389,7 +389,7 @@ export default function Homepage() {
 
         </main>
 
-        <footer className="border-t border-border py-12 px-12 flex flex-col md:flex-row justify-between items-center gap-6 text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+        <footer className="border-t border-border h-12 px-6 flex flex-col md:flex-row justify-between items-center gap-6 text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
           <span>© 2026 @deessejs/fp</span>
           <div className="flex gap-8">
             <a href="/docs" className="hover:text-foreground">Documentation</a>
